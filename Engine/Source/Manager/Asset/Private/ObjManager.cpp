@@ -265,23 +265,26 @@ void FObjManager::CreateMaterialsFromMTL(UStaticMesh* StaticMesh, FStaticMesh* S
 
 UStaticMesh* FObjManager::LoadObjStaticMesh(const FName& PathFileName, const FObjImporter::Configuration& Config)
 {
-	for (TObjectIterator<UStaticMesh> It; It; ++It)
+	// 1) Try AssetManager cache first (non-owning lookup)
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	if (UStaticMesh* Cached = AssetManager.GetStaticMeshFromCache(PathFileName))
 	{
-		UStaticMesh* StaticMesh = *It;
-		if (StaticMesh->GetAssetPathFileName() == PathFileName)
-		{
-			return *It;
-		}
+		return Cached;
 	}
 
+	// 2) Load asset-level data (FStaticMesh) if not cached
 	FStaticMesh* StaticMeshAsset = FObjManager::LoadObjStaticMeshAsset(PathFileName, Config);
 	if (StaticMeshAsset)
 	{
+		// Create runtime UStaticMesh and register to AssetManager cache (ownership there)
 		UStaticMesh* StaticMesh = new UStaticMesh();
 		StaticMesh->SetStaticMeshAsset(StaticMeshAsset);
 
-		// MTL 정보를 바탕으로 재질 객체 생성
+		// Create materials based on MTL information
 		CreateMaterialsFromMTL(StaticMesh, StaticMeshAsset, PathFileName);
+
+		// Register into AssetManager's cache (takes ownership)
+		AssetManager.AddStaticMeshToCache(PathFileName, StaticMesh);
 
 		return StaticMesh;
 	}

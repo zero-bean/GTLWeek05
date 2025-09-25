@@ -48,6 +48,10 @@ public:
 	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
+	// StaticMesh Cache Accessors
+	UStaticMesh* GetStaticMeshFromCache(const FName& InObjPath);
+	void AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh);
+
 	// Create Texture
 	static ID3D11ShaderResourceView* CreateTextureFromFile(const path& InFilePath);
 	static ID3D11ShaderResourceView* CreateTextureFromMemory(const void* InData, size_t InDataSize);

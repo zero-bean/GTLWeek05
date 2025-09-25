@@ -277,6 +277,28 @@ const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 	return StaticMeshAABBs[InName];
 }
 
+// StaticMesh Cache Accessors
+UStaticMesh* UAssetManager::GetStaticMeshFromCache(const FName& InObjPath)
+{
+	auto It = StaticMeshCache.find(InObjPath);
+	if (It != StaticMeshCache.end())
+	{
+		return It->second.get();
+	}
+	return nullptr;
+}
+
+void UAssetManager::AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh)
+{
+	if (!InStaticMesh)
+		return;
+
+	if (StaticMeshCache.find(InObjPath) == StaticMeshCache.end())
+	{
+		StaticMeshCache.emplace(InObjPath, std::unique_ptr<UStaticMesh>(InStaticMesh));
+	}
+}
+
 /**
  * @brief 파일에서 텍스처를 로드하고 캐시에 저장하는 함수
  * 중복 로딩을 방지하기 위해 이미 로드된 텍스처는 캐시에서 반환
