@@ -73,19 +73,29 @@ FMatrix FMatrix::Identity()
 /**
 * @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
 */
-FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
+FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix) const
 {
 	FMatrix Result;
 
 	for (int32 i = 0; i < 4; ++i)
 	{
-		for (int32 j = 0; j < 4; ++j)
+		// Result의 i번째 행을 0으로 초기화
+		__m128 Res = _mm_setzero_ps();
+
+		// A의 i번째 행과 B의 각 열의 내적 계산
+		for (int32 k = 0; k < 4; ++k)
 		{
-			for (int32 k = 0; k < 4; ++k)
-			{
-				Result.Data[i][j] += Data[i][k] * InOtherMatrix.Data[k][j];
-			}
+			// A[i][k]를 4개 레인에 브로드캐스트
+			__m128 Scalar = _mm_set1_ps(Data[i][k]);
+
+			// B의 k번째 행 (또는 전치된 B의 k번째 열)
+			__m128 OtherRow = InOtherMatrix.V[k];
+
+			// 병렬 곱셈 후 누적
+			Res = _mm_add_ps(Res, _mm_mul_ps(Scalar, OtherRow));
 		}
+
+		Result.V[i] = Res;
 	}
 
 	return Result;
@@ -251,25 +261,25 @@ FMatrix FMatrix::GetModelMatrixInverse(const FVector& Location, const FVector& R
 	return modelMatrixInverse * FMatrix::DxToUE;
 }
 
-FVector4 FMatrix::VectorMultiply(const FVector4& v, const FMatrix& m)
+FVector4 FMatrix::VectorMultiply(const FVector4& V, const FMatrix& M)
 {
 	FVector4 result = {};
-	result.X = (v.X * m.Data[0][0]) + (v.Y * m.Data[1][0]) + (v.Z * m.Data[2][0]) + (v.W * m.Data[3][0]);
-	result.Y = (v.X * m.Data[0][1]) + (v.Y * m.Data[1][1]) + (v.Z * m.Data[2][1]) + (v.W * m.Data[3][1]);
-	result.Z = (v.X * m.Data[0][2]) + (v.Y * m.Data[1][2]) + (v.Z * m.Data[2][2]) + (v.W * m.Data[3][2]);
-	result.W = (v.X * m.Data[0][3]) + (v.Y * m.Data[1][3]) + (v.Z * m.Data[2][3]) + (v.W * m.Data[3][3]);
+	result.X = (V.X * M.Data[0][0]) + (V.Y * M.Data[1][0]) + (V.Z * M.Data[2][0]) + (V.W * M.Data[3][0]);
+	result.Y = (V.X * M.Data[0][1]) + (V.Y * M.Data[1][1]) + (V.Z * M.Data[2][1]) + (V.W * M.Data[3][1]);
+	result.Z = (V.X * M.Data[0][2]) + (V.Y * M.Data[1][2]) + (V.Z * M.Data[2][2]) + (V.W * M.Data[3][2]);
+	result.W = (V.X * M.Data[0][3]) + (V.Y * M.Data[1][3]) + (V.Z * M.Data[2][3]) + (V.W * M.Data[3][3]);
 
 
 	return result;
 }
 
-FVector FMatrix::VectorMultiply(const FVector& v, const FMatrix& m)
+FVector FMatrix::VectorMultiply(const FVector& V, const FMatrix& M)
 {
 	FVector result = {};
-	result.X = (v.X * m.Data[0][0]) + (v.Y * m.Data[1][0]) + (v.Z * m.Data[2][0]);
-	result.Y = (v.X * m.Data[0][1]) + (v.Y * m.Data[1][1]) + (v.Z * m.Data[2][1]);
-	result.Z = (v.X * m.Data[0][2]) + (v.Y * m.Data[1][2]) + (v.Z * m.Data[2][2]);
-	//result.W = (v.X * m.Data[0][3]) + (v.Y * m.Data[1][3]) + (v.Z * m.Data[2][3]) + (v.W * m.Data[3][3]);
+	result.X = (V.X * M.Data[0][0]) + (V.Y * M.Data[1][0]) + (V.Z * M.Data[2][0]);
+	result.Y = (V.X * M.Data[0][1]) + (V.Y * M.Data[1][1]) + (V.Z * M.Data[2][1]);
+	result.Z = (V.X * M.Data[0][2]) + (V.Y * M.Data[1][2]) + (V.Z * M.Data[2][2]);
+	//result.W = (V.X * M.Data[0][3]) + (V.Y * M.Data[1][3]) + (V.Z * M.Data[2][3]) + (V.W * M.Data[3][3]);
 
 
 	return result;
@@ -277,16 +287,34 @@ FVector FMatrix::VectorMultiply(const FVector& v, const FMatrix& m)
 
 FMatrix FMatrix::Transpose() const
 {
-	FMatrix result = {};
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			result.Data[i][j] = Data[j][i];
-		}
-	}
+	// 1. 4개 행을 SIMD 레지스터에 로드
+	__m128 Row0 = V[0];
+	__m128 Row1 = V[1];
+	__m128 Row2 = V[2];
+	__m128 Row3 = V[3];
 
-	return result;
+	// 2. 1단계 셔플: 0/1행, 2/3행을 묶어 하위/상위 요소를 교차
+	__m128 T0 = _mm_unpacklo_ps(Row0, Row1); // (M00, M10, M01, M11)
+	__m128 T1 = _mm_unpackhi_ps(Row0, Row1); // (M02, M12, M03, M13)
+	__m128 T2 = _mm_unpacklo_ps(Row2, Row3); // (M20, M30, M21, M31)
+	__m128 T3 = _mm_unpackhi_ps(Row2, Row3); // (M22, M32, M23, M33)
+
+	// 3. 2단계 셔플: 중간 결과를 조합하여 최종 전치된 행(원래 행렬의 열)을 만듦
+	FMatrix Result;
+
+	// Result.V[0] = (M00, M10, M20, M30) - 기존 0열
+	Result.V[0] = _mm_shuffle_ps(T0, T2, _MM_SHUFFLE(1, 0, 1, 0));
+
+	// Result.V[1] = (M01, M11, M21, M31) - 기존 1열
+	Result.V[1] = _mm_shuffle_ps(T0, T2, _MM_SHUFFLE(3, 2, 3, 2));
+
+	// Result.V[2] = (M02, M12, M22, M32) - 기존 2열
+	Result.V[2] = _mm_shuffle_ps(T1, T3, _MM_SHUFFLE(1, 0, 1, 0));
+
+	// Result.V[3] = (M03, M13, M23, M33) - 기존 3열
+	Result.V[3] = _mm_shuffle_ps(T1, T3, _MM_SHUFFLE(3, 2, 3, 2));
+
+	return Result;
 }
 
 
