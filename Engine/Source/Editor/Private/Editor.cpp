@@ -16,6 +16,8 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Level/Public/Level.h"
 #include "Global/Quaternion.h"
+#include "Utility/Public/ScopeCycleCounter.h"
+#include "Render/UI/Overlay/Public/StatOverlay.h"
 
 UEditor::UEditor()
 {
@@ -415,8 +417,12 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 			if (ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 			{
 				TArray<UPrimitiveComponent*> Candidate = FindCandidatePrimitives(InLevel);
+
+				FScopeCycleCounter PickCounter{ TStatId() }; // 피킹 시간 측정 시작
 				UPrimitiveComponent* PrimitiveCollided = ObjectPicker.PickPrimitive(CurrentCamera, WorldRay, Candidate, &ActorDistance);
 				ActorPicked = PrimitiveCollided ? PrimitiveCollided->GetOwner() : nullptr;
+				float ElapsedMs = FWindowsPlatformTime::ToMilliseconds(PickCounter.Finish()); // 피킹 시간 측정 종료
+				UStatOverlay::GetInstance().RecordPickingStats(ElapsedMs);
 			}
 		}
 

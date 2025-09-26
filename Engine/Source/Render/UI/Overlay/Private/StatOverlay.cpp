@@ -62,6 +62,7 @@ void UStatOverlay::Render()
 
 	if (IsStatEnabled(EStatType::FPS))		{ RenderFPS(); }
 	if (IsStatEnabled(EStatType::Memory))	{ RenderMemory(); }
+	if (IsStatEnabled(EStatType::Picking))	{ RenderPicking(); }
 
 	D2DRenderTarget->EndDraw();
 }
@@ -130,6 +131,28 @@ void UStatOverlay::RenderMemory()
 	RenderText(MemoryText, OverlayX, OverlayY + OffsetY, 1.0f, 1.0f, 0.0f);
 }
 
+void UStatOverlay::RenderPicking()
+{
+	float AveragePickingTimeMs = PickAttempts > 0 ? AccumulatedPickingTimeMs / PickAttempts : 0.0f;
+
+	char PickingBuffer[128];
+	sprintf_s(PickingBuffer, sizeof(PickingBuffer), "Picking Time %.2f ms (Attempts %u, Accumulated %.2f ms, Average %.2f ms)", 
+	         LastPickingTimeMs, PickAttempts, AccumulatedPickingTimeMs, AveragePickingTimeMs);
+	FString PickingText = PickingBuffer;
+
+	// Calculate Y offset based on enabled stats
+	float OffsetY = 0.0f;
+	if (IsStatEnabled(EStatType::FPS)) OffsetY += 20.0f;
+	if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
+
+	// Color coding: Green for fast, Yellow for medium, Red for slow picking
+	float R = 0.0f, G = 1.0f, B = 0.8f;  // Default cyan
+	if (LastPickingTimeMs > 5.0f) { R = 1.0f; G = 0.0f; B = 0.0f; }      // Red for > 5ms
+	else if (LastPickingTimeMs > 1.0f) { R = 1.0f; G = 1.0f; B = 0.0f; }  // Yellow for > 1ms
+
+	RenderText(PickingText, OverlayX, OverlayY + OffsetY, R, G, B);
+}
+
 void UStatOverlay::RenderText(const FString& Text, float X, float Y, float R, float G, float B)
 {
 	if (!D2DRenderTarget || !TextBrush || !TextFormat) return;
@@ -137,7 +160,7 @@ void UStatOverlay::RenderText(const FString& Text, float X, float Y, float R, fl
 	TextBrush->SetColor(D2D1::ColorF(R, G, B));
 	std::wstring wText = ToWString(Text);
 
-	D2D1_RECT_F layoutRect = D2D1::RectF(X, Y, X + 400.0f, Y + 20.0f);
+	D2D1_RECT_F layoutRect = D2D1::RectF(X, Y, X + 800.0f, Y + 20.0f);
 	D2DRenderTarget->DrawText(
 		wText.c_str(),
 		static_cast<UINT32>(wText.length()),
@@ -175,4 +198,11 @@ void UStatOverlay::SetStatType(EStatType Type)
 bool UStatOverlay::IsStatEnabled(EStatType Type) const
 {
 	return (StatMask & static_cast<uint8>(Type)) != 0;
+}
+
+void UStatOverlay::RecordPickingStats(float ElapsedMs)
+{
+	++PickAttempts;
+	LastPickingTimeMs = ElapsedMs;
+	AccumulatedPickingTimeMs += ElapsedMs;
 }
