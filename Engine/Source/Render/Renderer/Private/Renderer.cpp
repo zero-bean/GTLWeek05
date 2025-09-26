@@ -436,7 +436,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 			return MeshA < MeshB;
 		});
 
-	UStaticMeshComponent* CurrentMesh = nullptr;
+	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 	ID3D11RasterizerState* CurrentRasterizer = nullptr;
 	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
@@ -473,11 +473,11 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 		}
 
 		// Mesh 변경시에만 버퍼 바인딩
-		if (CurrentMesh != MeshComp) 
+		if (CurrentMeshAsset != MeshAsset)
 		{
 			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
 			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
-			CurrentMesh = MeshComp;
+			CurrentMeshAsset = MeshAsset;
 		}
 
 		// Transform 업데이트 (메시별로)
