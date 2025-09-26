@@ -3,8 +3,8 @@
 #include "Core/Public/Object.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
+#include "Render/Renderer/Public/Pipeline.h"
 
-class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
@@ -89,12 +89,19 @@ public:
 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
 
 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
-	void UpdateConstant(const UPrimitiveComponent* InPrimitive) const;
-	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
-	void UpdateConstant(const FViewProjConstants& InViewProjConstants) const;
-	void UpdateConstant(const FMatrix& InMatrix) const;
-	void UpdateConstant(const FVector4& InColor) const;
-	void UpdateConstant(const FMaterialConstants& InMaterial) const;
+
+	template<typename T>
+	void UpdateConstantBuffer(ID3D11Buffer* Buffer, const T& Data, int SlotIndex = -1, bool IsVertexShader = true) const
+	{
+		if (!Buffer) { return; }
+
+		if (SlotIndex >= 0) { Pipeline->SetConstantBuffer(SlotIndex, IsVertexShader, Buffer); }
+
+		D3D11_MAPPED_SUBRESOURCE MappedResource = {};
+		GetDeviceContext()->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+		memcpy(MappedResource.pData, &Data, sizeof(T));
+		GetDeviceContext()->Unmap(Buffer, 0);
+	}
 
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 	static void ReleaseIndexBuffer(ID3D11Buffer* InIndexBuffer);
@@ -176,3 +183,4 @@ private:
 
 	bool bIsResizing = false;
 };
+
