@@ -30,9 +30,13 @@ public:
 	EComponentType GetComponentType() const { return ComponentType; }
 
 	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const;
+	bool CanTick() const { return bCanEverTick; }
+	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 
 protected:
 	EComponentType ComponentType;
+	bool bCanEverTick = false;
+
 private:
 	AActor* Owner;
 };
