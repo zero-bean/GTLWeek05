@@ -182,6 +182,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">
@@ -203,6 +204,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -226,7 +228,8 @@
       <AdditionalLibraryDirectories>;$(SolutionDir)External\Library</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>      
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
