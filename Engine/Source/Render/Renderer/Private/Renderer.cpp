@@ -304,7 +304,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
 	// Render Primitive
-	for (auto& PrimitiveComponent : CurrentLevel->GetLevelPrimitiveComponents())
+	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
 	{
 		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())

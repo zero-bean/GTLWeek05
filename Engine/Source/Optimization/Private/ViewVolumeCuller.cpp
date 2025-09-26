@@ -1,13 +1,20 @@
 #include "pch.h"
-#include "Component/Public/PrimitiveComponent.h"
+#include "Physics/Public/AABB.h"
 #include "Optimization/Public/ViewVolumeCuller.h"
+#include "Core/Public/Object.h"
 
 void ViewVolumeCuller::Cull(
 	const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,
 	const FViewProjConstants& ViewProjConstants
 )
 {
+
+	// 이전의 Cull했던 정보를 지운다.
+	RenderableObjects.clear();
+
 	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
+
+	Objects.size();
 
 	for (const TObjectPtr<UPrimitiveComponent>& Object : Objects)
 	{
@@ -43,7 +50,13 @@ void ViewVolumeCuller::Cull(
 			Plane[i] /= -length;
 		}
 
-		const FAABB* AABB = dynamic_cast<const FAABB*>(Object->GetBoundingBox());
+		if (!Object->GetBoundingBox())
+		{
+			RenderableObjects.push_back(Object);
+			continue;
+		}
+
+		const FAABB* AABB = static_cast<const FAABB*>(Object->GetBoundingBox());
 
 		EBoundCheckResult BoundCheckResult = EBoundCheckResult::Inside;
 
@@ -105,7 +118,7 @@ void ViewVolumeCuller::Cull(
 	Culled = Total - Rendered;
 }
 
-TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects()
+const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
 {
 	return RenderableObjects;
 }

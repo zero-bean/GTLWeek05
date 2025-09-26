@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Physics/Public/AABB.h"
+#include "Component/Public/PrimitiveComponent.h"
 
 enum class EBoundCheckResult
 {
@@ -22,7 +22,7 @@ public:
 		const FViewProjConstants& ViewProjConstants
 	);
 
-	TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects();
+	const TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects() const;
 private:
 	uint32 Total = 0;
 	uint32 Rendered = 0;

@@ -414,7 +414,9 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 		{
 			if (ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 			{
-				TArray<UPrimitiveComponent*> Candidate = FindCandidatePrimitives(InLevel);
+				TArray<UPrimitiveComponent*> Candidate;// = FindCandidatePrimitives(InLevel);
+				for (const TObjectPtr<UPrimitiveComponent>& Object : CurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
+					Candidate.push_back(Object.Get());
 				UPrimitiveComponent* PrimitiveCollided = ObjectPicker.PickPrimitive(CurrentCamera, WorldRay, Candidate, &ActorDistance);
 				ActorPicked = PrimitiveCollided ? PrimitiveCollided->GetOwner() : nullptr;
 			}
