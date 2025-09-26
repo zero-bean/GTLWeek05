@@ -13,6 +13,36 @@ USceneComponent::USceneComponent()
 	ComponentType = EComponentType::Scene;
 }
 
+void USceneComponent::BeginPlay()
+{
+	PreviousRelativeLocation = RelativeLocation;
+	PreviousRelativeRotation = RelativeRotation;
+	PreviousRelativeScale3D = RelativeScale3D;
+}
+
+void USceneComponent::TickComponent()
+{
+	Super::TickComponent();
+
+	// 2. 이전 프레임의 트랜스폼과 현재 트랜스폼을 비교
+	if (PreviousRelativeLocation != RelativeLocation ||
+		PreviousRelativeRotation != RelativeRotation ||
+		PreviousRelativeScale3D != RelativeScale3D)
+	{
+		// 3. 값이 하나라도 다르면 움직인 것으로 간주하고 플래그를 true로 설정
+		Mobility = EComponentMobility::Dynamic;
+	}
+	else
+	{
+		Mobility = EComponentMobility::Static;
+	}
+
+	// 4. 다음 프레임에서 비교할 수 있도록 현재 상태를 "이전 상태"로 저장
+	PreviousRelativeLocation = RelativeLocation;
+	PreviousRelativeRotation = RelativeRotation;
+	PreviousRelativeScale3D = RelativeScale3D;
+}
+
 void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
