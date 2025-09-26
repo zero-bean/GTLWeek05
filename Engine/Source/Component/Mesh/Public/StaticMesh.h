@@ -12,7 +12,10 @@ struct FMeshSection
 	uint32 MaterialSlot;
 };
 
-// Cooked Data
+/**
+* @brief 스태틱 메시 Cooked Data.
+* @note 엔진 내부 관점에서 Static Mesh Asset은 이 구조체를 의미합니다.
+*/
 struct FStaticMesh
 {
 	FName PathFileName;
@@ -35,6 +38,7 @@ struct FStaticMesh
 /**
  * @brief FStaticMesh(Cooked Data)를 엔진 오브젝트 시스템에 통합하는 래퍼 클래스.
  * 가비지 컬렉션, 리플렉션, 애셋 참조 관리의 대상이 됩니다.
+ * @note 엔진 외부 관점에서 Static Mesh Asset은 이 클래스를 의미합니다.
  */
 UCLASS()
 class UStaticMesh : public UObject
