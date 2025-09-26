@@ -344,10 +344,7 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Optimization\Private\FrustumCuller.cpp">
-      <Filter>Source\Optimization\Private</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Optimization\Private\PerspectiveFrustumCuller.cpp">
+    <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
   </ItemGroup>
@@ -725,10 +722,7 @@
     <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h">
       <Filter>Source\Utility\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Optimization\Public\FrustumCuller.h">
-      <Filter>Source\Optimization\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Optimization\Public\PerspectiveFrustumCuller.h">
+    <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
   </ItemGroup>

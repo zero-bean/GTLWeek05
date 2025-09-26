@@ -192,10 +192,13 @@ void UEditor::InitializeLayout()
 {
 	// 1. 루트 스플리터의 자식으로 2개의 수평 스플리터를 '주소'로 연결합니다.
 	RootSplitter.SetChildren(&LeftSplitter, &RightSplitter);
+	RootSplitter.SetRatio(0);
 
 	// 2. 각 수평 스플리터의 자식으로 뷰포트 윈도우들을 '주소'로 연결합니다.
 	LeftSplitter.SetChildren(&ViewportWindows[0], &ViewportWindows[1]);
+	LeftSplitter.SetRatio(0);
 	RightSplitter.SetChildren(&ViewportWindows[2], &ViewportWindows[3]);
+	RightSplitter.SetRatio(0);
 
 	// 3. 초기 레이아웃 계산
 	const D3D11_VIEWPORT& ViewportInfo = URenderer::GetInstance().GetDeviceResources()->GetViewportInfo();
