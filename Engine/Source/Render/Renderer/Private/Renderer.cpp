@@ -364,6 +364,7 @@ void URenderer::RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRend
 	// Update constant buffers
 	UpdateConstantBuffer(ConstantBufferModels,
 		FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
 	UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, true);
 
 	// Set vertex buffer and draw
@@ -411,6 +412,7 @@ void URenderer::RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, cons
 	{
 		UpdateConstantBuffer(ConstantBufferModels,
 			FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
+		Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
 		UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, true);
 	}
 
@@ -436,7 +438,7 @@ void URenderer::RenderStaticMesh(UStaticMeshComponent* InMeshComp, ID3D11Rasteri
 	if (!MeshAsset)	return;
 
 	// Pipeline setting
-	FPipelineInfo PipelineInfo = {
+	static FPipelineInfo PipelineInfo = {
 		TextureInputLayout,
 		TextureVertexShader,
 		InRasterizerState,
@@ -544,6 +546,7 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 	UpdateConstantBuffer(ConstantBufferModels,
 		FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
 		0, true);
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
 	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true);
 
 	// Bind vertex buffer
