@@ -1,7 +1,8 @@
 #include "pch.h"
-#include "Optimization/Public/PerspectiveFrustumCuller.h"
+#include "Component/Public/PrimitiveComponent.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
 
-void UPerspectiveFrustumCuller::Cull(
+void ViewVolumeCuller::Cull(
 	const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,
 	const FViewProjConstants& ViewProjConstants
 )
@@ -102,4 +103,9 @@ void UPerspectiveFrustumCuller::Cull(
 	Total = Objects.size();
 	Rendered = RenderableObjects.size();
 	Culled = Total - Rendered;
+}
+
+TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects()
+{
+	return RenderableObjects;
 }

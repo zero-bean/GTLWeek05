@@ -287,7 +287,6 @@ void URenderer::RenderBegin() const
 /**
  * @brief Buffer에 데이터 입력 및 Draw
  */
-#include "Optimization/Public/PerspectiveFrustumCuller.h"
 
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
@@ -300,19 +299,12 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		return;
 	}
 
-	UPerspectiveFrustumCuller PerspectiveFrustumCuller;
-	PerspectiveFrustumCuller.Cull(
-		CurrentLevel->GetLevelPrimitiveComponents(),
-		InCurrentCamera->GetFViewProjConstants()
-		);
-
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
 	// Render Primitive
-	for (auto& PrimitiveComponent : PerspectiveFrustumCuller.GetRenderableObjects())
-	//for (auto& PrimitiveComponent : CurrentLevel->GetLevelPrimitiveComponents())
+	for (auto& PrimitiveComponent : CurrentLevel->GetLevelPrimitiveComponents())
 	{
 		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())

@@ -273,8 +273,7 @@
     <ClInclude Include="Source\Manager\Asset\Public\ObjManager.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
-    <ClInclude Include="Source\Optimization\Public\FrustumCuller.h" />
-    <ClInclude Include="Source\Optimization\Public\PerspectiveFrustumCuller.h" />
+    <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h" />
     <ClInclude Include="Source\Physics\Public\AABB.h" />
     <ClInclude Include="Source\Physics\Public\BoundingSphere.h" />
     <ClInclude Include="Source\Physics\Public\BoundingVolume.h" />
@@ -421,8 +420,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\ObjManager.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
-    <ClCompile Include="Source\Optimization\Private\FrustumCuller.cpp" />
-    <ClCompile Include="Source\Optimization\Private\PerspectiveFrustumCuller.cpp" />
+    <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp" />
     <ClCompile Include="Source\Physics\Private\AABB.cpp" />
     <ClCompile Include="Source\Physics\Private\BoundingSphere.cpp" />
     <ClCompile Include="Source\Core\Private\AppWindow.cpp" />
