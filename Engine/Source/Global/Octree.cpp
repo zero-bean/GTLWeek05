@@ -39,19 +39,25 @@ void FOctree::Insert(UPrimitiveComponent* InPrimitive)
 		else // 여유 공간이 없고, 최대 깊이에 도달하지 않았다면
 		{
 			// 분할 및 재귀적 추가를 한다
-			Subdivide();
-			Insert(InPrimitive);
+			Subdivide(InPrimitive);
 		}
 	}
 	else
 	{
+		bool bWasInsertedIntoChild = false;
 		for (int Index = 0; Index < 8; ++Index)
 		{
 			// 자식 노드를 보유하고 있고, 영역 내에 해당 객체가 존재한다면
 			if (Children[Index]->BoundingBox.IsIntersected(GetPrimitiveBoundingBox(InPrimitive)))
 			{
 				Children[Index]->Insert(InPrimitive); // 자식 노드에게 넘겨준다
+				bWasInsertedIntoChild = true;
 			}
+		}
+
+		if (!bWasInsertedIntoChild)
+		{
+			Primitives.push_back(InPrimitive);
 		}
 	}
 }
@@ -166,7 +172,7 @@ FBoundingBox FOctree::GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
 	return Result;
 }
 
-void FOctree::Subdivide()
+void FOctree::Subdivide(UPrimitiveComponent* InPrimitive)
 {
 	FVector ParentCenter = BoundingBox.Center;
 	FVector ChildExtent = BoundingBox.Extent * 0.5f;
@@ -204,12 +210,8 @@ void FOctree::Subdivide()
 		Depth + 1);
 
 
-	for (int Index = 0; Index < 8; ++Index)
-	{
-		Children[Index]->BoundingBox.Extent = ChildExtent;
-	}
-
 	TArray<UPrimitiveComponent*> primitivesToMove = Primitives;
+	primitivesToMove.push_back(InPrimitive);
 	Primitives.clear();
 
 	for (UPrimitiveComponent* prim : primitivesToMove)
@@ -223,13 +225,19 @@ void FOctree::TryMerge()
 	// Case 1. 자식 노드가 존재하지 않으므로 종료
 	if (IsLeaf()) { return; }
 
-	// 모든 자식 노드에 있는 프리미티브의 총 개수를 계산
-	uint32 TotalPrimitives = 0;
+	// 모든 자식 노드가 리프 노드인지 확인
 	for (int Index = 0; Index < 8; ++Index)
 	{
-		// 주의: 자식 노드가 또 다른 내부 노드일 수 있으므로, 재귀적으로 개수를 세면 안됩니다.
-		// 합치기 조건은 오직 '모든 자식이 리프 노드'일 때 고려하는 것이 간단하고 일반적입니다.
-		// 여기서는 모든 자식이 리프 노드라는 가정 하에 개수만 셉니다.
+		if (!Children[Index]->IsLeaf())
+		{
+			return; // 하나라도 리프가 아니면 합치지 않음
+		}
+	}
+
+	// 모든 자식 노드에 있는 프리미티브의 총 개수를 계산
+	uint32 TotalPrimitives = Primitives.size();
+	for (int Index = 0; Index < 8; ++Index)
+	{
 		TotalPrimitives += Children[Index]->Primitives.size();
 	}
 

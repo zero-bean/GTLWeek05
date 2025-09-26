@@ -2,7 +2,7 @@
 
 class UPrimitiveComponent;
 
-constexpr int MAX_PRIMITIVES = 8; 
+constexpr int MAX_PRIMITIVES = 1000; 
 constexpr int MAX_DEPTH = 5;      
 
 struct FBoundingBox
@@ -37,7 +37,7 @@ public:
 
 private:
 	FBoundingBox GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive);
-	void Subdivide();
+	void Subdivide(UPrimitiveComponent* InPrimitive);
 	bool IsLeaf() const { return Children[0] == nullptr; }
 	void TryMerge();
 
