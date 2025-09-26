@@ -11,6 +11,9 @@ class UPrimitiveComponent : public USceneComponent
 public:
 	UPrimitiveComponent();
 
+	virtual void OnSelected() override;
+	virtual void OnDeselected() override;
+
 	const TArray<FNormalVertex>* GetVerticesData() const;
 	const TArray<uint32>* GetIndicesData() const;
 	ID3D11Buffer* GetVertexBuffer() const;

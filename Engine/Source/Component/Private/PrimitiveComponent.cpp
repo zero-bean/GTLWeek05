@@ -11,6 +11,16 @@ UPrimitiveComponent::UPrimitiveComponent()
 	ComponentType = EComponentType::Primitive;
 }
 
+void UPrimitiveComponent::OnSelected()
+{
+	SetColor({ 1.f, 0.8f, 0.2f, 0.4f });
+}
+
+void UPrimitiveComponent::OnDeselected()
+{
+	SetColor({ 0.f, 0.f, 0.f, 0.f });
+}
+
 void USceneComponent::SetRelativeLocation(const FVector& Location)
 {
 	RelativeLocation = Location;

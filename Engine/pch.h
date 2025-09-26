@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <iterator>
 #include <sstream>
+#include <xmmintrin.h>
 
 // Global Included
 #include "Source/Global/Types.h"

@@ -22,6 +22,9 @@ public:
 	virtual void TickComponent();
 	virtual void EndPlay();
 
+	virtual void OnSelected();
+	virtual void OnDeselected();
+
 	EComponentType GetComponentType() { return ComponentType; }
 
 	void SetOwner(AActor* InOwner) { Owner = InOwner; }
