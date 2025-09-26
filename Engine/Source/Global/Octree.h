@@ -33,6 +33,7 @@ public:
 	bool Remove(UPrimitiveComponent* InPrimitive);
 	void Clear();
 	void GetAllPrimitives(const FBoundingBox& InBoundingBox, TArray<UPrimitiveComponent*>& OutPrimitives);
+	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 private:
 	FBoundingBox GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive);

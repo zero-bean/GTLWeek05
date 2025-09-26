@@ -344,6 +344,9 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Global\Octree.cpp">
+      <Filter>Source\Global</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -715,6 +718,9 @@
     </ClInclude>
     <ClInclude Include="Source\Utility\Public\ActorTypeMapper.h">
       <Filter>Source\Utility\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Global\Octree.h">
+      <Filter>Source\Global</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4,8 +4,8 @@
 
 FOctree::FOctree()
 {
-	BoundingBox = { FVector(0, 0, 0), FVector(150, 150, 150) };
-	Depth = MAX_DEPTH;
+	BoundingBox = { FVector(0, 0, 0), FVector(1500, 1500, 1500) };
+	Depth = 0;
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
 }
 
@@ -58,6 +58,8 @@ void FOctree::Insert(UPrimitiveComponent* InPrimitive)
 
 bool FOctree::Remove(UPrimitiveComponent* InPrimitive)
 {
+	if (InPrimitive == nullptr) { return false; }
+
 	// 0. 현재 노드와 프리미티브가 겹치지 않으면, 탐색 종료
 	if (!BoundingBox.IsIntersected(GetPrimitiveBoundingBox(InPrimitive))) { return false; }
 
@@ -126,12 +128,27 @@ void FOctree::GetAllPrimitives(const FBoundingBox& InBoundingBox, TArray<UPrimit
 	// 3. 리프 노드가 아니라면, 모든 자식 노드에 대해 재귀적으로 탐색을 계속합니다.
 	if (!IsLeaf())
 	{
-		for (int i = 0; i < 8; ++i)
+		for (int Index = 0; Index < 8; ++Index)
 		{
-			if (Children[i])
+			if (Children[Index])
 			{
-				Children[i]->GetAllPrimitives(InBoundingBox, OutPrimitives);
+				Children[Index]->GetAllPrimitives(InBoundingBox, OutPrimitives);
 			}
+		}
+	}
+}
+
+void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const
+{
+	// 1. 현재 노드가 가진 프리미티브를 결과 배열에 추가합니다.
+	OutPrimitives.insert(OutPrimitives.end(), Primitives.begin(), Primitives.end());
+
+	// 2. 리프 노드가 아니라면, 모든 자식 노드에 대해 재귀적으로 함수를 호출합니다.
+	if (!IsLeaf())
+	{
+		for (int Index = 0; Index < 8; ++Index)
+		{
+			if (Children[Index]) { Children[Index]->GetAllPrimitives(OutPrimitives); }
 		}
 	}
 }
@@ -142,6 +159,7 @@ FBoundingBox FOctree::GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
 	FVector Min, Max;
 
 	InPrimitive->GetWorldAABB(Min, Max);
+
 	Result.Center = (Min + Max) * 0.5f;
 	Result.Extent = (Max - Min) * 0.5f;
 
