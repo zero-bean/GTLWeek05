@@ -186,34 +186,40 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
 
+	AActor* SelectedActor = ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor();
+
+	// 2. 전체 Actor의 컴포넌트를 순회
 	for (auto& Component : Actor->GetOwnedComponents())
 	{
-		if (Component->GetComponentType() >= EComponentType::Primitive)
+		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		if (!PrimitiveComponent)
 		{
-			TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+			continue;
+		}
 
-			if (!PrimitiveComponent)
-			{
-				continue;
-			}
+		const bool bIsPrimitiveVisible = PrimitiveComponent->IsVisible() && (ShowFlags & EEngineShowFlags::SF_Primitives);
+		if (!bIsPrimitiveVisible)
+		{
+			continue;
+		}
 
-			/* 3가지 경우 존재.
-			1: primitive show flag가 꺼져 있으면, 도형, 빌보드 모두 렌더링 안함.
-			2: primitive show flag가 켜져 있고, billboard show flag가 켜져 있으면, 도형, 빌보드 모두 렌더링
-			3: primitive show flag가 켜져 있고, billboard show flag가 꺼져 있으면, 도형은 렌더링 하지만, 빌보드는 렌더링 안함. */
-			// 빌보드는 무조건 피킹이 된 actor의 빌보드여야 렌더링 가능
-			if (PrimitiveComponent->IsVisible() && (ShowFlags & EEngineShowFlags::SF_Primitives))
+		if (PrimitiveComponent->GetPrimitiveType() != EPrimitiveType::BillBoard)
+		{
+			LevelPrimitiveComponents.push_back(PrimitiveComponent);
+		}
+		else
+		{
+			// [빌보드 렌더링 조건]: 
+			// 1. Primitive Show Flag가 켜져 있고 (bIsPrimitiveVisible에서 이미 체크)
+			// 2. Billboard Show Flag(SF_BillboardText)가 켜져 있으며
+			// 3. 현재 빌보드가 '선택된 Actor'의 컴포넌트여야 렌더링 가능
+
+			const bool bIsBillboardTextVisible = (ShowFlags & EEngineShowFlags::SF_BillboardText);
+			const bool bIsSelectedActor = (SelectedActor == Actor);
+
+			if (bIsBillboardTextVisible && bIsSelectedActor)
 			{
-				if (PrimitiveComponent->GetPrimitiveType() != EPrimitiveType::BillBoard)
-				{
-					LevelPrimitiveComponents.push_back(PrimitiveComponent);
-				}
-				else if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard && (ShowFlags & EEngineShowFlags::SF_BillboardText) && (ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor() == Actor))
-				{
-					//TObjectPtr<UBillBoardComponent> BillBoard = Cast<UBillBoardComponent>(PrimitiveComponent);
-					//BillBoard->UpdateRotationMatrix();
-					LevelPrimitiveComponents.push_back(PrimitiveComponent);
-				}
+				LevelPrimitiveComponents.push_back(PrimitiveComponent);
 			}
 		}
 	}
