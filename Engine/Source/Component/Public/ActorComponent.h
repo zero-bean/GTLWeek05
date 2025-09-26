@@ -22,6 +22,9 @@ public:
 	virtual void TickComponent();
 	virtual void EndPlay();
 
+	virtual void OnSelected();
+	virtual void OnDeselected();
+
 	EComponentType GetComponentType() { return ComponentType; }
 
 	void SetOwner(AActor* InOwner) { Owner = InOwner; }
@@ -30,9 +33,13 @@ public:
 	EComponentType GetComponentType() const { return ComponentType; }
 
 	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const;
+	bool CanTick() const { return bCanEverTick; }
+	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 
 protected:
 	EComponentType ComponentType;
+	bool bCanEverTick = false;
+
 private:
 	AActor* Owner;
 };

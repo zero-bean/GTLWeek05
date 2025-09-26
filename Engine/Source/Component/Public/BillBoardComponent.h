@@ -10,6 +10,9 @@ public:
 	UBillBoardComponent(AActor* InOwnerActor, float InYOffset);
 	~UBillBoardComponent();
 
+	virtual void OnSelected() override;
+	virtual void OnDeselected() override;
+
 	void UpdateRotationMatrix(const FVector& InCameraLocation);
 
 	FMatrix GetRTMatrix() const { return RTMatrix; }

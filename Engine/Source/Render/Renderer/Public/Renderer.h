@@ -3,8 +3,8 @@
 #include "Core/Public/Object.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
+#include "Render/Renderer/Public/Pipeline.h"
 
-class UPipeline;
 class UDeviceResources;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
@@ -70,7 +70,7 @@ public:
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera);
 	void RenderEnd() const;
-	void RenderStaticMesh(UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState);
+	void RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents);
 	void RenderBillboard(UBillBoardComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
@@ -89,12 +89,19 @@ public:
 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
 
 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
-	void UpdateConstant(const UPrimitiveComponent* InPrimitive) const;
-	void UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const;
-	void UpdateConstant(const FViewProjConstants& InViewProjConstants) const;
-	void UpdateConstant(const FMatrix& InMatrix) const;
-	void UpdateConstant(const FVector4& InColor) const;
-	void UpdateConstant(const FMaterialConstants& InMaterial) const;
+
+	template<typename T>
+	void UpdateConstantBuffer(ID3D11Buffer* Buffer, const T& Data, int SlotIndex = -1, bool IsVertexShader = true) const
+	{
+		if (!Buffer) { return; }
+
+		if (SlotIndex >= 0) { Pipeline->SetConstantBuffer(SlotIndex, IsVertexShader, Buffer); }
+
+		D3D11_MAPPED_SUBRESOURCE MappedResource = {};
+		GetDeviceContext()->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+		memcpy(MappedResource.pData, &Data, sizeof(T));
+		GetDeviceContext()->Unmap(Buffer, 0);
+	}
 
 	static void ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer);
 	static void ReleaseIndexBuffer(ID3D11Buffer* InIndexBuffer);
@@ -173,6 +180,7 @@ private:
 	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
 
 	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
-
+	
 	bool bIsResizing = false;
 };
+

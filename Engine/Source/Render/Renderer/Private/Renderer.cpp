@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Render/Renderer/Public/Pipeline.h"
 #include "Render/FontRenderer/Public/FontRenderer.h"
 #include "Component/Public/BillBoardComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -252,7 +251,7 @@ void URenderer::Update()
 
 		// 3. 해당 카메라의 View/Projection 행렬로 상수 버퍼를 업데이트합니다.
 		CurrentCamera->Update(ViewportClient.GetViewportInfo());
-		UpdateConstant(CurrentCamera->GetFViewProjConstants());
+		UpdateConstantBuffer(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true);
 
 		// 4. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
 		RenderLevel(CurrentCamera);
@@ -307,7 +306,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		InCurrentCamera->GetFViewProjConstants()
 		);
 
-	TObjectPtr<UBillBoardComponent> BillBoard = nullptr;
+	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
+	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
+	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
+
 	// Render Primitive
 	for (auto& PrimitiveComponent : PerspectiveFrustumCuller.GetRenderableObjects())
 	//for (auto& PrimitiveComponent : CurrentLevel->GetLevelPrimitiveComponents())
@@ -330,21 +332,30 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
-		case EPrimitiveType::BillBoard:
-			BillBoard = Cast<UBillBoardComponent>(PrimitiveComponent);
-			break;
 		case EPrimitiveType::StaticMesh:
-			RenderStaticMesh(Cast<UStaticMeshComponent>(PrimitiveComponent), LoadedRasterizerState);
+			MeshComponents.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
+			break;
+		case EPrimitiveType::BillBoard:
+			BillboardComponents.push_back(Cast<UBillBoardComponent>(PrimitiveComponent));
 			break;
 		default:
-			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+
+			if (ShowFlags & EEngineShowFlags::SF_Primitives)
+			{
+				RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+			}
 			break;
 		}
 	}
 
-	if (BillBoard)
+	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
-		RenderBillboard(BillBoard, InCurrentCamera);
+		RenderStaticMeshes(MeshComponents);
+	}
+
+	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
+	{
+		for (auto& Billboard : BillboardComponents) { RenderBillboard(Billboard, InCurrentCamera); }
 	}
 }
 
@@ -375,11 +386,10 @@ void URenderer::RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRend
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// Update constant buffers
-	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-	UpdateConstant(InPrimitive.Location, InPrimitive.Rotation, InPrimitive.Scale);
-
-	Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-	UpdateConstant(InPrimitive.Color);
+	UpdateConstantBuffer(ConstantBufferModels,
+		FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+	UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, true);
 
 	// Set vertex buffer and draw
 	Pipeline->SetVertexBuffer(InPrimitive.Vertexbuffer, Stride);
@@ -424,11 +434,10 @@ void URenderer::RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, cons
 	// 기본 상수 버퍼 사용하는 경우에만 업데이트
 	if (bInUseBaseConstantBuffer)
 	{
-		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-		UpdateConstant(InPrimitive.Location, InPrimitive.Rotation, InPrimitive.Scale);
-
-		Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-		UpdateConstant(InPrimitive.Color);
+		UpdateConstantBuffer(ConstantBufferModels,
+			FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
+		Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+		UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, true);
 	}
 
 	// Set buffers and draw indexed
@@ -445,92 +454,123 @@ void URenderer::RenderEnd() const
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
 }
 
-void URenderer::RenderStaticMesh(UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState)
+void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)
 {
-	if (!InMeshComp->GetStaticMesh()) return;
+	sort(MeshComponents.begin(), MeshComponents.end(),
+		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
+			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			return MeshA < MeshB;
+		});
 
-	FStaticMesh* MeshAsset = InMeshComp->GetStaticMesh()->GetStaticMeshAsset();
-	if (!MeshAsset)	return;
+	FStaticMesh* CurrentMeshAsset = nullptr;
+	UMaterial* CurrentMaterial = nullptr;
+	ID3D11RasterizerState* CurrentRasterizer = nullptr;
+	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
 
-	// Pipeline setting
-	FPipelineInfo PipelineInfo = {
-		TextureInputLayout,
-		TextureVertexShader,
-		InRasterizerState,
-		DefaultDepthStencilState,
-		TexturePixelShader,
-		nullptr,
-	};
-	Pipeline->UpdatePipeline(PipelineInfo);
-
-	// Constant buffer & transform
-	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-	UpdateConstant(
-		InMeshComp->GetRelativeLocation(),
-		InMeshComp->GetRelativeRotation(),
-		InMeshComp->GetRelativeScale3D()
-	);
-
-	Pipeline->SetVertexBuffer(InMeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
-	Pipeline->SetIndexBuffer(InMeshComp->GetIndexBuffer(), 0);
-
-	// If no material is assigned, render the entire mesh using the default shader
-	if (MeshAsset->MaterialInfo.empty() || InMeshComp->GetStaticMesh()->GetNumMaterials() == 0)
+	for (UStaticMeshComponent* MeshComp : MeshComponents) 
 	{
-		Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
-		return;
-	}
+		if (!MeshComp->GetStaticMesh()) { continue; }
+		FStaticMesh* MeshAsset = MeshComp->GetStaticMesh()->GetStaticMeshAsset();
+		if (!MeshAsset) { continue; }
 
-	if (InMeshComp->IsScrollEnabled())
-	{
-		UTimeManager& TimeManager = UTimeManager::GetInstance();
-		InMeshComp->SetElapsedTime(InMeshComp->GetElapsedTime() + TimeManager.GetDeltaTime());
-	}
-
-	for (const FMeshSection& Section : MeshAsset->Sections)
-	{
-		UMaterial* Material = InMeshComp->GetMaterial(Section.MaterialSlot);
-		if (Material)
+		// RasterizerState 설정
+		FRenderState RenderState = MeshComp->GetRenderState();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe) 
 		{
-			FMaterialConstants MaterialConstants = {};
-			FVector AmbientColor = Material->GetAmbientColor();
-			MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
-			FVector DiffuseColor = Material->GetDiffuseColor();
-			MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
-			FVector SpecularColor = Material->GetSpecularColor();
-			MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
-			MaterialConstants.Ns = Material->GetSpecularExponent();
-			MaterialConstants.Ni = Material->GetRefractionIndex();
-			MaterialConstants.D = Material->GetDissolveFactor();
-			MaterialConstants.MaterialFlags = 0; // Placeholder
-			MaterialConstants.Time = InMeshComp->GetElapsedTime();
-
-			// Update Constant Buffer
-			UpdateConstant(MaterialConstants);
-
-			if (Material->GetDiffuseTexture())
-			{
-				auto* Proxy = Material->GetDiffuseTexture()->GetRenderProxy();
-				Pipeline->SetTexture(0, false, Proxy->GetSRV());
-				Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
-			}
-			if (Material->GetAmbientTexture())
-			{
-				auto* Proxy = Material->GetAmbientTexture()->GetRenderProxy();
-				Pipeline->SetTexture(1, false, Proxy->GetSRV());
-			}
-			if (Material->GetSpecularTexture())
-			{
-				auto* Proxy = Material->GetSpecularTexture()->GetRenderProxy();
-				Pipeline->SetTexture(2, false, Proxy->GetSRV());
-			}
-			if (Material->GetAlphaTexture())
-			{
-				auto* Proxy = Material->GetAlphaTexture()->GetRenderProxy();
-				Pipeline->SetTexture(4, false, Proxy->GetSRV());
-			}
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
 		}
-		Pipeline->DrawIndexed(Section.IndexCount, Section.StartIndex, 0);
+		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
+
+		// Pipeline 변경시에만 업데이트
+		if (CurrentRasterizer != RasterizerState) 
+		{
+			static FPipelineInfo PipelineInfo = {
+				TextureInputLayout,
+				TextureVertexShader,
+				RasterizerState,
+				DefaultDepthStencilState,
+				TexturePixelShader,
+				nullptr,
+			};
+			PipelineInfo.RasterizerState = RasterizerState;
+			Pipeline->UpdatePipeline(PipelineInfo);
+			CurrentRasterizer = RasterizerState;
+		}
+
+		// Mesh 변경시에만 버퍼 바인딩
+		if (CurrentMeshAsset != MeshAsset)
+		{
+			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
+			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
+			CurrentMeshAsset = MeshAsset;
+		}
+
+		// Transform 업데이트 (메시별로)
+		UpdateConstantBuffer(ConstantBufferModels, MeshComp->GetWorldTransformMatrix(), 0, true);
+
+		// 머티리얼이 없으면 전체 메시 렌더링
+		if (MeshAsset->MaterialInfo.empty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0) 
+		{
+			Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
+			continue;
+		}
+
+		if (MeshComp->IsScrollEnabled()) 
+		{
+			UTimeManager& TimeManager = UTimeManager::GetInstance();
+			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + TimeManager.GetDeltaTime());
+		}
+
+		// 섹션별 렌더링
+		for (const FMeshSection& section : MeshAsset->Sections)
+		{
+			UMaterial* Material = MeshComp->GetMaterial(section.MaterialSlot);
+
+			// Material 변경시에만 상수버퍼 + 텍스처 바인딩
+			if (CurrentMaterial != Material) {
+
+				FMaterialConstants MaterialConstants = {};
+				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
+				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
+				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
+				MaterialConstants.Ns = Material->GetSpecularExponent();
+				MaterialConstants.Ni = Material->GetRefractionIndex();
+				MaterialConstants.D = Material->GetDissolveFactor();
+				MaterialConstants.MaterialFlags = 0;
+				MaterialConstants.Time = MeshComp->GetElapsedTime();
+
+				// Update Constant Buffer
+				UpdateConstantBuffer(ConstantBufferMaterial, MaterialConstants, 2, false);
+
+				if (Material->GetDiffuseTexture())
+				{
+					auto* Proxy = Material->GetDiffuseTexture()->GetRenderProxy();
+					Pipeline->SetTexture(0, false, Proxy->GetSRV());
+					Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
+				}
+				if (Material->GetAmbientTexture())
+				{
+					auto* Proxy = Material->GetAmbientTexture()->GetRenderProxy();
+					Pipeline->SetTexture(1, false, Proxy->GetSRV());
+				}
+				if (Material->GetSpecularTexture())
+				{
+					auto* Proxy = Material->GetSpecularTexture()->GetRenderProxy();
+					Pipeline->SetTexture(2, false, Proxy->GetSRV());
+				}
+				if (Material->GetAlphaTexture())
+				{
+					auto* Proxy = Material->GetAlphaTexture()->GetRenderProxy();
+					Pipeline->SetTexture(4, false, Proxy->GetSRV());
+				}
+
+				CurrentMaterial = Material;
+			}
+
+			Pipeline->DrawIndexed(section.IndexCount, section.StartIndex, 0);
+		}
 	}
 }
 
@@ -563,14 +603,11 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// Update pipeline buffers
-	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
-	UpdateConstant(
-		InPrimitiveComp->GetRelativeLocation(),
-		InPrimitiveComp->GetRelativeRotation(),
-		InPrimitiveComp->GetRelativeScale3D()
-	);
-	Pipeline->SetConstantBuffer(2, true, ConstantBufferColor);
-	UpdateConstant(InPrimitiveComp->GetColor());
+	UpdateConstantBuffer(ConstantBufferModels,
+		FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
+		0, true);
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true);
 
 	// Bind vertex buffer
 	Pipeline->SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
@@ -878,123 +915,6 @@ void URenderer::ReleaseConstantBuffer()
 	{
 		ConstantBufferMaterial->Release();
 		ConstantBufferMaterial = nullptr;
-	}
-}
-
-void URenderer::UpdateConstant(const UPrimitiveComponent* InPrimitive) const
-{
-	if (ConstantBufferModels)
-	{
-		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-
-		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-		// update constant buffer every frame
-		FMatrix* Constants = static_cast<FMatrix*>(constantbufferMSR.pData);
-		{
-			*Constants = FMatrix::GetModelMatrix(InPrimitive->GetRelativeLocation(),
-				FVector::GetDegreeToRadian(InPrimitive->GetRelativeRotation()),
-				InPrimitive->GetRelativeScale3D());
-		}
-		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
-	}
-}
-
-/**
- * @brief 상수 버퍼 업데이트 함수
- * @param InPosition
- * @param InRotation
- * @param InScale Ball Size
- */
-void URenderer::UpdateConstant(const FVector& InPosition, const FVector& InRotation, const FVector& InScale) const
-{
-	if (ConstantBufferModels)
-	{
-		D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
-
-		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-
-		// update constant buffer every frame
-		FMatrix* Constants = static_cast<FMatrix*>(constantbufferMSR.pData);
-		{
-			*Constants = FMatrix::GetModelMatrix(InPosition, FVector::GetDegreeToRadian(InRotation), InScale);
-		}
-		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
-	}
-}
-
-void URenderer::UpdateConstant(const FViewProjConstants& InViewProjConstants) const
-{
-	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
-
-	if (ConstantBufferViewProj)
-	{
-		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-		GetDeviceContext()->Map(ConstantBufferViewProj, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-		// update constant buffer every frame
-		FViewProjConstants* ViewProjectionConstants = static_cast<FViewProjConstants*>(ConstantBufferMSR.pData);
-		{
-			ViewProjectionConstants->View = InViewProjConstants.View;
-			ViewProjectionConstants->Projection = InViewProjConstants.Projection;
-		}
-		GetDeviceContext()->Unmap(ConstantBufferViewProj, 0);
-	}
-}
-
-void URenderer::UpdateConstant(const FMatrix& InMatrix) const
-{
-	if (ConstantBufferModels)
-	{
-		D3D11_MAPPED_SUBRESOURCE MappedSubResource;
-		GetDeviceContext()->Map(ConstantBufferModels, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubResource);
-		memcpy(MappedSubResource.pData, &InMatrix, sizeof(FMatrix));
-		GetDeviceContext()->Unmap(ConstantBufferModels, 0);
-	}
-}
-
-void URenderer::UpdateConstant(const FVector4& InColor) const
-{
-	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
-
-	if (ConstantBufferColor)
-	{
-		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-		GetDeviceContext()->Map(ConstantBufferColor, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-		// update constant buffer every frame
-		FVector4* ColorConstants = static_cast<FVector4*>(ConstantBufferMSR.pData);
-		{
-			ColorConstants->X = InColor.X;
-			ColorConstants->Y = InColor.Y;
-			ColorConstants->Z = InColor.Z;
-			ColorConstants->W = InColor.W;
-		}
-		GetDeviceContext()->Unmap(ConstantBufferColor, 0);
-	}
-}
-
-void URenderer::UpdateConstant(const FMaterialConstants& InMaterial) const
-{
-	Pipeline->SetConstantBuffer(2, false, ConstantBufferMaterial);
-
-	if (ConstantBufferMaterial)
-	{
-		D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR = {};
-
-		GetDeviceContext()->Map(ConstantBufferMaterial, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR);
-
-		FMaterialConstants* MaterialConstants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-		{
-			MaterialConstants->Ka = InMaterial.Ka;
-			MaterialConstants->Kd = InMaterial.Kd;
-			MaterialConstants->Ks = InMaterial.Ks;
-			MaterialConstants->Ns = InMaterial.Ns;
-			MaterialConstants->Ni = InMaterial.Ni;
-			MaterialConstants->D = InMaterial.D;
-			MaterialConstants->MaterialFlags = InMaterial.MaterialFlags;
-			MaterialConstants->Time = InMaterial.Time;
-		}
-		GetDeviceContext()->Unmap(ConstantBufferMaterial, 0);
 	}
 }
 

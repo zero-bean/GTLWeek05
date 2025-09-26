@@ -13,11 +13,22 @@ UBillBoardComponent::UBillBoardComponent(AActor* InOwnerActor, float InYOffset)
 	, ZOffset(InYOffset)
 {
 	Type = EPrimitiveType::BillBoard;
+	SetVisibility(false); // 현재는 시작하자마자 Visibility False, Select 시 True되는 시스템
 }
 
 UBillBoardComponent::~UBillBoardComponent()
 {
 	POwnerActor = nullptr;
+}
+
+void UBillBoardComponent::OnSelected()
+{
+	SetVisibility(true);
+}
+
+void UBillBoardComponent::OnDeselected()
+{
+	SetVisibility(false);
 }
 
 void UBillBoardComponent::UpdateRotationMatrix(const FVector& InCameraLocation)

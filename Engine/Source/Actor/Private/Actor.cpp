@@ -100,7 +100,7 @@ void AActor::Tick()
 {
 	for (auto& Component : OwnedComponents)
 	{
-		if (Component)
+		if (Component && Component->CanTick())
 		{
 			Component->TickComponent();
 		}

@@ -7,11 +7,25 @@ struct FMatrix
 	/**
 	* @brief 4x4 float 타입의 행렬
 	*/
-	float Data[4][4];
+	#if defined(_MSC_VER) // MSVC 컴파일러
+		__declspec(align(16))
+	#else // GCC, Clang 등
+		alignas(16)
+	#endif
+	union
+	{
+		/**
+		 * @brief 스칼라 접근용
+		 */
+		float Data[4][4];
+		/**
+		 * @brief SIMD 접근용: 4개의 __m128 벡터로 접근
+		 */
+		__m128 V[4];
+	};
 
 	static FMatrix DxToUE;
 	static FMatrix UEToDx;
-
 
 	/**
 	* @brief float 타입의 배열을 사용한 FMatrix의 기본 생성자
