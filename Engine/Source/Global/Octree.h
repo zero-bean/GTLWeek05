@@ -43,6 +43,6 @@ private:
 
 	FBoundingBox BoundingBox;       
 	int Depth;                       
-	TArray<UPrimitiveComponent*> Primitives;
+	TArray<TObjectPtr<UPrimitiveComponent>> Primitives;
 	FOctree* Children[8];
 };
