@@ -116,20 +116,11 @@ void ULevel::Update()
 	// Process Delayed Task
 	ProcessPendingDeletions();
 
-	uint64 AllocatedByte = GetAllocatedBytes();
-	uint32 AllocatedCount = GetAllocatedCount();
-
-	LevelPrimitiveComponents.clear();
-	//Deprecated : EditorPrimitive는 에디터에서 처리
-	//EditorPrimitiveComponents.clear();
-
-	//AActor* pOldActor = nullptr;
 	for (auto& Actor : LevelActors)
 	{
 		if (Actor)
 		{
-			Actor->Tick();
-			AddLevelPrimitiveComponent(Actor);
+			if (Actor->CanTick()) { Actor->Tick(); }
 		}
 	}
 }
@@ -176,6 +167,7 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 		}
 		LevelActors.push_back(TObjectPtr(NewActor));
 		NewActor->BeginPlay();
+		AddLevelPrimitiveComponent(NewActor);
 		return NewActor;
 	}
 
@@ -186,42 +178,12 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
 
-	AActor* SelectedActor = ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor();
-
-	// 2. 전체 Actor의 컴포넌트를 순회
 	for (auto& Component : Actor->GetOwnedComponents())
 	{
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-		if (!PrimitiveComponent)
-		{
-			continue;
-		}
+		if (!PrimitiveComponent) { continue; }
 
-		const bool bIsPrimitiveVisible = PrimitiveComponent->IsVisible() && (ShowFlags & EEngineShowFlags::SF_Primitives);
-		if (!bIsPrimitiveVisible)
-		{
-			continue;
-		}
-
-		if (PrimitiveComponent->GetPrimitiveType() != EPrimitiveType::BillBoard)
-		{
-			LevelPrimitiveComponents.push_back(PrimitiveComponent);
-		}
-		else
-		{
-			// [빌보드 렌더링 조건]: 
-			// 1. Primitive Show Flag가 켜져 있고 (bIsPrimitiveVisible에서 이미 체크)
-			// 2. Billboard Show Flag(SF_BillboardText)가 켜져 있으며
-			// 3. 현재 빌보드가 '선택된 Actor'의 컴포넌트여야 렌더링 가능
-
-			const bool bIsBillboardTextVisible = (ShowFlags & EEngineShowFlags::SF_BillboardText);
-			const bool bIsSelectedActor = (SelectedActor == Actor);
-
-			if (bIsBillboardTextVisible && bIsSelectedActor)
-			{
-				LevelPrimitiveComponents.push_back(PrimitiveComponent);
-			}
-		}
+		LevelPrimitiveComponents.push_back(PrimitiveComponent);
 	}
 }
 
@@ -232,14 +194,7 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	{
 		for (auto& Component : SelectedActor->GetOwnedComponents())
 		{
-			if (Component->GetComponentType() >= EComponentType::Primitive)
-			{
-				TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-				if (PrimitiveComponent->IsVisible())
-				{
-					PrimitiveComponent->SetColor({ 0.f, 0.f, 0.f, 0.f });
-				}
-			}
+			Component->OnDeselected();
 		}
 	}
 
@@ -253,14 +208,7 @@ void ULevel::SetSelectedActor(AActor* InActor)
 	{
 		for (auto& Component : SelectedActor->GetOwnedComponents())
 		{
-			if (Component->GetComponentType() >= EComponentType::Primitive)
-			{
-				TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-				if (PrimitiveComponent->IsVisible())
-				{
-					PrimitiveComponent->SetColor({ 1.f, 0.8f, 0.2f, 0.4f });
-				}
-			}
+			Component->OnSelected();
 		}
 	}
 }
@@ -271,6 +219,19 @@ bool ULevel::DestroyActor(AActor* InActor)
 	if (!InActor)
 	{
 		return false;
+	}
+
+	for (auto& PrimitiveComponent : InActor->GetOwnedComponents())
+	{
+		// LevelPrimitiveComponents 리스트에서 해당 프리미티브 컴포넌트 검색 및 제거
+		for (auto Iterator = LevelPrimitiveComponents.begin(); Iterator != LevelPrimitiveComponents.end(); ++Iterator)
+		{
+			if (*Iterator == PrimitiveComponent)
+			{
+				LevelPrimitiveComponents.erase(Iterator);
+				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
+			}
+		}
 	}
 
 	// LevelActors 리스트에서 제거

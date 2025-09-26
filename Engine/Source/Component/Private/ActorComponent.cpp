@@ -28,6 +28,18 @@ void UActorComponent::EndPlay()
 
 }
 
+
+void UActorComponent::OnSelected()
+{
+
+}
+
+
+void UActorComponent::OnDeselected()
+{
+
+}
+
 /**
  * @brief 특정 컴포넌트 전용 Widget이 필요할 경우 재정의 필요 
  */

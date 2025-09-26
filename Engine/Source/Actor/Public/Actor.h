@@ -67,6 +67,12 @@ public:
 		return NewComponent;
 	}
 
+	bool CanTick() const { return bCanEverTick; }
+	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
+
+protected:
+	bool bCanEverTick = false;
+
 private:
 	TObjectPtr<USceneComponent> RootComponent = nullptr;
 	TObjectPtr<UBillBoardComponent> BillBoardComponent = nullptr;

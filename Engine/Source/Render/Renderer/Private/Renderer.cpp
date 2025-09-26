@@ -290,13 +290,15 @@ void URenderer::RenderBegin() const
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
 	// Level 없으면 Early Return
-	if (!ULevelManager::GetInstance().GetCurrentLevel()) { return; }
+	ULevelManager& LevelManager = ULevelManager::GetInstance();
+	if (!LevelManager.GetCurrentLevel()) { return; }
 
+	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
 	// Render Primitive
-	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
+	for (auto& PrimitiveComponent : LevelManager.GetCurrentLevel()->GetLevelPrimitiveComponents())
 	{
 		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
@@ -306,7 +308,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 		// Get view mode from editor
 		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
 		if (ViewMode == EViewModeIndex::VMI_Wireframe)
 		{
 			RenderState.CullMode = ECullMode::None;
@@ -323,13 +325,24 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 			BillboardComponents.push_back(Cast<UBillBoardComponent>(PrimitiveComponent));
 			break;
 		default:
-			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+
+			if (ShowFlags & EEngineShowFlags::SF_Primitives)
+			{
+				RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+			}
 			break;
 		}
 	}
 
-	RenderStaticMeshes(MeshComponents);
-	for (auto& Billboard : BillboardComponents) { RenderBillboard(Billboard, InCurrentCamera); }
+	if (ShowFlags & EEngineShowFlags::SF_Primitives)
+	{
+		RenderStaticMeshes(MeshComponents);
+	}
+
+	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
+	{
+		for (auto& Billboard : BillboardComponents) { RenderBillboard(Billboard, InCurrentCamera); }
+	}
 }
 
 /**
