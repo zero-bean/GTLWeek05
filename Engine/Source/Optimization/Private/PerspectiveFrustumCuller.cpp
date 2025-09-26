@@ -12,79 +12,90 @@ void UPerspectiveFrustumCuller::Cull(
 	{
 		FMatrix MVP = Object->GetWorldTransformMatrix() * VP;
 
-		// get 4 columns of MVP
-		FVector4 AddRow4Row1 = MVP[3] + MVP[0];
-		FVector4 SubRow4Row1 = MVP[3] - MVP[0];
-		FVector4 AddRow4Row2 = MVP[3] + MVP[1];
-		FVector4 SubRow4Row2 = MVP[3] - MVP[1];
-		FVector4 AddRow4Row3 = MVP[3] + MVP[2];
-		FVector4 SubRow4Row3 = MVP[3] - MVP[2];
+		// 6개의 절두체 평면 추출
+		FVector4 Plane[6];
+		Plane[0] = MVP[3] + MVP[0];  // Left
+		Plane[1] = MVP[3] - MVP[0];  // Right
+		Plane[2] = MVP[3] + MVP[1];  // Bottom
+		Plane[3] = MVP[3] - MVP[1];  // Top
+		Plane[4] = MVP[3] + MVP[2];  // Near
+		Plane[5] = MVP[3] - MVP[2];  // Far
 
-		// define normals of 6 frustum planes
-		double Denomiator[6] = {};
-
-		Denomiator[0] = -sqrt(pow(AddRow4Row1.X, 2.0) + pow(AddRow4Row1.Y, 2.0) + pow(AddRow4Row1.Z, 2.0));
-		Denomiator[1] = -sqrt(pow(SubRow4Row1.X, 2.0) + pow(SubRow4Row1.Y, 2.0) + pow(SubRow4Row1.Z, 2.0));
-		Denomiator[2] = -sqrt(pow(AddRow4Row2.X, 2.0) + pow(AddRow4Row2.Y, 2.0) + pow(AddRow4Row2.Z, 2.0));
-		Denomiator[3] = -sqrt(pow(SubRow4Row2.X, 2.0) + pow(SubRow4Row2.Y, 2.0) + pow(SubRow4Row2.Z, 2.0));
-		Denomiator[4] = -sqrt(pow(AddRow4Row3.X, 2.0) + pow(AddRow4Row3.Y, 2.0) + pow(AddRow4Row3.Z, 2.0));
-		Denomiator[5] = -sqrt(pow(AddRow4Row3.X, 2.0) + pow(AddRow4Row3.Y, 2.0) + pow(AddRow4Row3.Z, 2.0));
-
-		// divide with zero 방지
-		for (int i = 0; i < 6; i++)
+		for (int32 i = 0; i < 6; i++)
 		{
-			// culling하지 않고 모든 오브젝트를 그린다.
-			if (Denomiator[i] >= -0.0001f || Denomiator[i] <= 0.0001f)
+			float length = sqrt(
+				Plane[i].X * Plane[i].X +
+				Plane[i].Y * Plane[i].Y +
+				Plane[i].Z * Plane[i].Z
+			);
+
+			// Divide with zero 방지
+			if (length > -0.0001f && length < 0.0001f)
+			{
 				RenderableObjects = Objects;
+				Total = Objects.size();
+				Rendered = Total;
+				Culled = 0;
+				return;
+			}
+
+			Plane[i] /= -length;
 		}
-
-		FVector4 Normal[6] = {};
-
-		Normal[0] = AddRow4Row1 / Denomiator[0];
-		Normal[1] = SubRow4Row1 / Denomiator[1];
-		Normal[2] = AddRow4Row2 / Denomiator[2];
-		Normal[3] = SubRow4Row2 / Denomiator[3];
-		Normal[4] = AddRow4Row3 / Denomiator[4];
-		Normal[5] = SubRow4Row3 / Denomiator[5];
 
 		const FAABB* AABB = dynamic_cast<const FAABB*>(Object->GetBoundingBox());
 
-		FVector4 Corner[8] = {};
+		EBoundCheckResult BoundCheckResult = EBoundCheckResult::Inside;
 
-		// define 8 corners of AABB
-		Corner[0] = { FVector4(AABB->Min.X, AABB->Max.Y, AABB->Min.Z, 1.0f) };
-		Corner[1] = { FVector4(AABB->Min.X, AABB->Max.Y, AABB->Min.Z, 1.0f) };
-		Corner[2] = { FVector4(AABB->Max.X, AABB->Min.Y, AABB->Min.Z, 1.0f) };
-		Corner[3] = { FVector4(AABB->Max.X, AABB->Max.Y, AABB->Min.Z, 1.0f) };
-		Corner[4] = { FVector4(AABB->Max.X, AABB->Min.Y, AABB->Max.Z, 1.0f) };
-		Corner[5] = { FVector4(AABB->Min.X, AABB->Max.Y, AABB->Max.Z, 1.0f) };
-		Corner[6] = { FVector4(AABB->Min.X, AABB->Min.Y, AABB->Min.Z, 1.0f) };
-		Corner[7] = { FVector4(AABB->Max.X, AABB->Max.Y, AABB->Max.Z, 1.0f) };
-
-		bool NotOutside = false;
-		bool NotInside = false;
-		for (int i = 0; i < 8; i++)
+		// 박스의 점들중 평면에 가장 가까운 점, 가장 먼 점만 비교한다.
+		for (int32 i = 0; i < 6; i++)
 		{
-			for (int j = 0; j < 6; j++)
+			FVector Closest, Farthest;
+
+			if (Plane[i].X > 0.0f)
 			{
-				if (Normal[j].Dot3(Corner[i]) + Normal[j].W < 0.0f)
-					NotOutside = true;
-				else
-					NotInside = true;
+				Closest.X = AABB->Min.X;
+				Farthest.X = AABB->Max.X;
 			}
+			else
+			{
+				Closest.X = AABB->Max.X;
+				Farthest.X = AABB->Min.X;
+			}
+
+			if (Plane[i].Y > 0.0f)
+			{
+				Closest.Y = AABB->Min.Y;
+				Farthest.Y = AABB->Max.Y;
+			}
+			else
+			{
+				Closest.Y = AABB->Max.Y;
+				Farthest.Y = AABB->Min.Y;
+			}
+
+			if (Plane[i].Z > 0.0f)
+			{
+				Closest.Z = AABB->Min.Z;
+				Farthest.Z = AABB->Max.Z;
+			}
+			else
+			{
+				Closest.Z = AABB->Max.Z;
+				Farthest.Z = AABB->Min.Z;
+			}
+
+			if (Plane[i].Dot3(Closest) + Plane[i].W > 0.0f)
+			{
+				BoundCheckResult = EBoundCheckResult::Outside;
+				break;
+			}
+			else if (Plane[i].Dot3(Farthest) + Plane[i].W < 0.0f)
+				;
+			else
+				BoundCheckResult = EBoundCheckResult::Intersect;
 		}
 
-		EBoundCheckResult BoundCheckResult;
-
-		if (NotOutside && !NotInside)
-			BoundCheckResult = EBoundCheckResult::Inside;
-		else if (NotOutside && NotInside)
-			BoundCheckResult = EBoundCheckResult::Intersect;
-		else
-			BoundCheckResult = EBoundCheckResult::Outside;
-
-		if (BoundCheckResult == EBoundCheckResult::Intersect ||
-			BoundCheckResult == EBoundCheckResult::Inside)
+		if (BoundCheckResult != EBoundCheckResult::Outside)
 			RenderableObjects.push_back(Object);
 	}
 

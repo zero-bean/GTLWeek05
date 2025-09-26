@@ -231,6 +231,17 @@ void FVector4::operator*=(const float Ratio)
 	W *= Ratio;
 }
 
+/**
+ * @brief 자신의 벡터를 스칼라로 나누는 함수
+ */
+void FVector4::operator/=(const float Scalar)
+{
+	X /= Scalar;
+	Y /= Scalar;
+	Z /= Scalar;
+	W /= Scalar;
+}
+
 FArchive& operator<<(FArchive& Ar, FVector4& Vector)
 {
 	Ar << Vector.X;

@@ -260,6 +260,11 @@ struct FVector4
 	 */
 	void operator*=(float Ratio);
 
+	/**
+	 * @brief 자신의 벡터를 스칼라로 나누는 함수
+	 */
+	void operator/=(float Scalar);
+
 	float Length() const
 	{
 		return sqrtf(X * X + Y * Y + Z * Z + W * W);
