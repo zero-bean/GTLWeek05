@@ -1,5 +1,6 @@
 #pragma once
 #include "Editor/Public/ViewportClient.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
 
 class URenderer;
 
@@ -61,6 +62,7 @@ public:
 
 private:
 	TArray<FViewportClient> ViewportClients = {};
+	TArray<ViewVolumeCuller> ViewVolumeCullers{4, ViewVolumeCuller()};
 	FViewportClient* ActiveViewportClient = nullptr;
 	FVector FocusPoint = { 0.0f, 0.0f, 0.0f }; 	// 직교 투영 카메라가 공유하는 좌표
 };

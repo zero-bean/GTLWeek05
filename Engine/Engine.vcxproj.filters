@@ -344,6 +344,12 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Optimization\Private\FrustumCuller.cpp">
+      <Filter>Source\Optimization\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Optimization\Private\PerspectiveFrustumCuller.cpp">
+      <Filter>Source\Optimization\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -719,6 +725,12 @@
     <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h">
       <Filter>Source\Utility\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Optimization\Public\FrustumCuller.h">
+      <Filter>Source\Optimization\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Optimization\Public\PerspectiveFrustumCuller.h">
+      <Filter>Source\Optimization\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
@@ -978,6 +990,15 @@
     </Filter>
     <Filter Include="Source\Texture\Public">
       <UniqueIdentifier>{b2172c3a-7772-49d9-b101-7e62cf0fc027}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization">
+      <UniqueIdentifier>{82a2c4ac-80f4-4510-898a-5fbe9a8eff15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization\Public">
+      <UniqueIdentifier>{a91490c4-a792-40fe-8123-686730dcae41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization\Private">
+      <UniqueIdentifier>{d8af24c6-69bf-48aa-a292-fa6419f74b7f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

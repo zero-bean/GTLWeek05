@@ -1,5 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
+
 class UConfigManager;
 
 enum class ECameraType
@@ -64,6 +66,8 @@ public:
 	float GetOrthoWidth() const { return OrthoWidth; }
 	ECameraType GetCameraType() const { return CameraType; }
 
+	const ViewVolumeCuller& GetViewVolumeCuller() { return ViewVolumeCuller; }
+
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
 	void SetMoveSpeed(float InSpeed)
@@ -100,6 +104,9 @@ private:
 	float FarZ = {};
 	float OrthoWidth = {};
 	ECameraType CameraType = {};
+
+	// 절두체 컬링을 이용한 최적화
+	ViewVolumeCuller ViewVolumeCuller;
 
 	// Dynamic Movement Speed
 	float CurrentMoveSpeed = DEFAULT_SPEED;

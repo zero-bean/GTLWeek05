@@ -416,7 +416,9 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 		{
 			if (ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 			{
-				TArray<UPrimitiveComponent*> Candidate = FindCandidatePrimitives(InLevel);
+				TArray<UPrimitiveComponent*> Candidate;// = FindCandidatePrimitives(InLevel);
+				for (const TObjectPtr<UPrimitiveComponent>& Object : CurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
+					Candidate.push_back(Object.Get());
 
 				FScopeCycleCounter PickCounter{ TStatId() }; // 피킹 시간 측정 시작
 				UPrimitiveComponent* PrimitiveCollided = ObjectPicker.PickPrimitive(CurrentCamera, WorldRay, Candidate, &ActorDistance);

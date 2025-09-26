@@ -2,6 +2,7 @@
 #include "Editor/Public/Viewport.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Manager/Config/Public/ConfigManager.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
 
 FViewport::~FViewport()
 {

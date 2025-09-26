@@ -106,6 +106,14 @@ void FMatrix::operator*=(const FMatrix& InOtherMatrix)
 	*this = (*this) * InOtherMatrix;
 }
 
+FVector4 FMatrix::operator[](uint32 i) const
+{
+	// 잘못된 index를 전달받으면 빈 벡터를 반환
+	if (i >= 4)
+		return FVector4();
+	return FVector4(Data[0][i], Data[1][i], Data[2][i], Data[3][i]);
+}
+
 /**
 * @brief Position의 정보를 행렬로 변환하여 제공하는 함수
 */

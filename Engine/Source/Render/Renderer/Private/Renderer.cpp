@@ -287,18 +287,24 @@ void URenderer::RenderBegin() const
 /**
  * @brief Buffer에 데이터 입력 및 Draw
  */
+
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
-	// Level 없으면 Early Return
 	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	if (!LevelManager.GetCurrentLevel()) { return; }
+	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
+
+	// Level 없으면 Early Return
+	if (!CurrentLevel)
+	{
+		return;
+	}
 
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
 	// Render Primitive
-	for (auto& PrimitiveComponent : LevelManager.GetCurrentLevel()->GetLevelPrimitiveComponents())
+	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
 	{
 		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
@@ -763,7 +769,7 @@ void URenderer::CreateVertexShaderAndInputLayout(const wstring& InFilePath,
 
 	// Vertex Shader 컴파일
 	HRESULT Result = D3DCompileFromFile(InFilePath.data(), nullptr, nullptr, "mainVS", "vs_5_0",
-		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
+		0, 0,
 		&VertexShaderBlob, &ErrorBlob);
 
 	// 컴파일 실패 시 에러 처리
@@ -804,7 +810,7 @@ void URenderer::CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader**
 
 	// Pixel Shader 컴파일
 	HRESULT Result = D3DCompileFromFile(InFilePath.data(), nullptr, nullptr, "mainPS", "ps_5_0",
-		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0,
+		0, 0,
 		&PixelShaderBlob, &ErrorBlob);
 
 	// 컴파일 실패 시 에러 처리
