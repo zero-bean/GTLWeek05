@@ -73,7 +73,7 @@ FMatrix FMatrix::Identity()
 /**
 * @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
 */
-FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
+FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix) const
 {
 	FMatrix Result;
 
@@ -94,6 +94,14 @@ FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
 void FMatrix::operator*=(const FMatrix& InOtherMatrix)
 {
 	*this = (*this) * InOtherMatrix;
+}
+
+FVector4 FMatrix::operator[](uint32 i) const
+{
+	// 잘못된 index를 전달받으면 빈 벡터를 반환
+	if (i >= 4)
+		return FVector4();
+	return FVector4(Data[0][i], Data[1][i], Data[2][i], Data[3][i]);
 }
 
 /**

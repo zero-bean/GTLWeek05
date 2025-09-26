@@ -229,6 +229,7 @@ struct FVector4
 	 * @brief 벡터와 행렬곱
 	 */
 	FVector4 operator*(const FMatrix& InMatrix) const;
+
 	/**
 	 * @brief 두 벡터를 뺀 새로운 벡터를 반환하는 함수
 	 */
@@ -239,6 +240,10 @@ struct FVector4
 	 */
 	FVector4 operator*(float InRatio) const;
 
+	/**
+	 * @brief 자신의 벡터에 스칼라를 나눈 값을  반환하는 함수
+	 */
+	FVector4 operator/(float Scalar) const;
 
 	/**
 	 * @brief 자신의 벡터에 다른 벡터를 가산하는 함수

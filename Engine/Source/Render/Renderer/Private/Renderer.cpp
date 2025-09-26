@@ -288,17 +288,29 @@ void URenderer::RenderBegin() const
 /**
  * @brief Buffer에 데이터 입력 및 Draw
  */
+#include "Optimization/Public/PerspectiveFrustumCuller.h"
+
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
+	ULevelManager& LevelManager = ULevelManager::GetInstance();
+	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
+
 	// Level 없으면 Early Return
-	if (!ULevelManager::GetInstance().GetCurrentLevel())
+	if (!CurrentLevel)
 	{
 		return;
 	}
 
+	/*UPerspectiveFrustumCuller PerspectiveFrustumCuller;
+	PerspectiveFrustumCuller.Cull(
+		CurrentLevel->GetLevelPrimitiveComponents(),
+		InCurrentCamera->GetFViewProjConstants()
+		);*/
+
 	TObjectPtr<UBillBoardComponent> BillBoard = nullptr;
 	// Render Primitive
-	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
+	//for (auto& PrimitiveComponent : PerspectiveFrustumCuller.GetRenderableObjects())
+	for (auto& PrimitiveComponent : CurrentLevel->GetLevelPrimitiveComponents())
 	{
 		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
@@ -308,7 +320,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 		// Get view mode from editor
 		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
 		if (ViewMode == EViewModeIndex::VMI_Wireframe)
 		{
 			RenderState.CullMode = ECullMode::None;

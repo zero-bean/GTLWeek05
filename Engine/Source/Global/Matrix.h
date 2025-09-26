@@ -40,8 +40,13 @@ struct FMatrix
 	/**
 	* @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
 	*/
-	FMatrix operator*(const FMatrix& InOtherMatrix);
+	FMatrix operator*(const FMatrix& InOtherMatrix) const;
 	void operator*=(const FMatrix& InOtherMatrix);
+
+	/**
+	* @brief Data의 행을 FVector4의 형태로 반환
+	*/
+	FVector4 operator[](uint32 i) const;
 
 	/**
 	* @brief Position의 정보를 행렬로 변환하여 제공하는 함수
