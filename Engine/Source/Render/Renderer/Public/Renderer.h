@@ -70,7 +70,7 @@ public:
 	void RenderBegin() const;
 	void RenderLevel(UCamera* InCurrentCamera);
 	void RenderEnd() const;
-	void RenderStaticMesh(UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState);
+	void RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents);
 	void RenderBillboard(UBillBoardComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
@@ -180,7 +180,7 @@ private:
 	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
 
 	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
-
+	
 	bool bIsResizing = false;
 };
 

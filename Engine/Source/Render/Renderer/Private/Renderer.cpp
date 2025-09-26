@@ -290,12 +290,11 @@ void URenderer::RenderBegin() const
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
 	// Level 없으면 Early Return
-	if (!ULevelManager::GetInstance().GetCurrentLevel())
-	{
-		return;
-	}
+	if (!ULevelManager::GetInstance().GetCurrentLevel()) { return; }
 
-	TObjectPtr<UBillBoardComponent> BillBoard = nullptr;
+	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
+	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
+
 	// Render Primitive
 	for (auto& PrimitiveComponent : ULevelManager::GetInstance().GetCurrentLevel()->GetLevelPrimitiveComponents())
 	{
@@ -317,11 +316,11 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
-		case EPrimitiveType::BillBoard:
-			BillBoard = Cast<UBillBoardComponent>(PrimitiveComponent);
-			break;
 		case EPrimitiveType::StaticMesh:
-			RenderStaticMesh(Cast<UStaticMeshComponent>(PrimitiveComponent), LoadedRasterizerState);
+			MeshComponents.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
+			break;
+		case EPrimitiveType::BillBoard:
+			BillboardComponents.push_back(Cast<UBillBoardComponent>(PrimitiveComponent));
 			break;
 		default:
 			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
@@ -329,10 +328,8 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		}
 	}
 
-	if (BillBoard)
-	{
-		RenderBillboard(BillBoard, InCurrentCamera);
-	}
+	RenderStaticMeshes(MeshComponents);
+	for (auto& Billboard : BillboardComponents) { RenderBillboard(Billboard, InCurrentCamera); }
 }
 
 /**
@@ -430,87 +427,123 @@ void URenderer::RenderEnd() const
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
 }
 
-void URenderer::RenderStaticMesh(UStaticMeshComponent* InMeshComp, ID3D11RasterizerState* InRasterizerState)
+void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)
 {
-	if (!InMeshComp->GetStaticMesh()) return;
+	sort(MeshComponents.begin(), MeshComponents.end(),
+		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
+			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			return MeshA < MeshB;
+		});
 
-	FStaticMesh* MeshAsset = InMeshComp->GetStaticMesh()->GetStaticMeshAsset();
-	if (!MeshAsset)	return;
+	UStaticMeshComponent* CurrentMesh = nullptr;
+	UMaterial* CurrentMaterial = nullptr;
+	ID3D11RasterizerState* CurrentRasterizer = nullptr;
+	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
 
-	// Pipeline setting
-	static FPipelineInfo PipelineInfo = {
-		TextureInputLayout,
-		TextureVertexShader,
-		InRasterizerState,
-		DefaultDepthStencilState,
-		TexturePixelShader,
-		nullptr,
-	};
-	Pipeline->UpdatePipeline(PipelineInfo);
-
-	// Constant buffer & transform
-	UpdateConstantBuffer(ConstantBufferModels, InMeshComp->GetWorldTransformMatrix(), 0, true);
-
-	Pipeline->SetVertexBuffer(InMeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
-	Pipeline->SetIndexBuffer(InMeshComp->GetIndexBuffer(), 0);
-
-	// If no material is assigned, render the entire mesh using the default shader
-	if (MeshAsset->MaterialInfo.empty() || InMeshComp->GetStaticMesh()->GetNumMaterials() == 0)
+	for (UStaticMeshComponent* MeshComp : MeshComponents) 
 	{
-		Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
-		return;
-	}
+		if (!MeshComp->GetStaticMesh()) { continue; }
+		FStaticMesh* MeshAsset = MeshComp->GetStaticMesh()->GetStaticMeshAsset();
+		if (!MeshAsset) { continue; }
 
-	if (InMeshComp->IsScrollEnabled())
-	{
-		UTimeManager& TimeManager = UTimeManager::GetInstance();
-		InMeshComp->SetElapsedTime(InMeshComp->GetElapsedTime() + TimeManager.GetDeltaTime());
-	}
-	
-	for (const FMeshSection& Section : MeshAsset->Sections)
-	{
-		UMaterial* Material = InMeshComp->GetMaterial(Section.MaterialSlot);
-		if (Material)
+		// RasterizerState 설정
+		FRenderState RenderState = MeshComp->GetRenderState();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe) 
 		{
-			FMaterialConstants MaterialConstants = {};
-			FVector AmbientColor = Material->GetAmbientColor();
-			MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
-			FVector DiffuseColor = Material->GetDiffuseColor();
-			MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
-			FVector SpecularColor = Material->GetSpecularColor();
-			MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
-			MaterialConstants.Ns = Material->GetSpecularExponent();
-			MaterialConstants.Ni = Material->GetRefractionIndex();
-			MaterialConstants.D = Material->GetDissolveFactor();
-			MaterialConstants.MaterialFlags = 0; // Placeholder
-			MaterialConstants.Time = InMeshComp->GetElapsedTime();
-
-			// Update Constant Buffer
-			UpdateConstantBuffer(ConstantBufferMaterial, MaterialConstants, 2, false);
-
-			if (Material->GetDiffuseTexture())
-			{
-				auto* Proxy = Material->GetDiffuseTexture()->GetRenderProxy();
-				Pipeline->SetTexture(0, false, Proxy->GetSRV());
-				Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
-			}
-			if (Material->GetAmbientTexture())
-			{
-				auto* Proxy = Material->GetAmbientTexture()->GetRenderProxy();
-				Pipeline->SetTexture(1, false, Proxy->GetSRV());
-			}
-			if (Material->GetSpecularTexture())
-			{
-				auto* Proxy = Material->GetSpecularTexture()->GetRenderProxy();
-				Pipeline->SetTexture(2, false, Proxy->GetSRV());
-			}
-			if (Material->GetAlphaTexture())
-			{
-				auto* Proxy = Material->GetAlphaTexture()->GetRenderProxy();
-				Pipeline->SetTexture(4, false, Proxy->GetSRV());
-			}
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
 		}
-		Pipeline->DrawIndexed(Section.IndexCount, Section.StartIndex, 0);
+		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
+
+		// Pipeline 변경시에만 업데이트
+		if (CurrentRasterizer != RasterizerState) 
+		{
+			static FPipelineInfo PipelineInfo = {
+				TextureInputLayout,
+				TextureVertexShader,
+				RasterizerState,
+				DefaultDepthStencilState,
+				TexturePixelShader,
+				nullptr,
+			};
+			PipelineInfo.RasterizerState = RasterizerState;
+			Pipeline->UpdatePipeline(PipelineInfo);
+			CurrentRasterizer = RasterizerState;
+		}
+
+		// Mesh 변경시에만 버퍼 바인딩
+		if (CurrentMesh != MeshComp) 
+		{
+			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
+			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
+			CurrentMesh = MeshComp;
+		}
+
+		// Transform 업데이트 (메시별로)
+		UpdateConstantBuffer(ConstantBufferModels, MeshComp->GetWorldTransformMatrix(), 0, true);
+
+		// 머티리얼이 없으면 전체 메시 렌더링
+		if (MeshAsset->MaterialInfo.empty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0) 
+		{
+			Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
+			continue;
+		}
+
+		if (MeshComp->IsScrollEnabled()) 
+		{
+			UTimeManager& TimeManager = UTimeManager::GetInstance();
+			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + TimeManager.GetDeltaTime());
+		}
+
+		// 섹션별 렌더링
+		for (const FMeshSection& section : MeshAsset->Sections)
+		{
+			UMaterial* Material = MeshComp->GetMaterial(section.MaterialSlot);
+
+			// Material 변경시에만 상수버퍼 + 텍스처 바인딩
+			if (CurrentMaterial != Material) {
+
+				FMaterialConstants MaterialConstants = {};
+				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
+				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
+				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
+				MaterialConstants.Ns = Material->GetSpecularExponent();
+				MaterialConstants.Ni = Material->GetRefractionIndex();
+				MaterialConstants.D = Material->GetDissolveFactor();
+				MaterialConstants.MaterialFlags = 0;
+				MaterialConstants.Time = MeshComp->GetElapsedTime();
+
+				// Update Constant Buffer
+				UpdateConstantBuffer(ConstantBufferMaterial, MaterialConstants, 2, false);
+
+				if (Material->GetDiffuseTexture())
+				{
+					auto* Proxy = Material->GetDiffuseTexture()->GetRenderProxy();
+					Pipeline->SetTexture(0, false, Proxy->GetSRV());
+					Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
+				}
+				if (Material->GetAmbientTexture())
+				{
+					auto* Proxy = Material->GetAmbientTexture()->GetRenderProxy();
+					Pipeline->SetTexture(1, false, Proxy->GetSRV());
+				}
+				if (Material->GetSpecularTexture())
+				{
+					auto* Proxy = Material->GetSpecularTexture()->GetRenderProxy();
+					Pipeline->SetTexture(2, false, Proxy->GetSRV());
+				}
+				if (Material->GetAlphaTexture())
+				{
+					auto* Proxy = Material->GetAlphaTexture()->GetRenderProxy();
+					Pipeline->SetTexture(4, false, Proxy->GetSRV());
+				}
+
+				CurrentMaterial = Material;
+			}
+
+			Pipeline->DrawIndexed(section.IndexCount, section.StartIndex, 0);
+		}
 	}
 }
 
