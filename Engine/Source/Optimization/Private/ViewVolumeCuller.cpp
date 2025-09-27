@@ -5,11 +5,11 @@
 
 void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const FViewProjConstants& ViewProjConstants)
 {
-	// ÀÌÀüÀÇ CullÇß´ø Á¤º¸¸¦ Áö¿î´Ù.
+	// ì´ì „ì˜ Cullí–ˆë˜ ì •ë³´ë¥¼ ì§€ìš´ë‹¤.
 	RenderableObjects.clear();
 	CurrentFrustum.Clear();
 
-	// 1. ÀıµÎÃ¼ 'Key' »ı¼º 
+	// 1. ì ˆë‘ì²´ 'Key' ìƒì„± 
 	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
 	CurrentFrustum.Planes[0] = VP[3] + VP[0]; // Left
 	CurrentFrustum.Planes[1] = VP[3] - VP[0]; // Right
@@ -20,7 +20,7 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 
 	for (int i = 0; i < 6; i++)
 	{
-		const float Length = sqrt((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
+		const float Length = ((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
 								(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
 								(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
 
@@ -29,7 +29,7 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 		CurrentFrustum.Planes[i] /= -Length;
 	}
 
-	// 2. ¿ÁÆ®¸®¸¦ ÀÌ¿ëÇØ º¸ÀÌ´Â °´Ã¼¸¸ RenderableObjects¿¡ ÀúÀåÇÑ´Ù.
+	// 2. ì˜¥íŠ¸ë¦¬ë¥¼ ì´ìš©í•´ ë³´ì´ëŠ” ê°ì²´ë§Œ RenderableObjectsì— ì €ì¥í•œë‹¤.
 	TArray<UPrimitiveComponent*>& TempArray = reinterpret_cast<TArray<UPrimitiveComponent*>&>(RenderableObjects);
 
 	if (StaticOctree)
