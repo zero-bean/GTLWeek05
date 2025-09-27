@@ -14,6 +14,7 @@
 
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
+#include "Utility/Public/ScopeCycleCounter.h"
 
 #ifdef IS_OBJ_VIEWER
 #include "Utility/Public/FileDialog.h"
@@ -150,14 +151,18 @@ void FClientApp::MainLoop()
 	}
 #endif
 
-	while (true)
+	bool bIsExit = false;
+	while (!bIsExit)
 	{
+		TStatId StatId;
+		FScopeCycleCounter CycleCounter(StatId);
 		// Async Message Process
-		if (PeekMessage(&MainMessage, nullptr, 0, 0, PM_REMOVE))
+		while (PeekMessage(&MainMessage, nullptr, 0, 0, PM_REMOVE))
 		{
 			// Process Termination
 			if (MainMessage.message == WM_QUIT)
 			{
+				bIsExit = true;
 				break;
 			}
 			// Shortcut Key Processing
@@ -168,10 +173,9 @@ void FClientApp::MainLoop()
 			}
 		}
 		// Game System Update
-		else
-		{
-			UpdateSystem();
-		}
+		UpdateSystem();
+
+		UTimeManager::GetInstance().SetDeltaTime(FPlatformTime::ToMilliseconds(CycleCounter.Finish()) / 1000);
 	}
 }
 
