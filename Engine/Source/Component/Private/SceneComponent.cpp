@@ -34,6 +34,15 @@ void USceneComponent::TickComponent()
 			Mobility = EComponentMobility::Dynamic;
 		}
 	}
+	else if (Mobility == EComponentMobility::Dynamic)
+	{
+		if (PreviousRelativeLocation == RelativeLocation ||
+			PreviousRelativeRotation == RelativeRotation ||
+			PreviousRelativeScale3D == RelativeScale3D)
+		{
+			EComponentMobility::Static;
+		}
+	}
 
 	// 4. 다음 프레임에서 비교할 수 있도록 현재 상태를 "이전 상태"로 저장
 	PreviousRelativeLocation = RelativeLocation;
@@ -51,6 +60,7 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		FJsonSerializer::ReadVector(InOutHandle, "Location", RelativeLocation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Rotation", RelativeRotation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Scale", RelativeScale3D, FVector::OneVector());
+		bIsTransformDirty = true;
 	}
 	// 저장
 	else

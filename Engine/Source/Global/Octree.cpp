@@ -52,6 +52,7 @@ void FOctree::Insert(UPrimitiveComponent* InPrimitive)
 			{
 				Children[Index]->Insert(InPrimitive); // 자식 노드에게 넘겨준다
 				bWasInsertedIntoChild = true;
+				break;
 			}
 		}
 
