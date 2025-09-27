@@ -169,31 +169,16 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 	return nullptr;
 }
 
-TArray<TObjectPtr<UPrimitiveComponent>> ULevel::GetLevelPrimitiveComponents() const
+void ULevel::GetVisiblePrimitives(const FFrustum& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutPrimitives) const
 {
-	// 1. 모든 프리미티브를 담을 임시 배열을 생성합니다.
-	TArray<TObjectPtr<UPrimitiveComponent>> AllPrimitives;
-
-	// 2. StaticOctree가 존재하면 모든 프리미티브를 가져와 배열에 추가합니다.
 	if (StaticOctree)
 	{
-		// FOctree는 UPrimitiveComponent*를 사용하므로 TObjectPtr로 변환이 필요할 수 있습니다.
-		// TArray<UPrimitiveComponent*> tempStaticPrimitives;
-		// StaticOctree->GetAllPrimitives(tempStaticPrimitives);
-		// AllPrimitives.insert(AllPrimitives.end(), tempStaticPrimitives.begin(), tempStaticPrimitives.end());
-
-		// NOTE: TObjectPtr이 포인터로부터 암시적 변환을 지원한다면 아래 코드가 더 간결합니다.
-		StaticOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
+		StaticOctree->FindVisiblePrimitives(InFrustum, reinterpret_cast<TArray<UPrimitiveComponent*>&>(OutPrimitives));
 	}
-
-	// 3. DynamicOctree가 존재하면 모든 프리미티브를 가져와 배열에 추가합니다.
 	if (DynamicOctree)
 	{
-		DynamicOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
+		DynamicOctree->FindVisiblePrimitives(InFrustum, reinterpret_cast<TArray<UPrimitiveComponent*>&>(OutPrimitives));
 	}
-
-	// 4. 합쳐진 배열을 값으로 반환합니다.
-	return AllPrimitives;
 }
 
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)

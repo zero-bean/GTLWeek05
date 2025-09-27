@@ -52,7 +52,7 @@ public:
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
-	TArray<TObjectPtr<UPrimitiveComponent>> GetLevelPrimitiveComponents() const;
+	void GetVisiblePrimitives(const FFrustum& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutPrimitives) const;
 
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
@@ -66,6 +66,9 @@ public:
 
 	uint64 GetShowFlags() const { return ShowFlags; }
 	void SetShowFlags(uint64 InShowFlags) { ShowFlags = InShowFlags; }
+
+	FOctree* GetStaticOctree() { return StaticOctree; }
+	FOctree* GetDynamicOctree() { return DynamicOctree; }
 
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.

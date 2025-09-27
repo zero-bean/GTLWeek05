@@ -20,9 +20,12 @@ public:
 	bool Remove(UPrimitiveComponent* InPrimitive);
 	void Clear();
 
-	void FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitiveComponent*>& OutPrimitives);
-
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const;
+
+	const FAABB& GetBoundingBox() const { return BoundingBox; }
+	bool IsLeafNode() const { return IsLeaf(); }
+	const TArray<UPrimitiveComponent*>& GetPrimitives() const { return Primitives; }
+	FOctree* const* GetChildren() const { return Children; }
 
 private:
 	FAABB GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive);

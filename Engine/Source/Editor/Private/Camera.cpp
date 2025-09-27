@@ -114,9 +114,15 @@ void UCamera::Update(const D3D11_VIEWPORT& InViewport)
 
 	// 카메라가 업데이트할 때마다 Cull한다.
 	// 카메라가 업데이트하지 않으면 Culling을 갱신할 이유가 없다.
-	const TArray<TObjectPtr<UPrimitiveComponent>>& Objects = \
-		ULevelManager::GetInstance().GetCurrentLevel().Get()->GetLevelPrimitiveComponents();
-	ViewVolumeCuller.Cull(Objects, ViewProjConstants);
+    ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel().Get();
+    if (CurrentLevel)
+    {
+        ViewVolumeCuller.Cull(
+            CurrentLevel->GetStaticOctree(),
+            CurrentLevel->GetDynamicOctree(),
+            ViewProjConstants
+        );
+    }
 }
 
 void UCamera::UpdateMatrixByPers()

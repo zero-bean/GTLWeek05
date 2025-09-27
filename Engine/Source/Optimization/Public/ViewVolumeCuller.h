@@ -3,6 +3,8 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Physics/Public/AABB.h"
 
+class FOctree;
+
 enum class EBoundCheckResult
 {
 	Outside,
@@ -41,8 +43,11 @@ struct FFrustum
                 Result = EBoundCheckResult::Intersect;
             }
         }
+
         return Result;
     }
+
+    void Clear() { for (int i = 0; i < 6; ++i) { Planes[i] = FVector4::Zero(); }; }
 };
 
 class ViewVolumeCuller
@@ -54,15 +59,13 @@ public:
 	ViewVolumeCuller& operator=(const ViewVolumeCuller& Other) = default;
 
 	void Cull(
-		const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,
+        FOctree* StaticOctree,
+        FOctree* DynamicOctree,
 		const FViewProjConstants& ViewProjConstants
 	);
 
 	const TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects() const;
 private:
-	uint32 Total = 0;
-	uint32 Rendered = 0;
-	uint32 Culled = 0;
-
-	TArray<TObjectPtr<UPrimitiveComponent>> RenderableObjects;
+    FFrustum CurrentFrustum{};
+    TArray<TObjectPtr<UPrimitiveComponent>> RenderableObjects{};
 };
