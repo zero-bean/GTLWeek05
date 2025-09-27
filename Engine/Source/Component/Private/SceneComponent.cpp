@@ -40,7 +40,7 @@ void USceneComponent::TickComponent()
 			PreviousRelativeRotation == RelativeRotation ||
 			PreviousRelativeScale3D == RelativeScale3D)
 		{
-			EComponentMobility::Static;
+			Mobility = EComponentMobility::Static;
 		}
 	}
 

@@ -5,8 +5,8 @@
 
 FOctree::FOctree()
 {
-	BoundingBox.Min = FVector(-200, -200, -5);
-	BoundingBox.Max = FVector(200, 200, 55);
+	BoundingBox.Min = FVector(-100, -100, -100);
+	BoundingBox.Max = FVector(200, 200, 200);
 	Depth = 0;
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
 }
@@ -126,7 +126,7 @@ void FOctree::FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitive
 	// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 종료합니다.
 	else if (result == EBoundCheckResult::Inside)
 	{
-		GetAllPrimitives(OutPrimitives); 
+		GetAllPrimitives(OutPrimitives);
 		return;
 	}
 	// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.

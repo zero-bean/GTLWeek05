@@ -22,8 +22,6 @@
 
 #include <json.hpp>
 
-ULevel::ULevel() = default;
-
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {

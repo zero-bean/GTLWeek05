@@ -20,6 +20,7 @@ public:
 	bool Remove(UPrimitiveComponent* InPrimitive);
 	void Clear();
 
+	void FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitiveComponent*>& OutPrimitives);
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 	const FAABB& GetBoundingBox() const { return BoundingBox; }

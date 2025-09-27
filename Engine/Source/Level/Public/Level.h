@@ -39,7 +39,7 @@ class ULevel :
 	public UObject
 {
 public:
-	ULevel();
+	ULevel() {}
 	ULevel(const FName& InName);
 	~ULevel() override;
 

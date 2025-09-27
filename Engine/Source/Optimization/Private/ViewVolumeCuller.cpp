@@ -18,7 +18,17 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 	CurrentFrustum.Planes[3] = VP[3] - VP[1]; // Top
 	CurrentFrustum.Planes[4] = VP[2];           // Near
 	CurrentFrustum.Planes[5] = VP[3] - VP[2]; // Far
-	for (int i = 0; i < 6; i++) { CurrentFrustum.Planes[i].Normalize(); }
+
+	for (int i = 0; i < 6; i++)
+	{
+		const float Length = sqrt((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
+							(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
+							(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
+
+		if (Length > -MATH_EPSILON && Length < MATH_EPSILON) { return; }
+
+		CurrentFrustum.Planes[i] /= -Length;
+	}
 
 	// 2. 옥트리를 이용해 보이는 객체만 RenderableObjects에 저장한다.
 	TArray<UPrimitiveComponent*>& TempArray = reinterpret_cast<TArray<UPrimitiveComponent*>&>(RenderableObjects);
@@ -30,6 +40,7 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 	{
 		DynamicOctree->FindVisiblePrimitives(CurrentFrustum, TempArray);
 	}
+	int a = TempArray.size();
 }
 
 const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
