@@ -20,7 +20,7 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 
 	for (int i = 0; i < 6; i++)
 	{
-		const float Length = ((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
+		const float Length = sqrt((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
 								(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
 								(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
 
