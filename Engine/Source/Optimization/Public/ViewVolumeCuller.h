@@ -9,13 +9,13 @@ enum class EBoundCheckResult
 	Inside
 };
 
-class ViewVolumeCuller
+class FViewVolumeCuller
 {
 public:
-	ViewVolumeCuller() = default;
-	~ViewVolumeCuller() = default;
-	ViewVolumeCuller(const ViewVolumeCuller& Other) = default;
-	ViewVolumeCuller& operator=(const ViewVolumeCuller& Other) = default;
+	FViewVolumeCuller() = default;
+	~FViewVolumeCuller() = default;
+	FViewVolumeCuller(const FViewVolumeCuller& Other) = default;
+	FViewVolumeCuller& operator=(const FViewVolumeCuller& Other) = default;
 
 	void Cull(
 		const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,

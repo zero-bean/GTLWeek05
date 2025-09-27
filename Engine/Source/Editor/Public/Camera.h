@@ -66,7 +66,7 @@ public:
 	float GetOrthoWidth() const { return OrthoWidth; }
 	ECameraType GetCameraType() const { return CameraType; }
 
-	const ViewVolumeCuller& GetViewVolumeCuller() { return ViewVolumeCuller; }
+	const FViewVolumeCuller& GetViewVolumeCuller() { return ViewVolumeCuller; }
 
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
@@ -106,7 +106,7 @@ private:
 	ECameraType CameraType = {};
 
 	// 절두체 컬링을 이용한 최적화
-	ViewVolumeCuller ViewVolumeCuller;
+	FViewVolumeCuller ViewVolumeCuller;
 
 	// Dynamic Movement Speed
 	float CurrentMoveSpeed = DEFAULT_SPEED;

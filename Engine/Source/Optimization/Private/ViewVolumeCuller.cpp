@@ -3,7 +3,7 @@
 #include "Optimization/Public/ViewVolumeCuller.h"
 #include "Core/Public/Object.h"
 
-void ViewVolumeCuller::Cull(
+void FViewVolumeCuller::Cull(
 	const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,
 	const FViewProjConstants& ViewProjConstants
 )
@@ -26,7 +26,7 @@ void ViewVolumeCuller::Cull(
 		Plane[1] = MVP[3] - MVP[0];  // Right
 		Plane[2] = MVP[3] + MVP[1];  // Bottom
 		Plane[3] = MVP[3] - MVP[1];  // Top
-		Plane[4] = MVP[3] + MVP[2];  // Near
+		Plane[4] = MVP[2];			 // Near
 		Plane[5] = MVP[3] - MVP[2];  // Far
 
 		for (int32 i = 0; i < 6; i++)
@@ -118,7 +118,7 @@ void ViewVolumeCuller::Cull(
 	Culled = Total - Rendered;
 }
 
-const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
+const TArray<TObjectPtr<UPrimitiveComponent>>& FViewVolumeCuller::GetRenderableObjects() const
 {
 	return RenderableObjects;
 }
