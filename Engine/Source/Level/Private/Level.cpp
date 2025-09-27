@@ -18,7 +18,6 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/Viewport.h"
 #include "Utility/Public/ActorTypeMapper.h"
-#include "Global/Octree.h"
 
 #include <json.hpp>
 
@@ -27,8 +26,6 @@ ULevel::ULevel() = default;
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {
-	StaticOctree = new FOctree();
-	DynamicOctree = new FOctree();
 }
 
 ULevel::~ULevel()
@@ -109,6 +106,11 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	}
 }
 
+void ULevel::Init()
+{
+	// TEST CODE
+}
+
 void ULevel::Update()
 {
 	// Process Delayed Task
@@ -121,6 +123,10 @@ void ULevel::Update()
 			if (Actor->CanTick()) { Actor->Tick(); }
 		}
 	}
+}
+
+void ULevel::Render()
+{
 }
 
 void ULevel::Cleanup()
@@ -138,9 +144,8 @@ void ULevel::Cleanup()
 	LevelActors.clear();
 
 	// 3. 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
-	SafeDelete(StaticOctree);
-	SafeDelete(DynamicOctree);
 	ActorsToDelete.clear();
+	LevelPrimitiveComponents.clear();
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
@@ -169,33 +174,6 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 	return nullptr;
 }
 
-TArray<TObjectPtr<UPrimitiveComponent>> ULevel::GetLevelPrimitiveComponents() const
-{
-	// 1. 모든 프리미티브를 담을 임시 배열을 생성합니다.
-	TArray<TObjectPtr<UPrimitiveComponent>> AllPrimitives;
-
-	// 2. StaticOctree가 존재하면 모든 프리미티브를 가져와 배열에 추가합니다.
-	if (StaticOctree)
-	{
-		// FOctree는 UPrimitiveComponent*를 사용하므로 TObjectPtr로 변환이 필요할 수 있습니다.
-		// TArray<UPrimitiveComponent*> tempStaticPrimitives;
-		// StaticOctree->GetAllPrimitives(tempStaticPrimitives);
-		// AllPrimitives.insert(AllPrimitives.end(), tempStaticPrimitives.begin(), tempStaticPrimitives.end());
-
-		// NOTE: TObjectPtr이 포인터로부터 암시적 변환을 지원한다면 아래 코드가 더 간결합니다.
-		StaticOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
-	}
-
-	// 3. DynamicOctree가 존재하면 모든 프리미티브를 가져와 배열에 추가합니다.
-	if (DynamicOctree)
-	{
-		DynamicOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
-	}
-
-	// 4. 합쳐진 배열을 값으로 반환합니다.
-	return AllPrimitives;
-}
-
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
@@ -205,8 +183,7 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		PrimitiveComponent->GetMobility() == EComponentMobility::Static ?
-			StaticOctree->Insert(PrimitiveComponent) : DynamicOctree->Insert(PrimitiveComponent);
+		LevelPrimitiveComponents.push_back(PrimitiveComponent);
 	}
 }
 
@@ -239,33 +216,33 @@ void ULevel::SetSelectedActor(AActor* InActor)
 // Level에서 Actor 제거하는 함수
 bool ULevel::DestroyActor(AActor* InActor)
 {
-	if (!InActor) return false;
-
-	// 컴포넌트들을 옥트리에서 제거
-	for (auto& Component : InActor->GetOwnedComponents())
+	if (!InActor)
 	{
-		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-		if (!PrimitiveComponent) { continue; }
+		return false;
+	}
 
-		if (PrimitiveComponent->GetMobility() == EComponentMobility::Static)
+	for (auto& PrimitiveComponent : InActor->GetOwnedComponents())
+	{
+		// LevelPrimitiveComponents 리스트에서 해당 프리미티브 컴포넌트 검색 및 제거
+		for (auto Iterator = LevelPrimitiveComponents.begin(); Iterator != LevelPrimitiveComponents.end(); ++Iterator)
 		{
-			if (StaticOctree) { StaticOctree->Remove(PrimitiveComponent); }
-		}
-		else
-		{
-			if (DynamicOctree) { DynamicOctree->Remove(PrimitiveComponent); }
+			if (*Iterator == PrimitiveComponent)
+			{
+				LevelPrimitiveComponents.erase(Iterator);
+				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
+			}
 		}
 	}
 
 	// LevelActors 리스트에서 제거
-	if (auto It = std::find(LevelActors.begin(), LevelActors.end(), InActor); It != LevelActors.end())
+	for (auto Iterator = LevelActors.begin(); Iterator != LevelActors.end(); ++Iterator)
 	{
-		*It = std::move(LevelActors.back());
-		LevelActors.pop_back();
-
-		return true;
+		if (*Iterator == InActor)
+		{
+			LevelActors.erase(Iterator);
+			break;
+		}
 	}
-
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)
