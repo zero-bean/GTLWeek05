@@ -10,20 +10,19 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 	CurrentFrustum.Clear();
 
 	// 1. 절두체 'Key' 생성 
-	FFrustum CurrentFrustum;
 	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
 	CurrentFrustum.Planes[0] = VP[3] + VP[0]; // Left
 	CurrentFrustum.Planes[1] = VP[3] - VP[0]; // Right
 	CurrentFrustum.Planes[2] = VP[3] + VP[1]; // Bottom
 	CurrentFrustum.Planes[3] = VP[3] - VP[1]; // Top
-	CurrentFrustum.Planes[4] = VP[2];           // Near
+	CurrentFrustum.Planes[4] = VP[3] + VP[2]; // Near
 	CurrentFrustum.Planes[5] = VP[3] - VP[2]; // Far
 
 	for (int i = 0; i < 6; i++)
 	{
 		const float Length = sqrt((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
-							(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
-							(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
+								(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
+								(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
 
 		if (Length > -MATH_EPSILON && Length < MATH_EPSILON) { return; }
 
@@ -32,15 +31,16 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 
 	// 2. 옥트리를 이용해 보이는 객체만 RenderableObjects에 저장한다.
 	TArray<UPrimitiveComponent*>& TempArray = reinterpret_cast<TArray<UPrimitiveComponent*>&>(RenderableObjects);
+
 	if (StaticOctree)
 	{
 		StaticOctree->FindVisiblePrimitives(CurrentFrustum, TempArray);
 	}
+
 	if (DynamicOctree)
 	{
 		DynamicOctree->FindVisiblePrimitives(CurrentFrustum, TempArray);
 	}
-	int a = TempArray.size();
 }
 
 const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const

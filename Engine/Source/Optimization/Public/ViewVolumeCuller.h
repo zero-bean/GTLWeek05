@@ -36,9 +36,10 @@ struct FFrustum
 
             if (P.Dot3(NVertex) + P.W > 0)
             {
-                return EBoundCheckResult::Outside;
+                Result = EBoundCheckResult::Outside;
+                break;
             }
-            if (P.Dot3(PVertex) + P.W > 0)
+            if (P.Dot3(PVertex) + P.W < 0)
             {
                 Result = EBoundCheckResult::Intersect;
             }
