@@ -41,6 +41,8 @@ public:
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
+	UBillBoardComponent* GetBillBoardComponent() const { return BillBoardComponent.Get(); }
+
 	const FVector& GetActorLocation() const;
 	const FVector& GetActorRotation() const;
 	const FVector& GetActorScale3D() const;

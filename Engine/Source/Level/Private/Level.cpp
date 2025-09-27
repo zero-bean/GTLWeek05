@@ -1,22 +1,20 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
-
-#include "Actor/Public/Actor.h"
-#include "Component/Public/BillBoardComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
-#include "Utility/Public/JsonSerializer.h"
+#include "Actor/Public/Actor.h"
 #include "Actor/Public/CubeActor.h"
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/SquareActor.h"
 #include "Factory/Public/NewObject.h"
-#include "Core/Public/Object.h"
 #include "Factory/Public/FactorySystem.h"
+#include "Core/Public/Object.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/Viewport.h"
+#include "Utility/Public/JsonSerializer.h"
 #include "Utility/Public/ActorTypeMapper.h"
 #include "Global/Octree.h"
 
@@ -175,6 +173,8 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 	{
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
+
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
 
 		PrimitiveComponent->GetMobility() == EComponentMobility::Static ?
 			StaticOctree->Insert(PrimitiveComponent) : DynamicOctree->Insert(PrimitiveComponent);

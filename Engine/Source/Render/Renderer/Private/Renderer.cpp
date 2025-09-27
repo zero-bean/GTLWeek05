@@ -299,7 +299,6 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
-	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
 	// Render Primitive
 	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
@@ -325,9 +324,6 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		case EPrimitiveType::StaticMesh:
 			MeshComponents.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
 			break;
-		case EPrimitiveType::BillBoard:
-			BillboardComponents.push_back(Cast<UBillBoardComponent>(PrimitiveComponent));
-			break;
 		default:
 
 			if (ShowFlags & EEngineShowFlags::SF_Primitives)
@@ -345,7 +341,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		for (auto& Billboard : BillboardComponents) { RenderBillboard(Billboard, InCurrentCamera); }
+		if (UBillBoardComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		{
+			RenderBillboard(PickedBillboard, InCurrentCamera);
+		}
 	}
 }
 
