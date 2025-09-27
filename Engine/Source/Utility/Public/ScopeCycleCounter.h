@@ -6,61 +6,20 @@
 class FWindowsPlatformTime
 {
 public:
-    static void InitTiming()
-    {
-        if (!bInitialized)
-        {
-            bInitialized = true;
+    static void InitTiming();
 
-            double Frequency = (double)GetFrequency();
-            if (Frequency <= 0.0)
-            {
-                Frequency = 1.0;
-            }
+    static double GetSecondsPerCycle();
 
-            GSecondsPerCycle = 1.0 / Frequency;
-        }
-    }
+    static uint64 GetFrequency();
 
-    static double GetSecondsPerCycle()
-    {
-        if (!bInitialized)
-        {
-            InitTiming();
-        }
-        return GSecondsPerCycle;
-    }
+    static float ToMilliseconds(uint64 CycleDiff);
 
-    static uint64 GetFrequency()
-    {
-        LARGE_INTEGER Frequency;
-        QueryPerformanceFrequency(&Frequency);
-        return Frequency.QuadPart;
-    }
-
-    static float ToMilliseconds(uint64 CycleDiff)
-    {
-        double Ms = static_cast<double>(CycleDiff)
-            * GetSecondsPerCycle()
-            * 1000.0;
-
-        return (float)Ms;
-    }
-
-    static uint64 Cycles64()
-    {
-        LARGE_INTEGER CycleCount;
-        QueryPerformanceCounter(&CycleCount);
-        return (uint64)CycleCount.QuadPart;
-    }
+    static uint64 Cycles64();
 
 private:
     static double GSecondsPerCycle;
     static bool bInitialized;
 };
-
-double FWindowsPlatformTime::GSecondsPerCycle = 0.0;
-bool FWindowsPlatformTime::bInitialized = false;
 
 struct TStatId
 {
