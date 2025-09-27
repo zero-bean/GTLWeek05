@@ -170,7 +170,6 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 			FVector WorldMin(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 			FVector WorldMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-			UE_LOG("Matrix T: %f, %f, %f", WorldTransform.Data[3][0], WorldTransform.Data[3][1], WorldTransform.Data[3][2]);
 			for (int32 i = 0; i < 8; i++)
 			{
 				FVector4 WorldCorner = FVector4(LocalCorners[i].X, LocalCorners[i].Y, LocalCorners[i].Z, 1.0f) * WorldTransform;
