@@ -60,7 +60,7 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		FJsonSerializer::ReadVector(InOutHandle, "Location", RelativeLocation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Rotation", RelativeRotation, FVector::ZeroVector());
 		FJsonSerializer::ReadVector(InOutHandle, "Scale", RelativeScale3D, FVector::OneVector());
-		bIsTransformDirty = true;
+		MarkAsDirty();
 	}
 	// 저장
 	else

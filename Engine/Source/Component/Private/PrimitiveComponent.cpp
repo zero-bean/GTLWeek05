@@ -147,38 +147,54 @@ D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
 
 void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 {
-	if (!BoundingBox)	return;
-
-	if (BoundingBox->GetType() == EBoundingVolumeType::AABB)
+	if (!BoundingBox)
 	{
-		const FAABB* LocalAABB = static_cast<const FAABB*>(BoundingBox);
-		FVector LocalCorners[8] =
-		{
-			FVector(LocalAABB->Min.X, LocalAABB->Min.Y, LocalAABB->Min.Z), FVector(LocalAABB->Max.X, LocalAABB->Min.Y, LocalAABB->Min.Z),
-			FVector(LocalAABB->Min.X, LocalAABB->Max.Y, LocalAABB->Min.Z), FVector(LocalAABB->Max.X, LocalAABB->Max.Y, LocalAABB->Min.Z),
-			FVector(LocalAABB->Min.X, LocalAABB->Min.Y, LocalAABB->Max.Z), FVector(LocalAABB->Max.X, LocalAABB->Min.Y, LocalAABB->Max.Z),
-			FVector(LocalAABB->Min.X, LocalAABB->Max.Y, LocalAABB->Max.Z), FVector(LocalAABB->Max.X, LocalAABB->Max.Y, LocalAABB->Max.Z)
-		};
-		const FMatrix& WorldTransform = GetWorldTransformMatrix();
-		FVector WorldMin(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-		FVector WorldMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-		for (int i = 0; i < 8; i++)
-		{
-			FVector4 WorldCorner = FVector4(LocalCorners[i].X, LocalCorners[i].Y, LocalCorners[i].Z, 1.0f) * WorldTransform;
-			WorldMin.X = std::min(WorldMin.X, WorldCorner.X);
-			WorldMin.Y = std::min(WorldMin.Y, WorldCorner.Y);
-			WorldMin.Z = std::min(WorldMin.Z, WorldCorner.Z);
-			WorldMax.X = std::max(WorldMax.X, WorldCorner.X);
-			WorldMax.Y = std::max(WorldMax.Y, WorldCorner.Y);
-			WorldMax.Z = std::max(WorldMax.Z, WorldCorner.Z);
-		}
-		OutMin = WorldMin;
-		OutMax = WorldMax;
+		OutMin = FVector(); OutMax = FVector();
+		return;
 	}
+
+	if (bIsAABBCacheDirty)
+	{
+		if (BoundingBox->GetType() == EBoundingVolumeType::AABB)
+		{
+			const FAABB* LocalAABB = static_cast<const FAABB*>(BoundingBox);
+			FVector LocalCorners[8] =
+			{
+				FVector(LocalAABB->Min.X, LocalAABB->Min.Y, LocalAABB->Min.Z), FVector(LocalAABB->Max.X, LocalAABB->Min.Y, LocalAABB->Min.Z),
+				FVector(LocalAABB->Min.X, LocalAABB->Max.Y, LocalAABB->Min.Z), FVector(LocalAABB->Max.X, LocalAABB->Max.Y, LocalAABB->Min.Z),
+				FVector(LocalAABB->Min.X, LocalAABB->Min.Y, LocalAABB->Max.Z), FVector(LocalAABB->Max.X, LocalAABB->Min.Y, LocalAABB->Max.Z),
+				FVector(LocalAABB->Min.X, LocalAABB->Max.Y, LocalAABB->Max.Z), FVector(LocalAABB->Max.X, LocalAABB->Max.Y, LocalAABB->Max.Z)
+			};
+
+			const FMatrix& WorldTransform = GetWorldTransformMatrix();
+			FVector WorldMin(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+			FVector WorldMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+			UE_LOG("Matrix T: %f, %f, %f", WorldTransform.Data[3][0], WorldTransform.Data[3][1], WorldTransform.Data[3][2]);
+			for (int32 i = 0; i < 8; i++)
+			{
+				FVector4 WorldCorner = FVector4(LocalCorners[i].X, LocalCorners[i].Y, LocalCorners[i].Z, 1.0f) * WorldTransform;
+				WorldMin.X = min(WorldMin.X, WorldCorner.X);
+				WorldMin.Y = min(WorldMin.Y, WorldCorner.Y);
+				WorldMin.Z = min(WorldMin.Z, WorldCorner.Z);
+				WorldMax.X = max(WorldMax.X, WorldCorner.X);
+				WorldMax.Y = max(WorldMax.Y, WorldCorner.Y);
+				WorldMax.Z = max(WorldMax.Z, WorldCorner.Z);
+			}
+
+			CachedWorldMin = WorldMin;
+			CachedWorldMax = WorldMax;
+			bIsAABBCacheDirty = false;
+		}
+	}
+
+	// 캐시된 값 반환
+	OutMin = CachedWorldMin;
+	OutMax = CachedWorldMax;
 }
 
-/*
-* 리소스는 Manager가 관리하고 component는 참조만 함.
-*
-*/
+void UPrimitiveComponent::MarkAsDirty()
+{
+	bIsAABBCacheDirty = true;
+	Super::MarkAsDirty();
+}

@@ -74,11 +74,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 				UClass* NewClass = FActorTypeMapper::TypeToActor(TypeString);
 
-				AActor* NewActor = SpawnActorToLevel(NewClass, IdString);
-				if (NewActor)
-				{
-					NewActor->Serialize(bInIsLoading, PrimitiveDataJson);
-				}
+				AActor* NewActor = SpawnActorToLevel(NewClass, IdString, &PrimitiveDataJson);
 			}
 		}
 	}
@@ -146,7 +142,7 @@ void ULevel::Cleanup()
 	SelectedActor = nullptr;
 }
 
-AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
+AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSON* ActorJsonData)
 {
 	if (!InActorClass)
 	{
@@ -159,6 +155,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 		if (InName != FName::GetNone())
 		{
 			NewActor->SetName(InName);
+		}
+		if (ActorJsonData != nullptr)
+		{
+			NewActor->Serialize(true, *ActorJsonData);
 		}
 		LevelActors.push_back(TObjectPtr(NewActor));
 		NewActor->BeginPlay();
@@ -183,13 +183,13 @@ TArray<TObjectPtr<UPrimitiveComponent>> ULevel::GetLevelPrimitiveComponents() co
 		// AllPrimitives.insert(AllPrimitives.end(), tempStaticPrimitives.begin(), tempStaticPrimitives.end());
 
 		// NOTE: TObjectPtr이 포인터로부터 암시적 변환을 지원한다면 아래 코드가 더 간결합니다.
-		StaticOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
+		StaticOctree->GetAllPrimitives(AllPrimitives);
 	}
 
 	// 3. DynamicOctree가 존재하면 모든 프리미티브를 가져와 배열에 추가합니다.
 	if (DynamicOctree)
 	{
-		DynamicOctree->GetAllPrimitives(reinterpret_cast<TArray<UPrimitiveComponent*>&>(AllPrimitives));
+		DynamicOctree->GetAllPrimitives(AllPrimitives);
 	}
 
 	// 4. 합쳐진 배열을 값으로 반환합니다.

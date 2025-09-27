@@ -56,7 +56,7 @@ public:
 
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
-	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone());
+	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 
 	bool DestroyActor(AActor* InActor);
 	void MarkActorForDeletion(AActor* InActor);
