@@ -152,11 +152,31 @@ FVector4 FVector4::operator+(const FVector4& InOtherVector) const
 
 FVector4 FVector4::operator*(const FMatrix& InMatrix) const
 {
+	__m128 VecX = _mm_shuffle_ps(V, V, _MM_SHUFFLE(0, 0, 0, 0)); // (X, X, X, X)
+	__m128 VecY = _mm_shuffle_ps(V, V, _MM_SHUFFLE(1, 1, 1, 1)); // (Y, Y, Y, Y)
+	__m128 VecZ = _mm_shuffle_ps(V, V, _MM_SHUFFLE(2, 2, 2, 2)); // (Z, Z, Z, Z)
+	__m128 VecW = _mm_shuffle_ps(V, V, _MM_SHUFFLE(3, 3, 3, 3)); // (W, W, W, W)
+
+	const __m128* MatrixRows = (const __m128*)InMatrix.Data;
+
+	// R0 = Row0 * X
+	// R0 = (m00*X, m01*X, m02*X, m03*X)
+	__m128 R0 = _mm_mul_ps(MatrixRows[0], VecX);
+
+	// R1 = R0 + (Row1 * Y)
+	// R1 = (m00*X + m10*Y, m01*X + m11*Y, ...)
+	__m128 R1 = _mm_fmadd_ps(MatrixRows[1], VecY, R0);
+
+	// R2 = R1 + (Row2 * Z)
+	__m128 R2 = _mm_fmadd_ps(MatrixRows[2], VecZ, R1);
+
+	// Final Result = R2 + (Row3 * W)
+	// 최종 결과 레지스터에는 (Result.X, Result.Y, Result.Z, Result.W)가 담깁니다.
+	__m128 ResultVec = _mm_fmadd_ps(MatrixRows[3], VecW, R2);
+
+	// 4. 결과를 FVector4 구조체에 저장합니다.
 	FVector4 Result;
-	Result.X = X * InMatrix.Data[0][0] + Y * InMatrix.Data[1][0] + Z * InMatrix.Data[2][0] + W * InMatrix.Data[3][0];
-	Result.Y = X * InMatrix.Data[0][1] + Y * InMatrix.Data[1][1] + Z * InMatrix.Data[2][1] + W * InMatrix.Data[3][1];
-	Result.Z = X * InMatrix.Data[0][2] + Y * InMatrix.Data[1][2] + Z * InMatrix.Data[2][2] + W * InMatrix.Data[3][2];
-	Result.W = X * InMatrix.Data[0][3] + Y * InMatrix.Data[1][3] + Z * InMatrix.Data[2][3] + W * InMatrix.Data[3][3];
+	_mm_store_ps((float*)&Result, ResultVec);
 
 	return Result;
 }

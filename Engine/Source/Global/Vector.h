@@ -197,12 +197,13 @@ struct FVector2
 
 FArchive& operator<<(FArchive& Ar, FVector2& Vector);
 
-struct FVector4
+struct alignas(16) FVector4
 {
-	float X;
-	float Y;
-	float Z;
-	float W;
+	union
+	{
+		struct { float X, Y, Z, W; };
+		__m128 V;
+	};
 
 	/**
 	 * @brief FVector 기본 생성자
