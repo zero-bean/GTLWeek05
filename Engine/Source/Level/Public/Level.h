@@ -52,11 +52,9 @@ public:
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
-	void GetVisiblePrimitives(const FFrustum& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutPrimitives) const;
-
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
-	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone());
+	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 
 	bool DestroyActor(AActor* InActor);
 	void MarkActorForDeletion(AActor* InActor);

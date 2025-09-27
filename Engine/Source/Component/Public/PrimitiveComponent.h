@@ -38,6 +38,8 @@ public:
 
 	EPrimitiveType GetPrimitiveType() const { return Type; }
 
+	virtual void MarkAsDirty() override;
+
 protected:
 	const TArray<FNormalVertex>* Vertices = nullptr;
 	const TArray<uint32>* Indices = nullptr;
@@ -57,4 +59,8 @@ protected:
 	bool bVisible = true;
 
 	const IBoundingVolume* BoundingBox = nullptr;
+
+	mutable FVector CachedWorldMin;
+	mutable FVector CachedWorldMax;
+	mutable bool bIsAABBCacheDirty = true;
 };

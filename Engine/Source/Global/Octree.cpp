@@ -1,19 +1,36 @@
 #include "pch.h"
 #include "Global/Octree.h"
 #include "Component/Public/PrimitiveComponent.h"
-#include "Optimization/Public/ViewVolumeCuller.h"
+
+namespace
+{
+	FAABB GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
+	{
+		FVector Min, Max;
+		InPrimitive->GetWorldAABB(Min, Max);
+
+		return FAABB(Min, Max);
+	}
+}
 
 FOctree::FOctree()
+	: BoundingBox(), Depth(0)
 {
-	BoundingBox.Min = FVector(-100, -100, -100);
-	BoundingBox.Max = FVector(200, 200, 200);
-	Depth = 0;
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
 }
 
 FOctree::FOctree(const FAABB& InBoundingBox, int InDepth)
 	: BoundingBox(InBoundingBox), Depth(InDepth)
 {
+	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
+}
+
+FOctree::FOctree(const FVector& InPosition, float InSize, int InDepth)
+	: Depth(InDepth)
+{
+	const float HalfSize = InSize * 0.5f;
+	BoundingBox.Min = InPosition - FVector(HalfSize, HalfSize, HalfSize);
+	BoundingBox.Max = InPosition + FVector(HalfSize, HalfSize, HalfSize);
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
 }
 
@@ -50,7 +67,7 @@ void FOctree::Insert(UPrimitiveComponent* InPrimitive)
 		for (int Index = 0; Index < 8; ++Index)
 		{
 			// 자식 노드를 보유하고 있고, 영역 내에 해당 객체가 존재한다면
-			if (Children[Index]->BoundingBox.IsIntersected(GetPrimitiveBoundingBox(InPrimitive)))
+			if (Children[Index]->BoundingBox.IsContains(GetPrimitiveBoundingBox(InPrimitive)))
 			{
 				Children[Index]->Insert(InPrimitive); // 자식 노드에게 넘겨준다
 				bWasInsertedIntoChild = true;
@@ -113,50 +130,6 @@ void FOctree::Clear()
 	for (int Index = 0; Index < 8; ++Index) { SafeDelete(Children[Index]); }
 }
 
-void FOctree::FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitiveComponent*>& OutPrimitives)
-{
-	// 1. 현재 옥트리 노드(자신)의 경계와 절두체의 관계를 확인합니다.
-	EBoundCheckResult result = InFrustum.CheckIntersection(this->BoundingBox);
-
-	// Case 1. 노드가 절두체 밖에 있다면, 즉시 종료합니다. 
-	if (result == EBoundCheckResult::Outside) 
-	{
-		return; 
-	}
-	// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 종료합니다.
-	else if (result == EBoundCheckResult::Inside)
-	{
-		GetAllPrimitives(OutPrimitives);
-		return;
-	}
-	// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.
-	else if (result == EBoundCheckResult::Intersect)
-	{
-		for (UPrimitiveComponent* Primitive : Primitives)
-		{
-			if (Primitive)
-			{
-				if (InFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
-				{
-					OutPrimitives.push_back(Primitive);
-				}
-			}
-		}
-
-		// 2. 자식 노드들에게 재귀적으로 검사를 계속 진행시킵니다.
-		if (!IsLeaf())
-		{
-			for (int Index = 0; Index < 8; ++Index)
-			{
-				if (Children[Index])
-				{
-					Children[Index]->FindVisiblePrimitives(InFrustum, OutPrimitives);
-				}
-			}
-		}
-	}
-}
-
 void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	// 1. 현재 노드가 가진 프리미티브를 결과 배열에 추가합니다.
@@ -172,25 +145,20 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 	}
 }
 
-FAABB FOctree::GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
-{
-	FVector Min, Max;
-	InPrimitive->GetWorldAABB(Min, Max);
-
-	return FAABB(Min, Max);
-}
-
 void FOctree::Subdivide(UPrimitiveComponent* InPrimitive)
 {
-	const FVector Center = (BoundingBox.Min + BoundingBox.Max) * 0.5f;
-	Children[0] = new FOctree(FAABB(FVector(BoundingBox.Min.X, Center.Y, BoundingBox.Min.Z), FVector(Center.X, BoundingBox.Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
-	Children[1] = new FOctree(FAABB(FVector(Center.X, Center.Y, BoundingBox.Min.Z), FVector(BoundingBox.Max.X, BoundingBox.Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
-	Children[2] = new FOctree(FAABB(FVector(BoundingBox.Min.X, Center.Y, Center.Z), FVector(Center.X, BoundingBox.Max.Y, BoundingBox.Max.Z)), Depth + 1); // Top-Front-Left
-	Children[3] = new FOctree(FAABB(FVector(Center.X, Center.Y, Center.Z), FVector(BoundingBox.Max.X, BoundingBox.Max.Y, BoundingBox.Max.Z)), Depth + 1); // Top-Front-Right
-	Children[4] = new FOctree(FAABB(FVector(BoundingBox.Min.X, BoundingBox.Min.Y, BoundingBox.Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
-	Children[5] = new FOctree(FAABB(FVector(Center.X, BoundingBox.Min.Y, BoundingBox.Min.Z), FVector(BoundingBox.Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
-	Children[6] = new FOctree(FAABB(FVector(BoundingBox.Min.X, BoundingBox.Min.Y, Center.Z), FVector(Center.X, Center.Y, BoundingBox.Max.Z)), Depth + 1); // Bottom-Front-Left
-	Children[7] = new FOctree(FAABB(FVector(Center.X, BoundingBox.Min.Y, Center.Z), FVector(BoundingBox.Max.X, Center.Y, BoundingBox.Max.Z)), Depth + 1); // Bottom-Front-Right
+	const FVector& Min = BoundingBox.Min;
+	const FVector& Max = BoundingBox.Max;
+	const FVector Center = (Min + Max) * 0.5f;
+
+	Children[0] = new FOctree(FAABB(FVector(Min.X, Center.Y, Min.Z), FVector(Center.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
+	Children[1] = new FOctree(FAABB(FVector(Center.X, Center.Y, Min.Z), FVector(Max.X, Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
+	Children[2] = new FOctree(FAABB(FVector(Min.X, Center.Y, Center.Z), FVector(Center.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Left
+	Children[3] = new FOctree(FAABB(FVector(Center.X, Center.Y, Center.Z), FVector(Max.X, Max.Y, Max.Z)), Depth + 1); // Top-Front-Right
+	Children[4] = new FOctree(FAABB(FVector(Min.X, Min.Y, Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
+	Children[5] = new FOctree(FAABB(FVector(Center.X, Min.Y, Min.Z), FVector(Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
+	Children[6] = new FOctree(FAABB(FVector(Min.X, Min.Y, Center.Z), FVector(Center.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Left
+	Children[7] = new FOctree(FAABB(FVector(Center.X, Min.Y, Center.Z), FVector(Max.X, Center.Y, Max.Z)), Depth + 1); // Bottom-Front-Right
 
 	TArray<UPrimitiveComponent*> primitivesToMove = Primitives;
 	primitivesToMove.push_back(InPrimitive);

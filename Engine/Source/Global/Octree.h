@@ -2,8 +2,6 @@
 
 #include "Physics/Public/AABB.h"
 
-struct FFrustum;
-
 class UPrimitiveComponent;
 
 constexpr int MAX_PRIMITIVES = 32; 
@@ -13,6 +11,7 @@ class FOctree
 {
 public:
 	FOctree();
+	FOctree(const FVector& InPosition, float InSize, int InDepth);
 	FOctree(const FAABB& InBoundingBox, int InDepth);
 	~FOctree();
 
@@ -20,7 +19,6 @@ public:
 	bool Remove(UPrimitiveComponent* InPrimitive);
 	void Clear();
 
-	void FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitiveComponent*>& OutPrimitives);
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
 	const FAABB& GetBoundingBox() const { return BoundingBox; }
@@ -29,7 +27,6 @@ public:
 	FOctree* const* GetChildren() const { return Children; }
 
 private:
-	FAABB GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive);
 	bool IsLeaf() const { return Children[0] == nullptr; }
 	void Subdivide(UPrimitiveComponent* InPrimitive);
 	void TryMerge();

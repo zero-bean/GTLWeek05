@@ -25,8 +25,8 @@
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {
-	StaticOctree = new FOctree();
-	DynamicOctree = new FOctree();
+	StaticOctree = new FOctree(FVector(0,0,0), 500, 0);
+	DynamicOctree = new FOctree(FVector(0, 0, 0), 500, 0);
 }
 
 ULevel::~ULevel()
@@ -72,11 +72,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 				UClass* NewClass = FActorTypeMapper::TypeToActor(TypeString);
 
-				AActor* NewActor = SpawnActorToLevel(NewClass, IdString);
-				if (NewActor)
-				{
-					NewActor->Serialize(bInIsLoading, PrimitiveDataJson);
-				}
+				AActor* NewActor = SpawnActorToLevel(NewClass, IdString, &PrimitiveDataJson);
 			}
 		}
 	}
@@ -144,7 +140,7 @@ void ULevel::Cleanup()
 	SelectedActor = nullptr;
 }
 
-AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
+AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSON* ActorJsonData)
 {
 	if (!InActorClass)
 	{
@@ -158,6 +154,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 		{
 			NewActor->SetName(InName);
 		}
+		if (ActorJsonData != nullptr)
+		{
+			NewActor->Serialize(true, *ActorJsonData);
+		}
 		LevelActors.push_back(TObjectPtr(NewActor));
 		NewActor->BeginPlay();
 		AddLevelPrimitiveComponent(NewActor);
@@ -165,18 +165,6 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 	}
 
 	return nullptr;
-}
-
-void ULevel::GetVisiblePrimitives(const FFrustum& InFrustum, TArray<TObjectPtr<UPrimitiveComponent>>& OutPrimitives) const
-{
-	if (StaticOctree)
-	{
-		StaticOctree->FindVisiblePrimitives(InFrustum, reinterpret_cast<TArray<UPrimitiveComponent*>&>(OutPrimitives));
-	}
-	if (DynamicOctree)
-	{
-		DynamicOctree->FindVisiblePrimitives(InFrustum, reinterpret_cast<TArray<UPrimitiveComponent*>&>(OutPrimitives));
-	}
 }
 
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)

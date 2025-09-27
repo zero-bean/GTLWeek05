@@ -71,6 +71,8 @@ public:
 
 	const TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects() const;
 private:
+    void CullOctree(FOctree* Octree);
+
     FFrustum CurrentFrustum{};
     TArray<TObjectPtr<UPrimitiveComponent>> RenderableObjects{};
 };

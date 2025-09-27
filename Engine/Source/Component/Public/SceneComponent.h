@@ -27,7 +27,7 @@ public:
 	void SetParentAttachment(USceneComponent* SceneComponent);
 	void RemoveChild(USceneComponent* ChildDeleted);
 
-	void MarkAsDirty();
+	virtual void MarkAsDirty();
 
 	void SetRelativeLocation(const FVector& Location);
 	void SetRelativeRotation(const FVector& Rotation);
