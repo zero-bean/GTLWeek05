@@ -1,0 +1,560 @@
+﻿#include "pch.h"
+#include "Optimization/Public/OcclusionCuller.h"
+#include "Component/Public/PrimitiveComponent.h"
+#include "Component/Mesh/Public/StaticMeshComponent.h"
+
+COcclusionCuller::COcclusionCuller()
+{
+    CPU_ZBuffer.resize(Z_BUFFER_SIZE);
+}
+
+void COcclusionCuller::InitializeCuller(const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
+{
+    fill(CPU_ZBuffer.begin(), CPU_ZBuffer.end(), 1.0f);
+    CurrentViewProj = ViewMatrix * ProjectionMatrix;
+}
+
+TArray<TObjectPtr<UStaticMeshComponent>> COcclusionCuller::PerformCulling(const TArray<TObjectPtr<UStaticMeshComponent>>& AllStaticMeshes, const FVector& CameraPos)
+{    
+    // 1. 오클루더 동적 선택 (2단계)
+    TArray<UStaticMeshComponent*> SelectedOccluders = SelectOccluders(AllStaticMeshes, CameraPos, AllStaticMeshes.size() / 50);
+
+    // 2. CPU Z-Buffer 구성 (3단계)
+    RasterizeOccluders(SelectedOccluders);
+
+    // 3. 가시성 테스트 (4단계)
+    TArray<TObjectPtr<UStaticMeshComponent>> VisibleMeshComponents;
+    for (TObjectPtr<UStaticMeshComponent> MeshComp : AllStaticMeshes)
+    {
+        if (IsMeshVisible(MeshComp))
+        {
+            VisibleMeshComponents.push_back(MeshComp);
+        }
+    }
+
+    return VisibleMeshComponents;
+
+}
+
+bool COcclusionCuller::IsMeshVisible(const UStaticMeshComponent* MeshComp) const
+{
+    /*
+	// 1. 월드 AABB 가져오기
+	FVector WorldMin, WorldMax;
+	MeshComp->GetWorldAABB(WorldMin, WorldMax);
+	FVector WorldCenter = (WorldMin + WorldMax) * 0.5f;
+
+	// 2. 월드 AABB의 총 15개 샘플링 포인트 구성
+	// 8개 코너 + 6개 면 중심 + 1개 중심점
+    FVector WorldCorners[] =
+    {
+        // 1. 8개 코너 (0 ~ 7)
+        //FVector(WorldMin.X, WorldMin.Y, WorldMin.Z), FVector(WorldMax.X, WorldMin.Y, WorldMin.Z),
+        //FVector(WorldMin.X, WorldMax.Y, WorldMin.Z), FVector(WorldMax.X, WorldMax.Y, WorldMin.Z),
+        //FVector(WorldMin.X, WorldMin.Y, WorldMax.Z), FVector(WorldMax.X, WorldMin.Y, WorldMax.Z),
+        //FVector(WorldMin.X, WorldMax.Y, WorldMax.Z), FVector(WorldMax.X, WorldMax.Y, WorldMax.Z),
+
+        // 2. 6개 면 중심 (8 ~ 13)
+        FVector(WorldCenter.X, WorldMin.Y, WorldCenter.Z), FVector(WorldCenter.X, WorldMax.Y, WorldCenter.Z), // Y-Min, Y-Max
+        FVector(WorldMin.X, WorldCenter.Y, WorldCenter.Z), FVector(WorldMax.X, WorldCenter.Y, WorldCenter.Z), // X-Min, X-Max
+        FVector(WorldCenter.X, WorldCenter.Y, WorldMin.Z), FVector(WorldCenter.X, WorldCenter.Y, WorldMax.Z), // Z-Min, Z-Max
+
+        // 3. 1개 중심점 (14)
+        WorldCenter,
+        // 4. 12개 엣지 중심 (15 ~ 26)
+        // 4-1. X 엣지 (4개)
+        FVector(WorldMin.X, WorldCenter.Y, WorldMin.Z), FVector(WorldMax.X, WorldCenter.Y, WorldMin.Z),
+        FVector(WorldMin.X, WorldCenter.Y, WorldMax.Z), FVector(WorldMax.X, WorldCenter.Y, WorldMax.Z),
+        // 4-2. Y 엣지 (4개)
+        FVector(WorldCenter.X, WorldMin.Y, WorldMin.Z), FVector(WorldCenter.X, WorldMax.Y, WorldMin.Z),
+        FVector(WorldCenter.X, WorldMin.Y, WorldMax.Z), FVector(WorldCenter.X, WorldMax.Y, WorldMax.Z),
+        // 4-3. Z 엣지 (4개)
+        FVector(WorldMin.X, WorldMin.Y, WorldCenter.Z), FVector(WorldMax.X, WorldMin.Y, WorldCenter.Z),
+        FVector(WorldMin.X, WorldMax.Y, WorldCenter.Z), FVector(WorldMax.X, WorldMax.Y, WorldCenter.Z)
+    };
+
+	for (const FVector& WorldCorner : WorldCorners) // 이제 WorldCorner는 샘플링 포인트를 의미
+	{
+		FVector ScreenCoord = Project(WorldCorner);
+		float Z = ScreenCoord.Z;
+		int32 X = (int32)ScreenCoord.X;
+		int32 Y = (int32)ScreenCoord.Y;
+		// Z-Buffer 경계 검사: X, Y가 유효 범위 내에 있는지 확인
+
+		if (X >= 0 && X < Z_BUFFER_WIDTH && Y >= 0 && Y < Z_BUFFER_HEIGHT)
+		{
+			int32 Index = Y * Z_BUFFER_WIDTH + X;
+			// 깊이 테스트: Z가 Z-Buffer 값보다 작으면 가려지지 않았음
+			const float Z_TOLERANCE = 0.0001f;
+
+			if (Z < CPU_ZBuffer[Index] + Z_TOLERANCE)
+			{
+				return true;
+			}
+		}
+	}
+
+	// 모든 샘플링 포인트가 Z-Buffer 테스트를 통과하지 못했거나 화면 밖에 있었음.
+	return false;
+    */
+
+    FVector WorldMin, WorldMax;
+
+    MeshComp->GetWorldAABB(WorldMin, WorldMax);
+
+    FVector WorldCenter = (WorldMin + WorldMax) * 0.5f;
+
+    // 2. 기존과 동일한 19개 샘플링 포인트 정확히 재현
+    TArray<FVector> OriginalSamples;
+    OriginalSamples.reserve(19);
+
+    // 6개 면 중심 (기존과 정확히 동일)
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMin.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMax.Z));
+
+    // 1개 중심점
+    OriginalSamples.push_back(WorldCenter);
+
+    // 12개 엣지 중심 (기존 순서와 정확히 동일)
+    // X 엣지 (4개)
+    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldMin.Z));
+    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldMin.Z));
+    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldMax.Z));
+    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldMax.Z));
+
+    // Y 엣지 (4개)
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldMin.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldMin.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldMax.Z));
+    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldMax.Z));
+
+    // Z 엣지 (4개)
+    OriginalSamples.push_back(FVector(WorldMin.X, WorldMin.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldMax.X, WorldMin.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldMin.X, WorldMax.Y, WorldCenter.Z));
+    OriginalSamples.push_back(FVector(WorldMax.X, WorldMax.Y, WorldCenter.Z));
+
+    // 3. SIMD 배치 처리를 위해 20개로 패딩 (4의 배수)
+    alignas(16) float SampleX[20], SampleY[20], SampleZ[20];
+    for (int32 i = 0; i < 19; ++i)
+    {
+        SampleX[i] = OriginalSamples[i].X;
+        SampleY[i] = OriginalSamples[i].Y;
+        SampleZ[i] = OriginalSamples[i].Z;
+    }
+
+    // 패딩 (20번째) - 화면 밖으로 설정하여 무시되도록
+    SampleX[19] = -999999.0f;
+    SampleY[19] = -999999.0f;
+    SampleZ[19] = -999999.0f;
+
+    const int32 NumSamples = 19;
+    const int32 BatchCount = (NumSamples + 3) / 4; // 5 배치 (19/4 = 4.75 -> 5)
+
+    // 2. SIMD 배치 처리를 위해 20개로 패딩된 배열 준비
+    // 원본 배열이 OriginalSamples[19] 라고 가정합니다.
+    alignas(16) float WorldX_Padded[20], WorldY_Padded[20], WorldZ_Padded[20];
+
+    // OriginalSamples 배열에서 Padded 배열로 데이터 복사 및 패딩
+    for (int32 i = 0; i < NumSamples; ++i)
+    {
+        WorldX_Padded[i] = OriginalSamples[i].X;
+        WorldY_Padded[i] = OriginalSamples[i].Y;
+        WorldZ_Padded[i] = OriginalSamples[i].Z;
+    }
+    // 나머지 19~20번 인덱스에 대해 패딩 (W > 0 검사를 통과하지 않도록 큰 값으로)
+    for (int32 i = NumSamples; i < 20; ++i)
+    {
+        WorldX_Padded[i] = 1e30f;
+        WorldY_Padded[i] = 1e30f;
+        WorldZ_Padded[i] = 1e30f;
+    }
+
+    // 3. 4개씩 묶어서 배치 투영 및 가시성 테스트
+    const float Z_TOLERANCE = 0.001f;
+
+    for (int32 BatchIdx = 0; BatchIdx < BatchCount; ++BatchIdx)
+    {
+        // 4개 샘플 배치 준비
+        BatchProjectionInput Input;
+        Input.WorldX = _mm_load_ps(&WorldX_Padded[BatchIdx * 4]);
+        Input.WorldY = _mm_load_ps(&WorldY_Padded[BatchIdx * 4]);
+        Input.WorldZ = _mm_load_ps(&WorldZ_Padded[BatchIdx * 4]);
+
+        // 4개 동시 투영
+        BatchProjectionResult ProjectionResult = BatchProject4(Input);
+
+        // 결과 추출 (uint64가 아닌 int32로 변환된 픽셀 좌표 추출)
+        alignas(16) int32 PixelX[4], PixelY[4];
+        alignas(16) float ScreenZ[4];
+
+        // _mm_storeu_si128 (비정렬 메모리 접근 허용) 또는 _mm_store_si128 사용
+        _mm_store_si128((__m128i*)PixelX, ProjectionResult.PixelX);
+        _mm_store_si128((__m128i*)PixelY, ProjectionResult.PixelY);
+        _mm_store_ps(ScreenZ, ProjectionResult.ScreenZ);
+
+        // 개별 Z-buffer 테스트 (정확성 및 Z-Buffer 접근을 위해 스칼라 사용)
+        for (int32 i = 0; i < 4; ++i)
+        {
+            int32 SampleIdx = BatchIdx * 4 + i;
+            if (SampleIdx >= NumSamples) break; // 패딩 제외
+
+            int32 X = PixelX[i];
+            int32 Y = PixelY[i];
+
+            // 화면 경계 내부인지 확인
+            if (X >= 0 && X < Z_BUFFER_WIDTH && Y >= 0 && Y < Z_BUFFER_HEIGHT)
+            {
+                int32 Index = Y * Z_BUFFER_WIDTH + X;
+
+                // 깊이 테스트 (Z_TOLERANCE 포함)
+                if (ScreenZ[i] < CPU_ZBuffer[Index] + Z_TOLERANCE)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput& Input) const
+{    
+    // 1. 4개 월드 좌표를 동질 좌표로 변환 (W = 1.0f)
+    __m128 Ones = _mm_set1_ps(1.0f);
+
+    // 2. ViewProjection 행렬 접근 - 더 안전한 방법
+    // FMatrix의 메모리 레이아웃을 명시적으로 확인
+    const float* MatrixData = (const float*)&CurrentViewProj;
+
+    __m128 Row0 = _mm_load_ps(&MatrixData[0]);
+    __m128 Row1 = _mm_load_ps(&MatrixData[4]);
+    __m128 Row2 = _mm_load_ps(&MatrixData[8]);
+    __m128 Row3 = _mm_load_ps(&MatrixData[12]);
+
+    __m128 ClipX = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+        _mm_mul_ps(Input.WorldX, _mm_shuffle_ps(Row0, Row0, 0x00)),
+        _mm_mul_ps(Input.WorldY, _mm_shuffle_ps(Row1, Row1, 0x00))),
+        _mm_mul_ps(Input.WorldZ, _mm_shuffle_ps(Row2, Row2, 0x00))),
+        _mm_mul_ps(Ones, _mm_shuffle_ps(Row3, Row3, 0x00)));
+
+    __m128 ClipY = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+        _mm_mul_ps(Input.WorldX, _mm_shuffle_ps(Row0, Row0, 0x55)),
+        _mm_mul_ps(Input.WorldY, _mm_shuffle_ps(Row1, Row1, 0x55))),
+        _mm_mul_ps(Input.WorldZ, _mm_shuffle_ps(Row2, Row2, 0x55))),
+        _mm_mul_ps(Ones, _mm_shuffle_ps(Row3, Row3, 0x55)));
+
+    __m128 ClipZ = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+        _mm_mul_ps(Input.WorldX, _mm_shuffle_ps(Row0, Row0, 0xAA)),
+        _mm_mul_ps(Input.WorldY, _mm_shuffle_ps(Row1, Row1, 0xAA))),
+        _mm_mul_ps(Input.WorldZ, _mm_shuffle_ps(Row2, Row2, 0xAA))),
+        _mm_mul_ps(Ones, _mm_shuffle_ps(Row3, Row3, 0xAA)));
+
+    __m128 ClipW = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+        _mm_mul_ps(Input.WorldX, _mm_shuffle_ps(Row0, Row0, 0xFF)),
+        _mm_mul_ps(Input.WorldY, _mm_shuffle_ps(Row1, Row1, 0xFF))),
+        _mm_mul_ps(Input.WorldZ, _mm_shuffle_ps(Row2, Row2, 0xFF))),
+        _mm_mul_ps(Ones, _mm_shuffle_ps(Row3, Row3, 0xFF)));
+
+    // -----------------------------------------------------------
+    // 3. Perspective divide 안전성 체크 및 수행 (SSE2 호환으로 수정)
+    // -----------------------------------------------------------
+
+    // 3-1. W > 0 (프러스텀 앞)인 항목만 유효하게 만듦
+    __m128 W_is_positive = _mm_cmpgt_ps(ClipW, _mm_set1_ps(1e-6f)); // W > 0.000001f
+
+    // 3-2. 안전한 역수 (InvW) 계산
+    __m128 SafeW = _mm_or_ps(ClipW, _mm_andnot_ps(W_is_positive, Ones));
+    // W > 0이면 ClipW, 아니면 1.0f (0으로 나누는 것을 방지)
+
+    __m128 InvW = _mm_div_ps(Ones, SafeW);
+
+    // 3-3. W <= 0 (Near Plane 뒤)인 항목은 InvW를 0으로 마스킹
+    InvW = _mm_and_ps(InvW, W_is_positive);
+
+    // 역투영
+    ClipX = _mm_mul_ps(ClipX, InvW);
+    ClipY = _mm_mul_ps(ClipY, InvW);
+    ClipZ = _mm_mul_ps(ClipZ, InvW);
+    // W <= 0인 좌표는 ClipX/Y/Z = 0이 되므로, NDC 밖(-1 또는 1)으로 튀어나가지 않음
+
+    // -----------------------------------------------------------
+    // 4. NDC to Screen coordinates (4개 동시)
+    // -----------------------------------------------------------
+    __m128 HalfWidth = _mm_set1_ps(Z_BUFFER_WIDTH * 0.5f);
+    __m128 HalfHeight = _mm_set1_ps(Z_BUFFER_HEIGHT * 0.5f);
+
+    BatchProjectionResult Result;
+    // X: (ClipX + 1.0) * 0.5 * Width
+    Result.ScreenX = _mm_mul_ps(_mm_add_ps(ClipX, Ones), HalfWidth);
+    // Y: (1.0 - ClipY) * 0.5 * Height
+    Result.ScreenY = _mm_mul_ps(_mm_sub_ps(Ones, ClipY), HalfHeight);
+    Result.ScreenZ = ClipZ; // ScreenZ (NDC Z)
+
+    // 5. 정수형 픽셀 좌표로 변환
+    // _mm_cvtps_epi32는 기본적으로 TRUNCATE (버림)을 수행합니다.
+    Result.PixelX = _mm_cvtps_epi32(Result.ScreenX);
+    Result.PixelY = _mm_cvtps_epi32(Result.ScreenY);
+
+    // 6. 화면 경계 검사는 IsMeshVisible에서 정수 픽셀 좌표로 수행하는 것이 더 정확합니다.
+    // InBoundsMask는 반환하지 않거나, W <= 0 체크 마스크를 넘겨주는 것이 유용합니다.
+    // 여기서는 SIMD 오버헤드를 줄이기 위해 InBoundsMask 계산을 삭제합니다.
+
+    return Result;
+}
+
+FVector COcclusionCuller::Project(const FVector& WorldPos) const
+{
+    FVector4 WorldPos4(WorldPos.X, WorldPos.Y, WorldPos.Z, 1.0f);
+    FVector4 ClipPos = WorldPos4 * CurrentViewProj;
+
+    if (ClipPos.W != 0.0f)
+    {
+        ClipPos.X /= ClipPos.W;
+        ClipPos.Y /= ClipPos.W;
+        ClipPos.Z /= ClipPos.W;
+    }
+
+    // NDC to Screen
+    float ScreenX = (ClipPos.X + 1.0f) * 0.5f * Z_BUFFER_WIDTH;
+    float ScreenY = (1.0f - ClipPos.Y) * 0.5f * Z_BUFFER_HEIGHT;
+    float ScreenZ = ClipPos.Z;
+
+    return FVector(ScreenX, ScreenY, ScreenZ);
+}
+
+void COcclusionCuller::RasterizeTriangle(const FVector& P1, const FVector& P2, const FVector& P3, TArray<float>& ZBuffer)
+{        // 1. 바운딩 박스 계산
+    int32 MinX = max(0, (int32)min({ P1.X, P2.X, P3.X }));
+    int32 MaxX = min(Z_BUFFER_WIDTH - 1, (int32)max({ P1.X, P2.X, P3.X }));
+    int32 MinY = max(0, (int32)min({ P1.Y, P2.Y, P3.Y }));
+    int32 MaxY = min(Z_BUFFER_HEIGHT - 1, (int32)max({ P1.Y, P2.Y, P3.Y }));
+
+    // 2. 바운딩 박스 유효성 체크
+    if (MinX > MaxX || MinY > MaxY)
+    {
+        return; // 유효하지 않은 바운딩 박스
+    }
+
+    // 3. 삼각형 면적 계산 (degenerate triangle 체크용)
+    float Area = 0.5f * abs((P2.X - P1.X) * (P3.Y - P1.Y) - (P3.X - P1.X) * (P2.Y - P1.Y));
+    if (Area < 0.001f)
+    {
+        return; // degenerate triangle
+    }
+
+    // 4. Barycentric 좌표 계산을 위한 분모 미리 계산 (최적화)
+    float Denom1 = (P2.X - P3.X) * (P1.Y - P3.Y) - (P2.Y - P3.Y) * (P1.X - P3.X);
+    float Denom2 = (P3.X - P1.X) * (P2.Y - P1.Y) - (P3.Y - P1.Y) * (P2.X - P1.X);
+
+    // 5. 분모가 0에 가까우면 degenerate triangle
+    if (abs(Denom1) < 0.0001f || abs(Denom2) < 0.0001f)
+    {
+        return;
+    }
+
+    // 6. 역수 미리 계산 (나눗셈을 곱셈으로 변환하여 최적화)
+    float InvDenom1 = 1.0f / Denom1;
+    float InvDenom2 = 1.0f / Denom2;
+
+    // 7. 바운딩 박스 내의 모든 픽셀에 대해 검사
+    for (int32 Y = MinY; Y <= MaxY; ++Y)
+    {
+        for (int32 X = MinX; X <= MaxX; ++X)
+        {
+            // 픽셀 중심점
+            float PixelX = X + 0.5f;
+            float PixelY = Y + 0.5f;
+
+            // Barycentric coordinates 계산 (최적화된 버전)
+            float W1 = ((P2.X - P3.X) * (PixelY - P3.Y) - (P2.Y - P3.Y) * (PixelX - P3.X)) * InvDenom1;
+            float W2 = ((P3.X - P1.X) * (PixelY - P1.Y) - (P3.Y - P1.Y) * (PixelX - P1.X)) * InvDenom2;
+            float W3 = 1.0f - W1 - W2;
+
+            const float EPSILON = -0.0001f; // 경계 케이스 처리
+            if (W1 >= EPSILON && W2 >= EPSILON && W3 >= EPSILON)
+            {
+                // 깊이값 보간
+                float InterpolatedZ = W1 * P1.Z + W2 * P2.Z + W3 * P3.Z;
+
+                // 깊이 범위 체크 (선택적)
+                if (InterpolatedZ < 0.0f || InterpolatedZ > 1.0f)
+                {
+                    continue; // 유효하지 않은 깊이값
+                }
+
+                int32 Index = Y * Z_BUFFER_WIDTH + X;
+
+                // 깊이 테스트 및 업데이트
+                if (InterpolatedZ < ZBuffer[Index])
+                {
+                    ZBuffer[Index] = InterpolatedZ;
+                }
+            }
+        }
+    }
+}
+
+TArray<FVector> COcclusionCuller::ConvertAABBToTriangles(const UPrimitiveComponent* PrimitiveComp) const
+{
+    TArray<FVector> Triangles;
+
+    if (!PrimitiveComp) { return Triangles; }
+
+    FVector WorldMin, WorldMax;
+    PrimitiveComp->GetWorldAABB(WorldMin, WorldMax);
+
+    FVector Center = (WorldMin + WorldMax) * 0.5f;
+    FVector Extent = (WorldMax - WorldMin) * 0.5f; // Half-Size
+    constexpr float OccluderScale = 0.6f;
+
+    // 축소나 확대 없이 원래 AABB를 사용
+    WorldMin = Center - Extent * OccluderScale;
+    WorldMax = Center + Extent * OccluderScale;
+
+
+    // AABB의 8개 정점 계산
+    FVector Vertices[8];
+    Vertices[0] = FVector(WorldMin.X, WorldMin.Y, WorldMin.Z); // 000
+    Vertices[1] = FVector(WorldMax.X, WorldMin.Y, WorldMin.Z); // 100
+    Vertices[2] = FVector(WorldMax.X, WorldMax.Y, WorldMin.Z); // 110
+    Vertices[3] = FVector(WorldMin.X, WorldMax.Y, WorldMin.Z); // 010
+    Vertices[4] = FVector(WorldMin.X, WorldMin.Y, WorldMax.Z); // 001
+    Vertices[5] = FVector(WorldMax.X, WorldMin.Y, WorldMax.Z); // 101
+    Vertices[6] = FVector(WorldMax.X, WorldMax.Y, WorldMax.Z); // 111
+    Vertices[7] = FVector(WorldMin.X, WorldMax.Y, WorldMax.Z); // 011
+
+    // Front face (Z = Min)
+    Triangles.push_back(Vertices[0]); Triangles.push_back(Vertices[1]); Triangles.push_back(Vertices[2]);
+    Triangles.push_back(Vertices[0]); Triangles.push_back(Vertices[2]); Triangles.push_back(Vertices[3]);
+
+    // Back face (Z = Max)
+    Triangles.push_back(Vertices[5]); Triangles.push_back(Vertices[4]); Triangles.push_back(Vertices[7]);
+    Triangles.push_back(Vertices[5]); Triangles.push_back(Vertices[7]); Triangles.push_back(Vertices[6]);
+
+    // Left face (X = Min)
+    Triangles.push_back(Vertices[4]); Triangles.push_back(Vertices[0]); Triangles.push_back(Vertices[3]);
+    Triangles.push_back(Vertices[4]); Triangles.push_back(Vertices[3]); Triangles.push_back(Vertices[7]);
+
+    // Right face (X = Max)
+    Triangles.push_back(Vertices[1]); Triangles.push_back(Vertices[5]); Triangles.push_back(Vertices[6]);
+    Triangles.push_back(Vertices[1]); Triangles.push_back(Vertices[6]); Triangles.push_back(Vertices[2]);
+
+    // Bottom face (Y = Min)
+    Triangles.push_back(Vertices[4]); Triangles.push_back(Vertices[5]); Triangles.push_back(Vertices[1]);
+    Triangles.push_back(Vertices[4]); Triangles.push_back(Vertices[1]); Triangles.push_back(Vertices[0]);
+
+    // Top face (Y = Max)
+    Triangles.push_back(Vertices[3]); Triangles.push_back(Vertices[2]); Triangles.push_back(Vertices[6]);
+    Triangles.push_back(Vertices[3]); Triangles.push_back(Vertices[6]); Triangles.push_back(Vertices[7]);
+
+    return Triangles;
+}
+
+TArray<UStaticMeshComponent*> COcclusionCuller::SelectOccluders(const TArray<TObjectPtr<UStaticMeshComponent>>& AllCandidates, const FVector& CameraPos, uint32 MaxOccluders)
+{
+    TArray<FOccluderScore> Scores;
+    Scores.reserve(AllCandidates.size());
+
+    for (UStaticMeshComponent* MeshComp : AllCandidates)
+    {
+        FVector WorldMin, WorldMax;
+        MeshComp->GetWorldAABB(WorldMin, WorldMax);
+        FVector WorldCenter = (WorldMin + WorldMax) * 0.5f;
+        //bool bIsCameraInsideAABB =
+        //    (CameraPos.X >= WorldMin.X && CameraPos.X <= WorldMax.X) &&
+        //    (CameraPos.Y >= WorldMin.Y && CameraPos.Y <= WorldMax.Y) &&
+        //    (CameraPos.Z >= WorldMin.Z && CameraPos.Z <= WorldMax.Z);
+
+        //if (bIsCameraInsideAABB) { continue; }
+        // 카메라와의 거리 계산
+        float Distance = (WorldCenter - CameraPos).Length();
+        constexpr float MIN_DISTANCE = 0.1f;
+        Distance = max(Distance, MIN_DISTANCE);
+
+        // 8면 공간 투영 면적 근사치 계산
+        FVector WorldCorners[8] =
+        {
+            FVector(WorldMin.X, WorldMin.Y, WorldMin.Z), FVector(WorldMax.X, WorldMin.Y, WorldMin.Z),
+            FVector(WorldMin.X, WorldMax.Y, WorldMin.Z), FVector(WorldMax.X, WorldMax.Y, WorldMin.Z),
+            FVector(WorldMin.X, WorldMin.Y, WorldMax.Z), FVector(WorldMax.X, WorldMin.Y, WorldMax.Z),
+            FVector(WorldMin.X, WorldMax.Y, WorldMax.Z), FVector(WorldMax.X, WorldMax.Y, WorldMax.Z)
+        };
+
+        FVector ScreenMin(FLT_MAX, FLT_MAX, FLT_MAX), ScreenMax(FLT_MIN, FLT_MIN, FLT_MIN);
+
+        // 8개 코너를 화면 좌표로 투영
+        for (const FVector& WorldCorner : WorldCorners)
+        {
+            FVector ScreenCoord = Project(WorldCorner);
+
+            ScreenMin.X = min(ScreenMin.X, ScreenCoord.X);
+            ScreenMin.Y = min(ScreenMin.Y, ScreenCoord.Y);
+            ScreenMax.X = max(ScreenMax.X, ScreenCoord.X);
+            ScreenMax.Y = max(ScreenMax.Y, ScreenCoord.Y);
+            ScreenMin.Z = min(ScreenMin.Z, ScreenCoord.Z);
+        }
+
+        float ProjectedWidth = ScreenMax.X - ScreenMin.X;
+        float ProjectedHeight = ScreenMax.Y - ScreenMin.Y;
+        float ScreenArea = ProjectedWidth * ProjectedHeight;
+
+        float ProjectedDepthRange = ScreenMax.Z - ScreenMin.Z;
+        constexpr float Z_RANGE_EPSILON = 0.001f; // 0으로 나누는 것을 방지
+
+        float Score = ScreenArea / (Distance * max(ProjectedDepthRange, Z_RANGE_EPSILON));
+        Scores.push_back({ MeshComp, Score });
+    }
+
+    uint32 OccludersCount = min((uint32)Scores.size(), MaxOccluders);
+
+    // std::nth_element를 사용한 부분 정렬 (가장 큰 MaxOccluders 개만 선택)
+    std::nth_element(Scores.begin(), Scores.begin() + OccludersCount, Scores.end(), std::greater<FOccluderScore>());
+
+    TArray<UStaticMeshComponent*> SelectedOccluders;
+    SelectedOccluders.reserve(OccludersCount);
+
+    for (int32 i = 0; i < OccludersCount; ++i) { SelectedOccluders.push_back(Scores[i].MeshComp); }
+
+    return SelectedOccluders;
+
+}
+
+void COcclusionCuller::RasterizeOccluders(const TArray<UStaticMeshComponent*>& SelectedOccluders)
+{
+    for (UStaticMeshComponent* OccluderComp : SelectedOccluders)
+    {
+        // 1. AABB를 12개 삼각형의 월드 정점 리스트로 변환
+        TArray<FVector> BoxTriangles = ConvertAABBToTriangles(OccluderComp);
+
+        // 2. CPU 래스터라이징
+        for (uint32 Idx = 0; Idx < BoxTriangles.size(); Idx += 3)
+        {
+            // 삼각형의 세 정점 (월드 좌표)
+            const FVector& P1_World = BoxTriangles[Idx];
+            const FVector& P2_World = BoxTriangles[Idx + 1];
+            const FVector& P3_World = BoxTriangles[Idx + 2];
+
+            // 정점을 화면 좌표로 투영
+            FVector P1_Screen = Project(P1_World);
+            FVector P2_Screen = Project(P2_World);
+            FVector P3_Screen = Project(P3_World);
+
+            // Backface Culling
+            FVector2 V1(P2_Screen.X - P1_Screen.X, P2_Screen.Y - P1_Screen.Y);
+            FVector2 V2(P3_Screen.X - P1_Screen.X, P3_Screen.Y - P1_Screen.Y);
+
+            // 2D 외적 (Z 성분만)
+            float CrossZ = V1.X * V2.Y - V1.Y * V2.X;
+            if (CrossZ < 0.0f) { continue; }
+
+            // Z-Buffer에 깊이 쓰기
+            RasterizeTriangle(P1_Screen, P2_Screen, P3_Screen, CPU_ZBuffer);
+        }
+    }
+}

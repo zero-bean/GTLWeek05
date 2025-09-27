@@ -15,7 +15,8 @@
 #include "Texture/Public/Material.h"
 #include "Texture/Public/Texture.h"
 #include "Texture/Public/TextureRenderProxy.h"
-#include "Source/Component/Mesh/Public/StaticMesh.h"
+#include "Component/Mesh/Public/StaticMesh.h"
+#include "Optimization/Public/OcclusionCuller.h"
 
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
@@ -294,56 +295,66 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
 
 	// Level 없으면 Early Return
-	if (!CurrentLevel)
-	{
-		return;
-	}
+	if (!CurrentLevel) { return; }
 
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
-	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
-	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 
-	// Render Primitive
+	TArray<TObjectPtr<UStaticMeshComponent>> OcclusionCandidates;
+	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
+	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
+
 	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
 	{
-		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
-		{
-			continue;
-		}
-
-		// Get view mode from editor
-		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
-		if (ViewMode == EViewModeIndex::VMI_Wireframe)
-		{
-			RenderState.CullMode = ECullMode::None;
-			RenderState.FillMode = EFillMode::WireFrame;
-		}
-		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible()) { continue; }
 
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
 		case EPrimitiveType::StaticMesh:
-			MeshComponents.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
+			OcclusionCandidates.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
 			break;
 		case EPrimitiveType::BillBoard:
 			BillboardComponents.push_back(Cast<UBillBoardComponent>(PrimitiveComponent));
 			break;
 		default:
-
-			if (ShowFlags & EEngineShowFlags::SF_Primitives)
-			{
-				RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
-			}
+			DefaultPrimitives.push_back(PrimitiveComponent);
 			break;
 		}
 	}
 
+	TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
+
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
-		RenderStaticMeshes(MeshComponents);
+		static COcclusionCuller Culler;
+
+		// 1단계: Culler 초기화 (View/Proj 행렬 설정 및 Z-Buffer 초기화)
+		const FMatrix& ViewMatrix = InCurrentCamera->GetFViewProjConstants().View;
+		const FMatrix& ProjectionMatrix = InCurrentCamera->GetFViewProjConstants().Projection;
+		Culler.InitializeCuller(ViewMatrix, ProjectionMatrix);
+
+		// 2~4단계: 오클루전 컬링 실행 (Draw Call 절감)
+		FinalVisibleMeshes = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
 	}
+
+	if (ShowFlags & EEngineShowFlags::SF_Primitives)
+	{
+		for (auto& PrimitiveComponent : DefaultPrimitives)
+		{
+			FRenderState RenderState = PrimitiveComponent->GetRenderState();
+			const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+			if (ViewMode == EViewModeIndex::VMI_Wireframe)
+			{
+				RenderState.CullMode = ECullMode::None;
+				RenderState.FillMode = EFillMode::WireFrame;
+			}
+			ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+
+			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+		}
+
+		RenderStaticMeshes(FinalVisibleMeshes);
+	}
+	// UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisibleMeshes.size());
 
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{

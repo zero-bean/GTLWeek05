@@ -347,6 +347,8 @@
     <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Global\Octree.cpp" />
+    <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -725,6 +727,8 @@
     <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Global\Octree.h" />
+    <ClInclude Include="Source\Optimization\Public\OcclusionCuller.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
