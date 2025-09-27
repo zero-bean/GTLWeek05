@@ -3,7 +3,6 @@
 #include "Core/Public/Object.h"
 #include "Actor/Public/Actor.h"
 
-class UObjectPicker;
 class UCamera;
 
 enum class EGizmoMode
@@ -42,8 +41,6 @@ struct FGizmoRotateCollisionConfig
 	float InnerRadius = {0.9f};  // 링 굵기 r
 	float Scale = {2.0f};
 };
-
-class UCamera;
 
 class UGizmo : public UObject
 {

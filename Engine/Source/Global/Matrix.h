@@ -58,6 +58,11 @@ struct FMatrix
 	void operator*=(const FMatrix& InOtherMatrix);
 
 	/**
+	* @brief Data의 행을 FVector4의 형태로 반환
+	*/
+	FVector4 operator[](uint32 i) const;
+
+	/**
 	* @brief Position의 정보를 행렬로 변환하여 제공하는 함수
 	*/
 	static FMatrix TranslationMatrix(const FVector& InOtherVector);

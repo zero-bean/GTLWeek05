@@ -195,6 +195,17 @@ FVector4 FVector4::operator*(const float InRatio) const
 	);
 }
 
+/**
+ * @brief 자신의 벡터에 스칼라를 나눈 값을  반환하는 함수
+ */
+FVector4 FVector4::operator/(float Scalar) const
+{
+	// divide with zero 방지
+	if (Scalar >= -0.0001f && Scalar <= 0.0001f)
+		return FVector4();
+
+	return FVector4(X / Scalar, Y / Scalar, Z / Scalar, W / Scalar);
+}
 
 /**
  * @brief 자신의 벡터에 다른 벡터를 가산하는 함수
@@ -227,6 +238,17 @@ void FVector4::operator*=(const float Ratio)
 	Y *= Ratio;
 	Z *= Ratio;
 	W *= Ratio;
+}
+
+/**
+ * @brief 자신의 벡터를 스칼라로 나누는 함수
+ */
+void FVector4::operator/=(const float Scalar)
+{
+	X /= Scalar;
+	Y /= Scalar;
+	Z /= Scalar;
+	W /= Scalar;
 }
 
 FArchive& operator<<(FArchive& Ar, FVector4& Vector)

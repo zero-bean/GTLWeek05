@@ -344,8 +344,8 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Global\Octree.cpp">
-      <Filter>Source\Global</Filter>
+    <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
+      <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -719,8 +719,11 @@
     <ClInclude Include="Source\Utility\Public\ActorTypeMapper.h">
       <Filter>Source\Utility\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Global\Octree.h">
-      <Filter>Source\Global</Filter>
+    <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h">
+      <Filter>Source\Utility\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
+      <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -981,6 +984,15 @@
     </Filter>
     <Filter Include="Source\Texture\Public">
       <UniqueIdentifier>{b2172c3a-7772-49d9-b101-7e62cf0fc027}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization">
+      <UniqueIdentifier>{82a2c4ac-80f4-4510-898a-5fbe9a8eff15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization\Public">
+      <UniqueIdentifier>{a91490c4-a792-40fe-8123-686730dcae41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Optimization\Private">
+      <UniqueIdentifier>{d8af24c6-69bf-48aa-a292-fa6419f74b7f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

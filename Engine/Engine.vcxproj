@@ -182,6 +182,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">
@@ -203,6 +204,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -226,7 +228,8 @@
       <AdditionalLibraryDirectories>;$(SolutionDir)External\Library</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y</Command>      
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -274,6 +277,7 @@
     <ClInclude Include="Source\Manager\Asset\Public\ObjManager.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
+    <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h" />
     <ClInclude Include="Source\Physics\Public\AABB.h" />
     <ClInclude Include="Source\Physics\Public\BoundingSphere.h" />
     <ClInclude Include="Source\Physics\Public\BoundingVolume.h" />
@@ -368,6 +372,7 @@
     </ClInclude>
     <ClInclude Include="Source\Utility\Public\FileDialog.h" />
     <ClInclude Include="Source\Utility\Public\JsonSerializer.h" />
+    <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h" />
     <ClInclude Include="Source\Utility\Public\UELogParser.h" />
   </ItemGroup>
   <ItemGroup>
@@ -421,6 +426,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\ObjManager.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
+    <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp" />
     <ClCompile Include="Source\Physics\Private\AABB.cpp" />
     <ClCompile Include="Source\Physics\Private\BoundingSphere.cpp" />
     <ClCompile Include="Source\Core\Private\AppWindow.cpp" />
