@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Global/Octree.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
 
 FOctree::FOctree()
 {
@@ -109,38 +110,48 @@ bool FOctree::Remove(UPrimitiveComponent* InPrimitive)
 void FOctree::Clear()
 {
 	Primitives.clear();
-	for (int i = 0; i < 8; ++i) { SafeDelete(Children[i]); }
+	for (int Index = 0; Index < 8; ++Index) { SafeDelete(Children[Index]); }
 }
 
-void FOctree::GetAllPrimitives(const FAABB& InBoundingBox, TArray<UPrimitiveComponent*>& OutPrimitives)
+void FOctree::FindVisiblePrimitives(const FFrustum& InFrustum, TArray<UPrimitiveComponent*>& OutPrimitives)
 {
-	// 1. 현재 노드의 바운딩 박스와 입력된 바운딩 박스가 교차하지 않으면, 더 이상 탐색할 필요가 없습니다.
-	if (!BoundingBox.IsIntersected(InBoundingBox))
+	// 1. 현재 옥트리 노드(자신)의 경계와 절두체의 관계를 확인합니다.
+	EBoundCheckResult result = InFrustum.CheckIntersection(this->BoundingBox);
+
+	// Case 1. 노드가 절두체 밖에 있다면, 즉시 종료합니다. 
+	if (result == EBoundCheckResult::Outside) 
 	{
+		return; 
+	}
+	// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 종료합니다.
+	else if (result == EBoundCheckResult::Inside)
+	{
+		GetAllPrimitives(OutPrimitives); 
 		return;
 	}
-
-	// 2. 현재 노드에 있는 모든 프리미티브에 대해, 입력된 바운딩 박스와 교차하는지 확인합니다.
-	for (UPrimitiveComponent* Primitive : Primitives)
+	// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.
+	else if (result == EBoundCheckResult::Intersect)
 	{
-		if (Primitive)
+		for (UPrimitiveComponent* Primitive : Primitives)
 		{
-			const FAABB& PrimitiveBoundingBox = GetPrimitiveBoundingBox(Primitive);
-			if (PrimitiveBoundingBox.IsIntersected(InBoundingBox))
+			if (Primitive)
 			{
-				OutPrimitives.push_back(Primitive);
+				if (InFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
+				{
+					OutPrimitives.push_back(Primitive);
+				}
 			}
 		}
-	}
 
-	// 3. 리프 노드가 아니라면, 모든 자식 노드에 대해 재귀적으로 탐색을 계속합니다.
-	if (!IsLeaf())
-	{
-		for (int Index = 0; Index < 8; ++Index)
+		// 2. 자식 노드들에게 재귀적으로 검사를 계속 진행시킵니다.
+		if (!IsLeaf())
 		{
-			if (Children[Index])
+			for (int Index = 0; Index < 8; ++Index)
 			{
-				Children[Index]->GetAllPrimitives(InBoundingBox, OutPrimitives);
+				if (Children[Index])
+				{
+					Children[Index]->FindVisiblePrimitives(InFrustum, OutPrimitives);
+				}
 			}
 		}
 	}
