@@ -4,12 +4,6 @@
 namespace json { class JSON; }
 using JSON = json::JSON;
 
-enum class EComponentMobility : uint8
-{
-	Static,
-	Dynamic,
-};
-
 UCLASS()
 class USceneComponent : public UActorComponent
 {
@@ -18,9 +12,6 @@ class USceneComponent : public UActorComponent
 
 public:
 	USceneComponent();
-
-	void BeginPlay() override;
-	void TickComponent() override;
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
@@ -33,23 +24,15 @@ public:
 	void SetRelativeRotation(const FVector& Rotation);
 	void SetRelativeScale3D(const FVector& Scale);
 	void SetUniformScale(bool bIsUniform);
-	void SetMobility(EComponentMobility NewMobility) { Mobility = NewMobility; }
 
 	bool IsUniformScale() const;
 
 	const FVector& GetRelativeLocation() const;
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;
+
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
-	EComponentMobility GetMobility() const { return Mobility; }
-
-protected:
-	// 해당 컴포넌트의 움직임을 감지하는 객체
-	EComponentMobility Mobility = EComponentMobility::Static;
-	FVector PreviousRelativeLocation;
-	FVector PreviousRelativeRotation;
-	FVector PreviousRelativeScale3D;
 
 private:
 	mutable bool bIsTransformDirty = true;
