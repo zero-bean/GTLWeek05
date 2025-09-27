@@ -38,7 +38,7 @@ void ViewVolumeCuller::Cull(
 			);
 
 			// Divide with zero ¹æÁö
-			if (length > -0.0001f && length < 0.0001f)
+			if (length > MATH_EPSILON && length < MATH_EPSILON)
 			{
 				RenderableObjects = Objects;
 				Total = Objects.size();

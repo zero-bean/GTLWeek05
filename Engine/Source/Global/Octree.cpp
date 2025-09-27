@@ -4,12 +4,13 @@
 
 FOctree::FOctree()
 {
-	BoundingBox = { FVector(0, 0, 0), FVector(1500, 1500, 1500) };
+	BoundingBox.Min = FVector(-200, -200, -5);
+	BoundingBox.Max = FVector(200, 200, 55);
 	Depth = 0;
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
 }
 
-FOctree::FOctree(const FBoundingBox& InBoundingBox, int InDepth)
+FOctree::FOctree(const FAABB& InBoundingBox, int InDepth)
 	: BoundingBox(InBoundingBox), Depth(InDepth)
 {
 	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
@@ -111,7 +112,7 @@ void FOctree::Clear()
 	for (int i = 0; i < 8; ++i) { SafeDelete(Children[i]); }
 }
 
-void FOctree::GetAllPrimitives(const FBoundingBox& InBoundingBox, TArray<UPrimitiveComponent*>& OutPrimitives)
+void FOctree::GetAllPrimitives(const FAABB& InBoundingBox, TArray<UPrimitiveComponent*>& OutPrimitives)
 {
 	// 1. 현재 노드의 바운딩 박스와 입력된 바운딩 박스가 교차하지 않으면, 더 이상 탐색할 필요가 없습니다.
 	if (!BoundingBox.IsIntersected(InBoundingBox))
@@ -124,7 +125,7 @@ void FOctree::GetAllPrimitives(const FBoundingBox& InBoundingBox, TArray<UPrimit
 	{
 		if (Primitive)
 		{
-			FBoundingBox PrimitiveBoundingBox = GetPrimitiveBoundingBox(Primitive);
+			const FAABB& PrimitiveBoundingBox = GetPrimitiveBoundingBox(Primitive);
 			if (PrimitiveBoundingBox.IsIntersected(InBoundingBox))
 			{
 				OutPrimitives.push_back(Primitive);
@@ -160,56 +161,25 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 	}
 }
 
-FBoundingBox FOctree::GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
+FAABB FOctree::GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
 {
-	FBoundingBox Result;
 	FVector Min, Max;
-
 	InPrimitive->GetWorldAABB(Min, Max);
 
-	Result.Center = (Min + Max) * 0.5f;
-	Result.Extent = (Max - Min) * 0.5f;
-
-	return Result;
+	return FAABB(Min, Max);
 }
 
 void FOctree::Subdivide(UPrimitiveComponent* InPrimitive)
 {
-	FVector ParentCenter = BoundingBox.Center;
-	FVector ChildExtent = BoundingBox.Extent * 0.5f;
-
-	Children[0] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(-ChildExtent.X, ChildExtent.Y, -ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[1] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(ChildExtent.X, ChildExtent.Y, -ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[2] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(-ChildExtent.X, ChildExtent.Y, ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[3] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(ChildExtent.X, ChildExtent.Y, ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[4] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(-ChildExtent.X, -ChildExtent.Y, -ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[5] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(ChildExtent.X, -ChildExtent.Y, -ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[6] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(-ChildExtent.X, -ChildExtent.Y, ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
-	Children[7] = new FOctree(
-		FBoundingBox(ParentCenter + FVector(ChildExtent.X, -ChildExtent.Y, ChildExtent.Z), ChildExtent),
-		Depth + 1);
-
+	const FVector Center = (BoundingBox.Min + BoundingBox.Max) * 0.5f;
+	Children[0] = new FOctree(FAABB(FVector(BoundingBox.Min.X, Center.Y, BoundingBox.Min.Z), FVector(Center.X, BoundingBox.Max.Y, Center.Z)), Depth + 1); // Top-Back-Left
+	Children[1] = new FOctree(FAABB(FVector(Center.X, Center.Y, BoundingBox.Min.Z), FVector(BoundingBox.Max.X, BoundingBox.Max.Y, Center.Z)), Depth + 1); // Top-Back-Right
+	Children[2] = new FOctree(FAABB(FVector(BoundingBox.Min.X, Center.Y, Center.Z), FVector(Center.X, BoundingBox.Max.Y, BoundingBox.Max.Z)), Depth + 1); // Top-Front-Left
+	Children[3] = new FOctree(FAABB(FVector(Center.X, Center.Y, Center.Z), FVector(BoundingBox.Max.X, BoundingBox.Max.Y, BoundingBox.Max.Z)), Depth + 1); // Top-Front-Right
+	Children[4] = new FOctree(FAABB(FVector(BoundingBox.Min.X, BoundingBox.Min.Y, BoundingBox.Min.Z), FVector(Center.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Left
+	Children[5] = new FOctree(FAABB(FVector(Center.X, BoundingBox.Min.Y, BoundingBox.Min.Z), FVector(BoundingBox.Max.X, Center.Y, Center.Z)), Depth + 1); // Bottom-Back-Right
+	Children[6] = new FOctree(FAABB(FVector(BoundingBox.Min.X, BoundingBox.Min.Y, Center.Z), FVector(Center.X, Center.Y, BoundingBox.Max.Z)), Depth + 1); // Bottom-Front-Left
+	Children[7] = new FOctree(FAABB(FVector(Center.X, BoundingBox.Min.Y, Center.Z), FVector(BoundingBox.Max.X, Center.Y, BoundingBox.Max.Z)), Depth + 1); // Bottom-Front-Right
 
 	TArray<UPrimitiveComponent*> primitivesToMove = Primitives;
 	primitivesToMove.push_back(InPrimitive);

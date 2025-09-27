@@ -10,6 +10,9 @@ struct FAABB : public IBoundingVolume
 	FAABB() : Min(0.f, 0.f, 0.f), Max(0.f, 0.f, 0.f) {}
 	FAABB(const FVector& InMin, const FVector& InMax) : Min(InMin), Max(InMax) {}
 
+	bool IsIntersected(const FAABB& Other) const;
+
 	bool RaycastHit() const override;
+
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
 };

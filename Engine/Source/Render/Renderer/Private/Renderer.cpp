@@ -246,17 +246,15 @@ void URenderer::Update()
 		// 1. 현재 뷰포트의 영역을 설정합니다.
 		ViewportClient.Apply(GetDeviceContext());
 
-		// 2. 현재 뷰포트의 카메라 정보를 가져옵니다.
+		// 2. 카메라의 View/Projection 행렬로 상수 버퍼를 업데이트합니다.
 		UCamera* CurrentCamera = &ViewportClient.Camera;
-
-		// 3. 해당 카메라의 View/Projection 행렬로 상수 버퍼를 업데이트합니다.
 		CurrentCamera->Update(ViewportClient.GetViewportInfo());
 		UpdateConstantBuffer(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true);
 
-		// 4. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
+		// 3. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
 		RenderLevel(CurrentCamera);
 
-		// 5. 에디터를 렌더링합니다.
+		// 4. 에디터를 렌더링합니다.
 		ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
 	}
 
