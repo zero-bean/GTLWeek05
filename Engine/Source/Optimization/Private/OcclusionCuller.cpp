@@ -42,7 +42,7 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
     RasterizeOccluders(SelectedOccluders, CameraPos);
 
     // 3. 가시성 테스트
-    TArray<TObjectPtr<UPrimitiveComponent>> VisibleMeshComponents;
+    VisibleMeshComponents.clear();
     for (auto& AABBData : CachedAABBs)
     {
         if (IsMeshVisible(AABBData))
@@ -56,8 +56,7 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
 
 TArray<UPrimitiveComponent*> COcclusionCuller::SelectOccluders(const TArray<UPrimitiveComponent*>& Candidates, const FVector& CameraPos)
 {
-    TArray<UPrimitiveComponent*> FilteredOccluders;
-    FilteredOccluders.reserve(Candidates.size());
+    FilteredOccluders.clear();
 
     for (UPrimitiveComponent* Occluder : Candidates)
     {
@@ -400,7 +399,7 @@ TArray<FVector> COcclusionCuller::ConvertAABBToTriangles(UPrimitiveComponent* Pr
     const FVector& WorldCenter = CachedAABBs[AABBIndexMap[Prim]].Center;
     FVector Extent = (CachedAABBs[AABBIndexMap[Prim]].Min - CachedAABBs[AABBIndexMap[Prim]].Max) * 0.5f;
 
-    constexpr float OccluderScale = 0.6f;
+    constexpr float OccluderScale = 0.55f;
 
     FVector WorldMin = WorldCenter - Extent * OccluderScale;
     FVector WorldMax = WorldCenter + Extent * OccluderScale;
