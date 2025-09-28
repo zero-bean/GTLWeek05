@@ -6,6 +6,7 @@ class AActor;
 class ULevel;
 class UCamera;
 class UGizmo;
+class FOctree;
 struct FRay;
 
 class UObjectPicker : public UObject
@@ -15,6 +16,8 @@ public:
 	UPrimitiveComponent* PickPrimitive(UCamera* InActiveCamera, const FRay& WorldRay, TArray<UPrimitiveComponent*> Candidate, float* Distance);
 	void PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint);
 	bool IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane);
+
+	bool FindCandidateFromOctree(FOctree* Node, const FRay& WorldRay, TArray<UPrimitiveComponent*>& OutCandidate);
 
 private:
 	bool IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& WorldRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);

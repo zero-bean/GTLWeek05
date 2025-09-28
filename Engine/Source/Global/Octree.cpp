@@ -16,13 +16,13 @@ namespace
 FOctree::FOctree()
 	: BoundingBox(), Depth(0)
 {
-	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
+	Children.resize(8);
 }
 
 FOctree::FOctree(const FAABB& InBoundingBox, int InDepth)
 	: BoundingBox(InBoundingBox), Depth(InDepth)
 {
-	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
+	Children.resize(8);
 }
 
 FOctree::FOctree(const FVector& InPosition, float InSize, int InDepth)
@@ -31,7 +31,7 @@ FOctree::FOctree(const FVector& InPosition, float InSize, int InDepth)
 	const float HalfSize = InSize * 0.5f;
 	BoundingBox.Min = InPosition - FVector(HalfSize, HalfSize, HalfSize);
 	BoundingBox.Max = InPosition + FVector(HalfSize, HalfSize, HalfSize);
-	for (int Index = 0; Index < 8; ++Index) { Children[Index] = nullptr; }
+	Children.resize(8);
 }
 
 FOctree::~FOctree()

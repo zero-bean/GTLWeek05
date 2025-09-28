@@ -8,6 +8,7 @@
 #include "ImGui/imgui.h"
 #include "Level/Public/Level.h"
 #include "Global/Quaternion.h"
+#include "Global/Octree.h"
 #include "Physics/Public/AABB.h"
 
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
@@ -29,10 +30,8 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(UCamera* InActiveCamera, const
 
 	for (UPrimitiveComponent* Primitive : Candidate)
 	{
-		if (Primitive->GetPrimitiveType() == EPrimitiveType::BillBoard)
-		{
-			continue;
-		}
+		if (Primitive->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
+
 		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 		if (IsRayPrimitiveCollided(InActiveCamera, WorldRay, Primitive, ModelMat, &PrimitiveDistance))
 			//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
@@ -300,4 +299,35 @@ bool UObjectPicker::IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoi
 
 
 	return true;
+}
+
+/**
+ * 레이와 충돌하는 후보 노드들을 찾아 그 안의 프리미티브들을 OutCandidate에 담습니다.
+ * @return 후보를 찾았으면 true, 못 찾았으면 false를 반환합니다.
+ */
+bool UObjectPicker::FindCandidateFromOctree(FOctree* Node, const FRay& WorldRay, TArray<UPrimitiveComponent*>& OutCandidate)
+{
+	// 0. nullptr인지 검사.
+	if (!Node) { return false; }
+
+	// 1. 레이가 현재 노드와 겹치지 않으면 검사 생략.
+	if (CheckIntersectionRayBox(WorldRay, Node->GetBoundingBox()) == false) { return false; }
+
+	// 2. 노드와 레이가 교차하고, 자식 노드가 없다면 추가 후 종료.
+	if (Node->IsLeafNode())
+	{
+		Node->GetAllPrimitives(OutCandidate);
+		return true;
+	}
+	// 3. 2. 노드와 레이가 교차하고, 자식 노드가 있다면 자식 순회.
+	else
+	{
+		for (FOctree* Child : Node->GetChildren())
+		{
+			FindCandidateFromOctree(Child, WorldRay, OutCandidate);
+		}
+	}
+
+	// 모든 자식 노드를 검사했지만 후보를 찾지 못했으면 false를 반환.
+	return false;
 }

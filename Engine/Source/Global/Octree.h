@@ -24,7 +24,7 @@ public:
 	const FAABB& GetBoundingBox() const { return BoundingBox; }
 	bool IsLeafNode() const { return IsLeaf(); }
 	const TArray<UPrimitiveComponent*>& GetPrimitives() const { return Primitives; }
-	FOctree* const* GetChildren() const { return Children; }
+	TArray<FOctree*>& GetChildren() { return Children; }
 
 private:
 	bool IsLeaf() const { return Children[0] == nullptr; }
@@ -34,5 +34,5 @@ private:
 	FAABB BoundingBox;
 	int Depth;                       
 	TArray<UPrimitiveComponent*> Primitives;
-	FOctree* Children[8];
+	TArray<FOctree*> Children;
 };
