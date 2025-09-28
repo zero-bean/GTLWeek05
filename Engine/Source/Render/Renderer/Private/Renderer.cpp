@@ -330,7 +330,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
 		for (auto& Prim : FinalVisiblePrims) { FinalVisibleMeshes.push_back(Cast<UStaticMeshComponent>(Prim)); }
 		RenderStaticMeshes(FinalVisibleMeshes);
-		UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
+		//UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
