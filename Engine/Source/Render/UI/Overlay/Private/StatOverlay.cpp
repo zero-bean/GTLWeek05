@@ -63,6 +63,7 @@ void UStatOverlay::Render()
 	if (IsStatEnabled(EStatType::FPS))		{ RenderFPS(); }
 	if (IsStatEnabled(EStatType::Memory))	{ RenderMemory(); }
 	if (IsStatEnabled(EStatType::Picking))	{ RenderPicking(); }
+	if (IsStatEnabled(EStatType::Time))	{ RenderTimeInfo(); }
 
 	D2DRenderTarget->EndDraw();
 }
@@ -106,7 +107,7 @@ void UStatOverlay::RenderFPS()
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	CurrentFPS = TimeManager.GetFPS();
-	FrameTime = (CurrentFPS > 0.0f) ? (1000.0f / CurrentFPS) : 0.0f;
+	FrameTime = TimeManager.GetDeltaTime() * 1000;
 
 	char FpsBuffer[64];
 	sprintf_s(FpsBuffer, sizeof(FpsBuffer), "FPS: %.1f (%.2f ms)", CurrentFPS, FrameTime);
@@ -151,6 +152,36 @@ void UStatOverlay::RenderPicking()
 	else if (LastPickingTimeMs > 1.0f) { R = 1.0f; G = 1.0f; B = 0.0f; }  // Yellow for > 1ms
 
 	RenderText(PickingText, OverlayX, OverlayY + OffsetY, R, G, B);
+}
+
+void UStatOverlay::RenderTimeInfo()
+{   
+	const TArray<FString> ProfileKeys = FScopeCycleCounter::GetTimeProfileKeys();
+
+	float OffsetY = 0.0f;
+	if (IsStatEnabled(EStatType::FPS)) OffsetY += 20.0f;
+	if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
+	if (IsStatEnabled(EStatType::Picking)) OffsetY += 20.0f;
+
+	float CurrentY = OverlayY + OffsetY;
+	const float LINE_HEIGHT = 20.0f;
+
+	for (const std::string& Key : ProfileKeys)
+	{
+		const FTimeProfile& Profile = FScopeCycleCounter::GetTimeProfile(Key);
+
+		float AverageTimeMs = Profile.Milliseconds;
+		char TimeBuffer[128];
+		sprintf_s(TimeBuffer, sizeof(TimeBuffer), "%s: %.2f ms", Key.c_str(), AverageTimeMs);
+
+		FString TimeText = TimeBuffer;
+
+		float R = 0.8f, G = 0.8f, B = 0.8f;
+		if (AverageTimeMs > 1.0f) { R = 1.0f; G = 1.0f; B = 0.0f; } 
+
+		RenderText(TimeText, OverlayX, CurrentY, R, G, B);
+		CurrentY += LINE_HEIGHT;
+	}
 }
 
 void UStatOverlay::RenderText(const FString& Text, float X, float Y, float R, float G, float B)

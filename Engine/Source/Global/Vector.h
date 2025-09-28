@@ -127,6 +127,17 @@ struct FVector
 	{
 		return FVector{ Rad.X * (180.0f / PI), Rad.Y * (180.0f / PI), Rad.Z * (180.0f / PI) };
 	}
+	static float Dist(const FVector& V1, const FVector& V2) 
+	{
+		FVector Diff = V1 - V2;
+		return Diff.Length();
+	}
+	static float DistSquared(const FVector& V1, const FVector& V2) 
+	{
+		FVector Diff = V1 - V2;
+		return Diff.LengthSquared();
+	}
+
 
 	// Constant Vector (definition from UE5)
 	static FVector ZeroVector() { return {0.0f, 0.0f, 0.0f}; }
@@ -199,12 +210,13 @@ struct FVector2
 
 FArchive& operator<<(FArchive& Ar, FVector2& Vector);
 
-struct FVector4
+struct alignas(16) FVector4
 {
-	float X;
-	float Y;
-	float Z;
-	float W;
+	union
+	{
+		struct { float X, Y, Z, W; };
+		__m128 V;
+	};
 
 	/**
 	 * @brief FVector 기본 생성자

@@ -1,6 +1,14 @@
 #include "pch.h"
 #include "Physics/Public/AABB.h"
 
+float FAABB::GetCenterDistanceSquared(const FVector& Point) const
+{
+    FVector Center = GetCenter();
+    FVector Diff = Center - Point;
+
+    return (Diff.X * Diff.X) + (Diff.Y * Diff.Y) + (Diff.Z * Diff.Z);
+}
+
 bool FAABB::IsContains(const FAABB& Other) const
 {
     return (Other.Min.X >= Min.X && Other.Max.X <= Max.X) &&
@@ -76,4 +84,33 @@ FAABB Union(const FAABB& Box1, const FAABB& Box2)
         std::max(Box1.Max.Z, Box2.Max.Z)
     );
     return FAABB(NewMin, NewMax);
+}
+
+
+float FAABB::GetDistanceSquaredToPoint(const FVector& Point) const
+{
+    float SquaredDistance = 0.0f;
+
+    if (Point.X < Min.X) {
+        SquaredDistance += (Min.X - Point.X) * (Min.X - Point.X);
+    }
+    else if (Point.X > Max.X) {
+        SquaredDistance += (Point.X - Max.X) * (Point.X - Max.X);
+    }
+
+    if (Point.Y < Min.Y) {
+        SquaredDistance += (Min.Y - Point.Y) * (Min.Y - Point.Y);
+    }
+    else if (Point.Y > Max.Y) {
+        SquaredDistance += (Point.Y - Max.Y) * (Point.Y - Max.Y);
+    }
+
+    if (Point.Z < Min.Z) {
+        SquaredDistance += (Min.Z - Point.Z) * (Min.Z - Point.Z);
+    }
+    else if (Point.Z > Max.Z) {
+        SquaredDistance += (Point.Z - Max.Z) * (Point.Z - Max.Z);
+    }
+
+    return SquaredDistance;
 }

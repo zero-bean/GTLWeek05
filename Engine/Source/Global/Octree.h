@@ -20,6 +20,7 @@ public:
 	void Clear();
 
 	void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) const;
+	TArray<UPrimitiveComponent*> FindNearestPrimitives(const FVector& FindPos, uint32 MaxPrimitiveCount);
 
 	const FAABB& GetBoundingBox() const { return BoundingBox; }
 	bool IsLeafNode() const { return IsLeaf(); }
@@ -36,3 +37,9 @@ private:
 	TArray<UPrimitiveComponent*> Primitives;
 	FOctree* Children[8];
 };
+
+using FNodeQueue = std::priority_queue<
+	std::pair<float, FOctree*>,
+	std::vector<std::pair<float, FOctree*>>,
+	std::greater<std::pair<float, FOctree*>>
+>;

@@ -38,6 +38,7 @@
 #include "Source/Global/CoreTypes.h"
 #include "Source/Global/Macro.h"
 #include "Source/Global/Function.h"
+#include "Utility/Public/ScopeCycleCounter.h"
 
 using std::clamp;
 using std::unordered_map;
