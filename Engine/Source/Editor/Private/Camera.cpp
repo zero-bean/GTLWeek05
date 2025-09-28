@@ -119,7 +119,7 @@ void UCamera::Update(const D3D11_VIEWPORT& InViewport)
     {
         ViewVolumeCuller.Cull(
             CurrentLevel->GetStaticOctree(),
-            CurrentLevel->GetDynamicOctree(),
+            CurrentLevel->GetDynamicPrimitives(),
             ViewProjConstants
         );
     }

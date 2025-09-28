@@ -9,6 +9,12 @@ IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 UPrimitiveComponent::UPrimitiveComponent()
 {
 	ComponentType = EComponentType::Primitive;
+	bCanEverTick = true;
+}
+
+void UPrimitiveComponent::TickComponent()
+{
+	Super::TickComponent();
 }
 
 void UPrimitiveComponent::OnSelected()
@@ -19,30 +25,6 @@ void UPrimitiveComponent::OnSelected()
 void UPrimitiveComponent::OnDeselected()
 {
 	SetColor({ 0.f, 0.f, 0.f, 0.f });
-}
-
-void USceneComponent::SetRelativeLocation(const FVector& Location)
-{
-	RelativeLocation = Location;
-	MarkAsDirty();
-}
-
-void USceneComponent::SetRelativeRotation(const FVector& Rotation)
-{
-	RelativeRotation = Rotation;
-	MarkAsDirty();
-}
-void USceneComponent::SetRelativeScale3D(const FVector& Scale)
-{
-	FVector ActualScale = Scale;
-	if (ActualScale.X < MinScale)
-		ActualScale.X = MinScale;
-	if (ActualScale.Y < MinScale)
-		ActualScale.Y = MinScale;
-	if (ActualScale.Z < MinScale)
-		ActualScale.Z = MinScale;
-	RelativeScale3D = ActualScale;
-	MarkAsDirty();
 }
 
 void USceneComponent::SetUniformScale(bool bIsUniform)

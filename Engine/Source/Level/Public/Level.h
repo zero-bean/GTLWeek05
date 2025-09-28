@@ -52,6 +52,8 @@ public:
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
+	void RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive);
+
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
@@ -65,13 +67,15 @@ public:
 	uint64 GetShowFlags() const { return ShowFlags; }
 	void SetShowFlags(uint64 InShowFlags) { ShowFlags = InShowFlags; }
 
+	void UpdatePrimitiveInOctree(UPrimitiveComponent* InComponent);
+
 	FOctree* GetStaticOctree() { return StaticOctree; }
-	FOctree* GetDynamicOctree() { return DynamicOctree; }
+	TArray<UPrimitiveComponent*>& GetDynamicPrimitives() { return DynamicPrimitives; }
 
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;
-	FOctree* DynamicOctree = nullptr;
+	TArray<UPrimitiveComponent*> DynamicPrimitives;
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;

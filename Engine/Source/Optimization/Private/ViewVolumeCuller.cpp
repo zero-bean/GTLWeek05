@@ -14,7 +14,7 @@ namespace
 	}
 }
 
-void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const FViewProjConstants& ViewProjConstants)
+void ViewVolumeCuller::Cull(FOctree* StaticOctree, TArray<UPrimitiveComponent*>& DynamicPrimitives, const FViewProjConstants& ViewProjConstants)
 {
 	// 이전의 Cull했던 정보를 지운다.
 	RenderableObjects.clear();
@@ -46,9 +46,12 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 		CullOctree(StaticOctree);
 	}
 
-	if (DynamicOctree)
+	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
 	{
-		CullOctree(DynamicOctree);
+		if (Primitive && CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
+		{
+			RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+		}
 	}
 }
 

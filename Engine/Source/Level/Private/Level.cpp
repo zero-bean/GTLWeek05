@@ -23,7 +23,6 @@ ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {
 	StaticOctree = new FOctree(FVector(0, 0, -5), 75, 0);
-	DynamicOctree = new FOctree(FVector(0, 0, 0), 75, 0);
 }
 
 ULevel::~ULevel()
@@ -139,7 +138,7 @@ void ULevel::Cleanup()
 
 	// 3. 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
 	SafeDelete(StaticOctree);
-	SafeDelete(DynamicOctree);
+	DynamicPrimitives.clear();
 	ActorsToDelete.clear();
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
@@ -173,6 +172,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 	return nullptr;
 }
 
+void ULevel::RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive)
+{
+}
+
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;
@@ -184,8 +187,7 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
 
-		PrimitiveComponent->GetMobility() == EComponentMobility::Static ?
-			StaticOctree->Insert(PrimitiveComponent) : DynamicOctree->Insert(PrimitiveComponent);
+		StaticOctree->Insert(PrimitiveComponent);
 	}
 }
 
@@ -226,13 +228,16 @@ bool ULevel::DestroyActor(AActor* InActor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		if (PrimitiveComponent->GetMobility() == EComponentMobility::Static)
+		if (StaticOctree)
 		{
-			if (StaticOctree) { StaticOctree->Remove(PrimitiveComponent); }
-		}
-		else
-		{
-			if (DynamicOctree) { DynamicOctree->Remove(PrimitiveComponent); }
+			if (StaticOctree->Remove(PrimitiveComponent) == false)
+			{
+				if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), PrimitiveComponent); It != DynamicPrimitives.end())
+				{
+					*It = std::move(DynamicPrimitives.back());
+					DynamicPrimitives.pop_back();
+				}
+			}
 		}
 	}
 
@@ -286,6 +291,14 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	if (SelectedActor == InActor)
 	{
 		SelectedActor = nullptr;
+	}
+}
+
+void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* InComponent)
+{
+	if(StaticOctree->Remove(InComponent))
+	{
+		DynamicPrimitives.push_back(InComponent);
 	}
 }
 

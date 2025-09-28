@@ -4,13 +4,6 @@
 namespace json { class JSON; }
 using JSON = json::JSON;
 
-enum class EComponentMobility : uint8
-{
-	Static,
-	Dynamic,
-};
-
-
 UCLASS()
 class USceneComponent : public UActorComponent
 {
@@ -43,15 +36,6 @@ public:
 
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
-
-	EComponentMobility GetMobility() const { return Mobility; }
-
-protected:
-	// 해당 컴포넌트의 움직임을 감지하는 객체
-	EComponentMobility Mobility = EComponentMobility::Static;
-	FVector PreviousRelativeLocation;
-	FVector PreviousRelativeRotation;
-	FVector PreviousRelativeScale3D;
 
 private:
 	mutable bool bIsTransformDirty = true;

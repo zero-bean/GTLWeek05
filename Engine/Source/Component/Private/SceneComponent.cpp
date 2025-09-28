@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "Component/Public/SceneComponent.h"
-
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Utility/Public/JsonSerializer.h"
+#include "Manager/Level/Public/LevelManager.h"
+#include "Component/Public/PrimitiveComponent.h"
+#include "Level/Public/Level.h"
 
 #include <json.hpp>
 
@@ -15,39 +17,12 @@ USceneComponent::USceneComponent()
 
 void USceneComponent::BeginPlay()
 {
-	PreviousRelativeLocation = RelativeLocation;
-	PreviousRelativeRotation = RelativeRotation;
-	PreviousRelativeScale3D = RelativeScale3D;
+
 }
 
 void USceneComponent::TickComponent()
 {
 	Super::TickComponent();
-
-	// 한번이라도 움직인 경우 Mobility를 Dynamic으로 설정하고 더 이상 Static으로 되돌리지 않습니다.
-	if (Mobility == EComponentMobility::Static)
-	{
-		if (PreviousRelativeLocation != RelativeLocation ||
-			PreviousRelativeRotation != RelativeRotation ||
-			PreviousRelativeScale3D != RelativeScale3D)
-		{
-			Mobility = EComponentMobility::Dynamic;
-		}
-	}
-	else if (Mobility == EComponentMobility::Dynamic)
-	{
-		if (PreviousRelativeLocation == RelativeLocation ||
-			PreviousRelativeRotation == RelativeRotation ||
-			PreviousRelativeScale3D == RelativeScale3D)
-		{
-			EComponentMobility::Static;
-		}
-	}
-
-	// 4. 다음 프레임에서 비교할 수 있도록 현재 상태를 "이전 상태"로 저장
-	PreviousRelativeLocation = RelativeLocation;
-	PreviousRelativeRotation = RelativeRotation;
-	PreviousRelativeScale3D = RelativeScale3D;
 }
 
 void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
@@ -116,5 +91,38 @@ void USceneComponent::MarkAsDirty()
 	for (USceneComponent* Child : Children)
 	{
 		Child->MarkAsDirty();
+	}
+}
+
+void USceneComponent::SetRelativeLocation(const FVector& Location)
+{
+	RelativeLocation = Location;
+	MarkAsDirty();
+
+	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
+	{
+		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+	}
+}
+
+void USceneComponent::SetRelativeRotation(const FVector& Rotation)
+{
+	RelativeRotation = Rotation;
+	MarkAsDirty();
+
+	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
+	{
+		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+	}
+}
+
+void USceneComponent::SetRelativeScale3D(const FVector& Scale)
+{
+	RelativeScale3D = Scale;
+	MarkAsDirty();
+
+	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
+	{
+		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }

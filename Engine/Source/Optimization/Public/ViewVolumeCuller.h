@@ -65,7 +65,7 @@ public:
 
 	void Cull(
         FOctree* StaticOctree,
-        FOctree* DynamicOctree,
+        TArray<UPrimitiveComponent*>& DynamicPrimitives,
 		const FViewProjConstants& ViewProjConstants
 	);
 
