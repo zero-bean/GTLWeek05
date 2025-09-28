@@ -14,9 +14,13 @@ struct FAABB : public IBoundingVolume
 
 	bool IsIntersected(const FAABB& Other) const;
 
+	float GetSurfaceArea() const;
+
 	bool RaycastHit() const override;
 
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
 };
 
 bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box);
+
+FAABB Union(const FAABB& Box1, const FAABB& Box2);

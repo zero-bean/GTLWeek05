@@ -9,6 +9,7 @@
 #include "Level/Public/Level.h"
 #include "Global/Quaternion.h"
 #include "Physics/Public/AABB.h"
+#include "Component/Mesh/Public/StaticMeshComponent.h"
 
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
@@ -33,6 +34,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(UCamera* InActiveCamera, const
 		{
 			continue;
 		}
+
 		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 		if (IsRayPrimitiveCollided(InActiveCamera, WorldRay, Primitive, ModelMat, &PrimitiveDistance))
 			//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
@@ -185,7 +187,52 @@ bool UObjectPicker::IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& 
 
 	const uint32 NumVertices = Primitive->GetNumVertices();
 	const uint32 NumIndices = Primitive->GetNumIndices();
+	
+	// 스태틱메시 컴포넌트인 경우 BVH로 충돌 검사
+	//FScopeCycleCounter Counter{ TStatId{} };
+	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Primitive))
+	{
+		if (FStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh()->GetStaticMeshAsset())
+		{
+			// BVH를 이용하여 Ray와 교차하는 후보 삼각형들 추려내기
+			TArray<int32> CandidateTriangleIndices;
+			if (StaticMesh->BVH.TraverseRay(ModelRay, CandidateTriangleIndices))
+			{
+				// BVH에서 추려낸 후보 삼각형들만 정밀 검사
+				const TArray<FNormalVertex>& Vertices = StaticMesh->Vertices;
+				const TArray<uint32>& Indices = StaticMesh->Indices;
 
+				for (int32 TriangleBaseIndex : CandidateTriangleIndices)
+				{
+					// 인덱스 유효성 검사
+					if (TriangleBaseIndex < 0 || TriangleBaseIndex + 2 >= static_cast<int32>(Indices.size()))
+					{
+						continue;
+					}
+
+					FVector TriangleVertices[3] = {
+						Vertices[Indices[TriangleBaseIndex + 0]].Position,
+						Vertices[Indices[TriangleBaseIndex + 1]].Position,
+						Vertices[Indices[TriangleBaseIndex + 2]].Position
+					};
+
+					if (IsRayTriangleCollided(InActiveCamera, ModelRay, TriangleVertices[0], TriangleVertices[1], TriangleVertices[2], ModelMatrix, &Distance))
+					{
+						bIsHit = true;
+						if (Distance < *ShortestDistance)
+						{
+							*ShortestDistance = Distance;
+						}
+					}
+				}
+				//float ElapsedMS = FWindowsPlatformTime::ToMilliseconds(Counter.Finish());
+				//UE_LOG("BVH Raycast Time: %f ms, Candidates: %d", ElapsedMS, CandidateTriangleIndices.size());
+				return bIsHit; // BVH를 사용한 경우 일반적인 루프는 건너뜀
+			}
+		}
+	}
+	
+	//FScopeCycleCounter Counter2{ TStatId{} };
 	const TArray<FNormalVertex>* Vertices = Primitive->GetVerticesData();
 	const TArray<uint32>* Indices = Primitive->GetIndicesData();
 
@@ -218,7 +265,8 @@ bool UObjectPicker::IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& 
 			}
 		}
 	}
-
+	//float ElapsedMS2 = FWindowsPlatformTime::ToMilliseconds(Counter2.Finish());
+	//UE_LOG("Raycast Time: %f ms", ElapsedMS2);
 	return bIsHit;
 }
 

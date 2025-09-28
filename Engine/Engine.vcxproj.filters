@@ -350,6 +350,9 @@
     <ClCompile Include="Source\Global\Octree.cpp">
       <Filter>Source\Global</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Global\BVH.cpp">
+      <Filter>Source\Global</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -729,6 +732,9 @@
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Global\Octree.h">
+      <Filter>Source\Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Global\BVH.h">
       <Filter>Source\Global</Filter>
     </ClInclude>
   </ItemGroup>
