@@ -59,54 +59,58 @@ const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableOb
 
 void ViewVolumeCuller::CullOctree(FOctree* Octree)
 {
-	if (!Octree)
-	{
-		return;
-	}
+	if (!Octree) { return; }
 
-	// 1. 현재 옥트리 노드(자신)의 경계와 절두체의 관계를 확인합니다.
-	EBoundCheckResult result = CurrentFrustum.CheckIntersection(Octree->GetBoundingBox());
+	// 0. 탐색할 노드를 추가합니다.
+	TDeque<FOctree*> VisitngNodes;
+	VisitngNodes.push_back(Octree);
 
-	// Case 1. 노드가 절두체 밖에 있다면, 즉시 종료합니다. 
-	if (result == EBoundCheckResult::Outside)
+	while (VisitngNodes.empty() == false)
 	{
-		return;
-	}
-	// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 종료합니다.
-	else if (result == EBoundCheckResult::Inside)
-	{
-		TArray<UPrimitiveComponent*> Primitives;
-		Octree->GetAllPrimitives(Primitives);
-		for (UPrimitiveComponent* Primitive : Primitives)
+		FOctree* CurrentNode = VisitngNodes.back();
+		VisitngNodes.pop_back();
+
+		// 현재 옥트리 노드(자신)의 경계와 절두체의 관계를 확인합니다.
+		EBoundCheckResult result = CurrentFrustum.CheckIntersection(CurrentNode->GetBoundingBox());
+	
+		// Case 1. 노드가 절두체 밖에 있다면, 즉시 다음 노드로 넘어갑니다. 
+		if (result == EBoundCheckResult::Outside)
 		{
-			RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+			continue;
 		}
-		return;
-	}
-	// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.
-	else if (result == EBoundCheckResult::Intersect)
-	{
-		for (UPrimitiveComponent* Primitive : Octree->GetPrimitives())
+		// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 다음 노드로 넘어갑니다.
+		else if (result == EBoundCheckResult::Inside)
 		{
-			if (Primitive)
+			TArray<UPrimitiveComponent*> Primitives;
+			CurrentNode->GetAllPrimitives(Primitives);
+			RenderableObjects.insert(RenderableObjects.end(), Primitives.begin(), Primitives.end());
+			continue;
+		}
+		// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.
+		else if (result == EBoundCheckResult::Intersect)
+		{
+			// 노드가 겹치면, 현재 노드에 있는 프리미티브들만 개별적으로 검사합니다.
+			for (UPrimitiveComponent* Primitive : CurrentNode->GetPrimitives())
 			{
-				if (CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
+				if (Primitive && 
+					CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
 				{
 					RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
 				}
 			}
-		}
 
-		// 2. 자식 노드들에게 재귀적으로 검사를 계속 진행시킵니다.
-		if (!Octree->IsLeafNode())
-		{
-			for (int Index = 0; Index < 8; ++Index)
+			// 2. 자식 노드들을 탐색 대상에 추가합니다.
+			if (CurrentNode->IsLeafNode() == false)
 			{
-				if (Octree->GetChildren()[Index])
+				const TArray<FOctree*>& Children = CurrentNode->GetChildren();
+				for (FOctree* Child : Children)
 				{
-					CullOctree(Octree->GetChildren()[Index]);
+					if (Child != nullptr) { VisitngNodes.push_back(Child); }
 				}
 			}
+
 		}
+
 	}
+
 }

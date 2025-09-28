@@ -22,8 +22,8 @@
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {
-	StaticOctree = new FOctree(FVector(0,0, 0), 500, 0);
-	DynamicOctree = new FOctree(FVector(0, 0, 0), 500, 0);
+	StaticOctree = new FOctree(FVector(0,0, 0), 75, 0);
+	DynamicOctree = new FOctree(FVector(0, 0, 0), 75, 0);
 }
 
 ULevel::~ULevel()
