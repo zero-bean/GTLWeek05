@@ -1,8 +1,0 @@
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Font\Pretendard-Regular.otf
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Icon\project_gtl.ico
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Shader\BatchLinePS.hlsl
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Shader\BatchLineVS.hlsl
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Shader\SampleShader.hlsl
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Shader\ShaderFont.hlsl
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Shader\TextureShader.hlsl
-C:\Users\Jungle\Documents\GitHub\GTLWeek05\Build\Develop\Asset\Texture\DejaVu Sans Mono.png
