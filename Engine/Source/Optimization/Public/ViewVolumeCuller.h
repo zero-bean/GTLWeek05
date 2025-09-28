@@ -23,11 +23,7 @@ struct FFrustum
         for (int i = 0; i < 6; ++i)
         {
             const FVector4& P = Planes[i];
-            FVector Farthest(
-                P.X > 0 ? BBox.Max.X : BBox.Min.X,
-                P.Y > 0 ? BBox.Max.Y : BBox.Min.Y,
-                P.Z > 0 ? BBox.Max.Z : BBox.Min.Z
-            );
+
             FVector Closest(
                 P.X > 0 ? BBox.Min.X : BBox.Max.X,
                 P.Y > 0 ? BBox.Min.Y : BBox.Max.Y,
@@ -36,17 +32,21 @@ struct FFrustum
 
             if (P.Dot3(Closest) + P.W > 0)
             {
-                Result = EBoundCheckResult::Outside;
-                break;
+                return EBoundCheckResult::Outside; 
             }
-            else if (P.Dot3(Farthest) + P.W < 0)
+
+            FVector Farthest(
+                P.X > 0 ? BBox.Max.X : BBox.Min.X,
+                P.Y > 0 ? BBox.Max.Y : BBox.Min.Y,
+                P.Z > 0 ? BBox.Max.Z : BBox.Min.Z
+            );
+
+            if (P.Dot3(Farthest) + P.W < 0)
             {
-               
+                continue; 
             }
-            else
-            {
-                Result = EBoundCheckResult::Intersect;
-            }
+
+            Result = EBoundCheckResult::Intersect;
         }
 
         return Result;

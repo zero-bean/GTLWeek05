@@ -427,7 +427,6 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 			if (ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 			{
 				TArray<UPrimitiveComponent*> Candidate;
-				FScopeCycleCounter PickCounter{ TStatId() }; // 피킹 시간 측정 시작
 
 				ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
 				ObjectPicker.FindCandidateFromOctree(CurrentLevel->GetStaticOctree(), WorldRay, Candidate);

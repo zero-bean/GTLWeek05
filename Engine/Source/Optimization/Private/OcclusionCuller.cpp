@@ -6,7 +6,7 @@
 #include "Global/Octree.h"
 
 COcclusionCuller::COcclusionCuller()
-{
+{ 
     CPU_ZBuffer.resize(Z_BUFFER_SIZE);
     OriginalSamples.reserve(19);
 }
