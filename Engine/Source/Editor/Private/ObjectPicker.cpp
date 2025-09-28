@@ -8,6 +8,7 @@
 #include "ImGui/imgui.h"
 #include "Level/Public/Level.h"
 #include "Global/Quaternion.h"
+#include "Physics/Public/AABB.h"
 
 FRay UObjectPicker::GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive)
 {
@@ -33,8 +34,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(UCamera* InActiveCamera, const
 			continue;
 		}
 		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
-		FRay ModelRay = GetModelRay(WorldRay, Primitive);
-		if (IsRayPrimitiveCollided(InActiveCamera, ModelRay, Primitive, ModelMat, &PrimitiveDistance))
+		if (IsRayPrimitiveCollided(InActiveCamera, WorldRay, Primitive, ModelMat, &PrimitiveDistance))
 			//Ray와 Primitive가 충돌했다면 거리 테스트 후 가까운 Actor Picking
 		{
 			if (PrimitiveDistance < ShortestDistance)
@@ -166,17 +166,28 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 }
 
 //개별 primitive와 ray 충돌 검사
-bool UObjectPicker::IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance)
-
+bool UObjectPicker::IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& WorldRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance)
 {
+	// 1. World Bounding Box를 통해 rough한 충돌 체크
+	FVector Min, Max;
+	Primitive->GetWorldAABB(Min, Max);
+	FAABB WorldAABB(Min, Max);
+	if (!CheckIntersectionRayBox(WorldRay, WorldAABB))
+	{
+		return false; //AABB와 충돌하지 않으면 false반환
+	}
+
+	// 2. 삼각형 단위로 정밀 충돌 체크
+	float Distance = D3D11_FLOAT32_MAX; //Distance 초기화
+	bool bIsHit = false;
+
+	FRay ModelRay = GetModelRay(WorldRay, Primitive);
+
 	const uint32 NumVertices = Primitive->GetNumVertices();
 	const uint32 NumIndices = Primitive->GetNumIndices();
 
 	const TArray<FNormalVertex>* Vertices = Primitive->GetVerticesData();
 	const TArray<uint32>* Indices = Primitive->GetIndicesData();
-
-	float Distance = D3D11_FLOAT32_MAX; //Distance 초기화
-	bool bIsHit = false;
 
 	const int32 NumTriangles = (NumIndices > 0) ? (NumIndices / 3) : (NumVertices / 3);
 

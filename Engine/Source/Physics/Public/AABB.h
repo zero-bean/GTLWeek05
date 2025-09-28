@@ -22,3 +22,5 @@ struct FAABB : public IBoundingVolume
 
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
 };
+
+bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box);

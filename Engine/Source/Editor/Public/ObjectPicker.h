@@ -17,7 +17,7 @@ public:
 	bool IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane);
 
 private:
-	bool IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& ModelRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
+	bool IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& WorldRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
 	FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
 	bool IsRayTriangleCollided(UCamera* InActiveCamera, const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
 		const FMatrix& ModelMatrix, float* Distance);
