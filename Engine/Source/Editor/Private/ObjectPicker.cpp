@@ -313,14 +313,15 @@ bool UObjectPicker::FindCandidateFromOctree(FOctree* Node, const FRay& WorldRay,
 	// 1. 레이가 현재 노드와 겹치지 않으면 검사 생략.
 	if (CheckIntersectionRayBox(WorldRay, Node->GetBoundingBox()) == false) { return false; }
 
-	// 2. 노드와 레이가 교차하고, 자식 노드가 없다면 추가 후 종료.
-	if (Node->IsLeafNode())
+	// 2. 현재 노드와 레이가 교차하므로, 이 노드에 직접 포함된 프리미티브들을 후보에 추가합니다.
+	const auto& CurrentNodePrimitives = Node->GetPrimitives();
+	if (!CurrentNodePrimitives.empty())
 	{
-		Node->GetAllPrimitives(OutCandidate);
-		return true;
+		OutCandidate.insert(OutCandidate.end(), CurrentNodePrimitives.begin(), CurrentNodePrimitives.end());
 	}
-	// 3. 2. 노드와 레이가 교차하고, 자식 노드가 있다면 자식 순회.
-	else
+
+	// 3. 리프 노드가 아니라면, 자식 노드를 재귀적으로 탐색합니다.
+	if (!Node->IsLeafNode())
 	{
 		for (FOctree* Child : Node->GetChildren())
 		{
@@ -328,6 +329,5 @@ bool UObjectPicker::FindCandidateFromOctree(FOctree* Node, const FRay& WorldRay,
 		}
 	}
 
-	// 모든 자식 노드를 검사했지만 후보를 찾지 못했으면 false를 반환.
-	return false;
+	return true;
 }
