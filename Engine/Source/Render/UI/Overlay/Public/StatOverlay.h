@@ -9,7 +9,8 @@ enum class EStatType : uint8
 	FPS = 1 << 0,      // 1
 	Memory = 1 << 1,   // 2
 	Picking = 1 << 2,  // 4
-	All = FPS | Memory | Picking // 7
+	Time = 1 << 3,  // 8
+	All = FPS | Memory | Picking | Time
 };
 
 UCLASS()
@@ -31,6 +32,7 @@ public:
 	void ShowFPS(bool bShow) { bShow ? EnableStat(EStatType::FPS) : DisableStat(EStatType::FPS); }
 	void ShowMemory(bool bShow) { bShow ? EnableStat(EStatType::Memory) : DisableStat(EStatType::Memory); }
 	void ShowPicking(bool bShow) { bShow ? EnableStat(EStatType::Picking) : DisableStat(EStatType::Picking); }
+	void ShowTime(bool bShow) { bShow ? EnableStat(EStatType::Time) : DisableStat(EStatType::Time); }
 	void ShowAll(bool bShow) { SetStatType(bShow ? EStatType::All : EStatType::None); }
 
 	// API to update stats
@@ -40,6 +42,7 @@ private:
 	void RenderFPS();
 	void RenderMemory();
 	void RenderPicking();
+	void RenderTimeInfo();
 	void RenderText(const FString& Text, float X, float Y, float R, float G, float B);
 
 	// FPS Stats

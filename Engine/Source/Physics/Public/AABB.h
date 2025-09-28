@@ -10,11 +10,17 @@ struct FAABB : public IBoundingVolume
 	FAABB() : Min(0.f, 0.f, 0.f), Max(0.f, 0.f, 0.f) {}
 	FAABB(const FVector& InMin, const FVector& InMax) : Min(InMin), Max(InMax) {}
 
+	FVector GetCenter() const { return (Min + Max) * 0.5f; }
+
+	float GetCenterDistanceSquared(const FVector& Point) const;
+
 	bool IsContains(const FAABB& Other) const;
 
 	bool IsIntersected(const FAABB& Other) const;
 
 	bool RaycastHit() const override;
+
+	float GetDistanceSquaredToPoint(const FVector& Point) const;
 
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
 };

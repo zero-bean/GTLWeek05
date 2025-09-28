@@ -15,7 +15,8 @@
 #include "Texture/Public/Material.h"
 #include "Texture/Public/Texture.h"
 #include "Texture/Public/TextureRenderProxy.h"
-#include "Source/Component/Mesh/Public/StaticMesh.h"
+#include "Component/Mesh/Public/StaticMesh.h"
+#include "Optimization/Public/OcclusionCuller.h"
 
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
@@ -292,51 +293,58 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
 
 	// Level 없으면 Early Return
-	if (!CurrentLevel)
-	{
-		return;
-	}
+	if (!CurrentLevel) { return; }
 
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
-	TArray<TObjectPtr<UStaticMeshComponent>> MeshComponents;
 
-	// Render Primitive
+	TArray<TObjectPtr<UPrimitiveComponent>> OcclusionCandidates;
+	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
+	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
+
 	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
 	{
-		// TODO(KHJ) Visible 여기서 Control 하고 있긴 한데 맞는지 Actor 단위 렌더링 할 때도 이렇게 써야할지 고민 필요
-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
-		{
-			continue;
-		}
+		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible()) { continue; }
 
-		// Get view mode from editor
-		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
-		if (ViewMode == EViewModeIndex::VMI_Wireframe)
-		{
-			RenderState.CullMode = ECullMode::None;
-			RenderState.FillMode = EFillMode::WireFrame;
-		}
-		ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
-
+		OcclusionCandidates.push_back(PrimitiveComponent);
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
 		case EPrimitiveType::StaticMesh:
-			MeshComponents.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
 			break;
 		default:
-
-			if (ShowFlags & EEngineShowFlags::SF_Primitives)
-			{
-				RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
-			}
+			DefaultPrimitives.push_back(PrimitiveComponent);
 			break;
 		}
 	}
 
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
-		RenderStaticMeshes(MeshComponents);
+		// 오클루전 컬링
+		TIME_PROFILE(Occlusion)
+		static COcclusionCuller Culler;
+		const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
+		Culler.InitializeCuller(ViewProj.View, ViewProj.Projection);
+		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
+		TIME_PROFILE_END(Occlusion)
+
+		TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
+		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
+		for (auto& Prim : FinalVisiblePrims) { FinalVisibleMeshes.push_back(Cast<UStaticMeshComponent>(Prim)); }
+		RenderStaticMeshes(FinalVisibleMeshes);
+		//UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
+
+		for (auto& PrimitiveComponent : DefaultPrimitives)
+		{
+			FRenderState RenderState = PrimitiveComponent->GetRenderState();
+			const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+			if (ViewMode == EViewModeIndex::VMI_Wireframe)
+			{
+				RenderState.CullMode = ECullMode::None;
+				RenderState.FillMode = EFillMode::WireFrame;
+			}
+			ID3D11RasterizerState* LoadedRasterizerState = GetRasterizerState(RenderState);
+
+			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
+		}
 	}
 
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
@@ -440,7 +448,9 @@ void URenderer::RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, cons
  */
 void URenderer::RenderEnd() const
 {
+	TIME_PROFILE(DrawCall)
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
+	TIME_PROFILE_END(DrawCall)
 }
 
 void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)

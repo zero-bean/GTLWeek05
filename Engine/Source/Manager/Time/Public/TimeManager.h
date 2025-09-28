@@ -14,24 +14,19 @@ public:
 	void Update();
 
 	// Getter & Setter
-	float GetFPS() const { return FPS; }
+	float GetFPS() const { return 1 / DeltaTime; }
 	float GetDeltaTime() const { return DeltaTime; }
 	float GetGameTime() const { return GameTime; }
 	bool IsPaused() const { return bIsPaused; }
+	
+	void SetDeltaTime(float InDeltaTime) { DeltaTime = InDeltaTime; }
 
 	void PauseGame() { bIsPaused = true; }
 	void ResumeGame() { bIsPaused = false; }
 
 private:
-	high_resolution_clock::time_point PrevTime;
-	high_resolution_clock::time_point CurrentTime;
 	float GameTime;
 	float DeltaTime;
-
-	float FPS;
-	int FrameCount;
-	float FrameSpeedSamples[Time::FPS_SAMPLE_COUNT];
-	int FrameSpeedSampleIndex;
 
 	bool bIsPaused;
 
