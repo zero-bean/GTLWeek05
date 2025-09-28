@@ -183,8 +183,8 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 
 			CachedWorldMin = WorldMin;
 			CachedWorldMax = WorldMax;
-			bIsAABBCacheDirty = false;
 		}
+		bIsAABBCacheDirty = false;
 	}
 
 	// 캐시된 값 반환

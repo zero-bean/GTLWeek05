@@ -297,7 +297,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 
-	TArray<TObjectPtr<UStaticMeshComponent>> OcclusionCandidates;
+	TArray<TObjectPtr<UPrimitiveComponent>> OcclusionCandidates;
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
 
@@ -305,10 +305,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	{
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible()) { continue; }
 
+		OcclusionCandidates.push_back(PrimitiveComponent);
 		switch (PrimitiveComponent->GetPrimitiveType())
 		{
 		case EPrimitiveType::StaticMesh:
-			OcclusionCandidates.push_back(Cast<UStaticMeshComponent>(PrimitiveComponent));
 			break;
 		default:
 			DefaultPrimitives.push_back(PrimitiveComponent);
@@ -316,23 +316,20 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		}
 	}
 
-	TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
-
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
+		// 오클루전 컬링
 		static COcclusionCuller Culler;
+		const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
+		Culler.InitializeCuller(ViewProj.View, ViewProj.Projection);
+		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
 
-		// 1단계: Culler 초기화 (View/Proj 행렬 설정 및 Z-Buffer 초기화)
-		const FMatrix& ViewMatrix = InCurrentCamera->GetFViewProjConstants().View;
-		const FMatrix& ProjectionMatrix = InCurrentCamera->GetFViewProjConstants().Projection;
-		Culler.InitializeCuller(ViewMatrix, ProjectionMatrix);
+		TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
+		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
+		for (auto& Prim : FinalVisiblePrims) { FinalVisibleMeshes.push_back(Cast<UStaticMeshComponent>(Prim)); }
+		RenderStaticMeshes(FinalVisibleMeshes);
+		// UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
-		// 2~4단계: 오클루전 컬링 실행 (Draw Call 절감)
-		FinalVisibleMeshes = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
-	}
-
-	if (ShowFlags & EEngineShowFlags::SF_Primitives)
-	{
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
@@ -346,10 +343,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
 		}
-
-		RenderStaticMeshes(FinalVisibleMeshes);
 	}
-	// UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisibleMeshes.size());
 
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{

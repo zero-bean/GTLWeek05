@@ -1,6 +1,14 @@
 #include "pch.h"
 #include "Physics/Public/AABB.h"
 
+float FAABB::GetCenterDistanceSquared(const FVector& Point) const
+{
+    FVector Center = GetCenter();
+    FVector Diff = Center - Point;
+
+    return (Diff.X * Diff.X) + (Diff.Y * Diff.Y) + (Diff.Z * Diff.Z);
+}
+
 bool FAABB::IsContains(const FAABB& Other) const
 {
     return (Other.Min.X >= Min.X && Other.Max.X <= Max.X) &&

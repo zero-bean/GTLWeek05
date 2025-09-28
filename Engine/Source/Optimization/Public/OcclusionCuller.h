@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 
 /**
- * @brief Occlusion Culling À» ´ã´çÇÏ´Â Å¬·¡½º
+ * @brief Occlusion Culling ì„ ë‹´ë‹¹í•˜ëŠ” í´ë˜ìŠ¤
  */
-class UStaticMeshComponent;
+class UPrimitiveComponent;
 
 class COcclusionCuller
 {
@@ -11,18 +11,18 @@ public:
     COcclusionCuller();
 
     /**
-     * @brief ÄÃ¸µ ÇÁ·Î¼¼½º¸¦ À§ÇÑ È¯°æÀ» ÃÊ±âÈ­ÇÏ°í View/Projection Çà·ÄÀ» ¼³Á¤.
-     * ¸Å ÇÁ·¹ÀÓ ÄÃ¸µÀ» ½ÃÀÛÇÏ±â Àü¿¡ È£ÃâµÇ¾î¾ß ÇÔ
+     * @brief ì»¬ë§ í”„ë¡œì„¸ìŠ¤ë¥¼ ìœ„í•œ í™˜ê²½ì„ ì´ˆê¸°í™”í•˜ê³  View/Projection í–‰ë ¬ì„ ì„¤ì •.
+     * ë§¤ í”„ë ˆì„ ì»¬ë§ì„ ì‹œì‘í•˜ê¸° ì „ì— í˜¸ì¶œë˜ì–´ì•¼ í•¨
      */
     void InitializeCuller(const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix);
 
      /**
-     * @brief ¿ÀÅ¬·çÀü ÄÃ¸µÀÇ ÀüÃ¼ ÇÁ·Î¼¼½º¸¦ ½ÇÇàÇÏ°í ÃÖÁ¾ °¡½Ã ¿ÀºêÁ§Æ® ¸ñ·ÏÀ» ¹İÈ¯
-     * @param AllStaticMeshes ÇÁ·¯½ºÅÒ ÄÃ¸µÀ» Åë°úÇÑ ¸ğµç ½ºÅÂÆ½ ¸Ş½Ã ¸ñ·Ï
-     * @param CameraPos ÇöÀç Ä«¸Ş¶ó À§Ä¡
-     * @return ·»´õ¸µµÇ¾î¾ß ÇÒ UStaticMeshComponent ¸ñ·Ï
+     * @brief ì˜¤í´ë£¨ì „ ì»¬ë§ì˜ ì „ì²´ í”„ë¡œì„¸ìŠ¤ë¥¼ ì‹¤í–‰í•˜ê³  ìµœì¢… ê°€ì‹œ ì˜¤ë¸Œì íŠ¸ ëª©ë¡ì„ ë°˜í™˜
+     * @param AllStaticMeshes í”„ëŸ¬ìŠ¤í…€ ì»¬ë§ì„ í†µê³¼í•œ ëª¨ë“  ìŠ¤íƒœí‹± ë©”ì‹œ ëª©ë¡
+     * @param CameraPos í˜„ì¬ ì¹´ë©”ë¼ ìœ„ì¹˜
+     * @return ë Œë”ë§ë˜ì–´ì•¼ í•  UPrimitiveComponent ëª©ë¡
      */
-    TArray<TObjectPtr<UStaticMeshComponent>> PerformCulling(const TArray<TObjectPtr<UStaticMeshComponent>>& AllStaticMeshes, const FVector& CameraPos);
+    TArray<TObjectPtr<UPrimitiveComponent>> PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllStaticMeshes, const FVector& CameraPos);
 
     // Constants
     static constexpr int Z_BUFFER_WIDTH = 256;
@@ -31,46 +31,57 @@ public:
 
 private:
     /**
-     * @brief ÇØ´ç ¸Ş½Ã ÄÄÆ÷³ÍÆ®°¡ Z-Buffer¿¡ ÀÇÇØ °¡·ÁÁö´ÂÁö Å×½ºÆ®ÇÕ´Ï´Ù.
-     * @return ¹Ù¿îµù ¹Ú½ºÀÇ ÄÚ³Ê Áß ÇÏ³ª¶óµµ º¸ÀÌ¸é true¸¦ ¹İÈ¯ÇÕ´Ï´Ù.
-     */
-    bool IsMeshVisible(const UStaticMeshComponent* MeshComp) const;
+    * @brief ì¹´ë©”ë¼ì—ì„œ ê³¼ë„í•˜ê²Œ ê°€ê¹Œìš´ ì• ë“¤ ì œì™¸
+    * @param AllCandidates ê°€ê¹Œìš´ ê³³ì˜ Occluders í›„ë³´
+    * @return ì˜¤í´ë£¨ë”ë¡œ ì„ ì •ëœ UPrimitiveComponent ëª©ë¡
+    */
+    TArray<UPrimitiveComponent*> SelectOccluders(const TArray<UPrimitiveComponent*>& AllCandidates, const FVector& CameraPos);
 
-    struct BatchProjectionResult BatchProject4(const struct BatchProjectionInput& Input) const;
+    void RasterizeOccluders(const TArray<UPrimitiveComponent*>& SelectedOccluders, const FVector& CameraPos);
 
     /**
      * @brief World Pos > Clip Space > Screen Coordinate
-     * @return ½ºÅ©¸° ÁÂÇ¥ (X, Y)¿Í NDC Depth (Z)¸¦ ´ãÀº FVector
+     * @return ìŠ¤í¬ë¦° ì¢Œí‘œ (X, Y)ì™€ NDC Depth (Z)ë¥¼ ë‹´ì€ FVector
      */
     FVector Project(const FVector& WorldPos) const;
 
     /**
-     * @brief CPU Z-Buffer¿¡ »ï°¢ÇüÀ» ·¡½ºÅÍ¶óÀÌÂ¡, ±íÀÌ Å×½ºÆ® ¼öÇà
+     * @brief í•´ë‹¹ ë©”ì‹œ ì»´í¬ë„ŒíŠ¸ê°€ Z-Bufferì— ì˜í•´ ê°€ë ¤ì§€ëŠ”ì§€ í…ŒìŠ¤íŠ¸í•©ë‹ˆë‹¤.
+     * @return ë°”ìš´ë”© ë°•ìŠ¤ì˜ ì½”ë„ˆ ì¤‘ í•˜ë‚˜ë¼ë„ ë³´ì´ë©´ trueë¥¼ ë°˜í™˜í•©ë‹ˆë‹¤.
+     */
+    bool IsMeshVisible(const UPrimitiveComponent* MeshComp);
+
+    struct BatchProjectionResult BatchProject4(const struct BatchProjectionInput& Input) const;
+
+
+    /**
+     * @brief CPU Z-Bufferì— ì‚¼ê°í˜•ì„ ë˜ìŠ¤í„°ë¼ì´ì§•, ê¹Šì´ í…ŒìŠ¤íŠ¸ ìˆ˜í–‰
      */
     void RasterizeTriangle(const FVector& P1, const FVector& P2, const FVector& P3, TArray<float>& ZBuffer);
 
     /**
-     * @brief PrimitiveComponentÀÇ AABB¸¦ 12°³ÀÇ »ï°¢Çü Á¤Á¡À¸·Î º¯È¯
+     * @brief PrimitiveComponentì˜ AABBë¥¼ 12ê°œì˜ ì‚¼ê°í˜• ì •ì ìœ¼ë¡œ ë³€í™˜
      */
-    TArray<FVector> ConvertAABBToTriangles(const class UPrimitiveComponent* PrimitiveComp) const;
-     /**
-     * @brief È­¸é °ø°£ ¸éÀû ¹× °Å¸®¸¦ ±âÁØÀ¸·Î ¿ÀÅ¬·ç´õ ¿ªÇÒÀ» ÇÒ °´Ã¼ µ¿Àû ¼±ÅÃ
-     * @param AllCandidates ÇÁ·¯½ºÅÒ ÄÃ¸µÀ» Åë°úÇÑ ¸ğµç ½ºÅÂÆ½ ¸Ş½Ã ÈÄº¸ ¸ñ·Ï
-     * @param MaxOccluders Z-Buffer ±¸¼º¿¡ »ç¿ëÇÒ ÃÖ´ë ¿ÀÅ¬·ç´õ ¼ö
-     * @return ¿ÀÅ¬·ç´õ·Î ¼±Á¤µÈ UStaticMeshComponent ¸ñ·Ï
-     */
-    TArray<UStaticMeshComponent*> SelectOccluders(const TArray<TObjectPtr<UStaticMeshComponent>>& AllCandidates, const FVector& CameraPos, uint32 MaxOccluders = 100);
-
-    void RasterizeOccluders(const TArray<UStaticMeshComponent*>& SelectedOccluders);
+    TArray<FVector> ConvertAABBToTriangles(const class UPrimitiveComponent* PrimitiveComp);
 
     TArray<float> CPU_ZBuffer;
     FMatrix CurrentViewProj;
 
+    TMap<const UPrimitiveComponent*, struct FWorldAABBData> CachedAABBs;
+    TArray<FVector> OriginalSamples;
+    TArray<FVector> Triangles;
+};
+
+struct FWorldAABBData
+{
+    FVector Min;
+    FVector Max;
+    FVector Center; // ìì£¼ ì‚¬ìš©ë˜ëŠ” Center ê°’ë„ ì €ì¥í•˜ì—¬ ê³„ì‚° ì˜¤ë²„í—¤ë“œ ì œê±°
 };
 
 struct FOccluderScore
 {
-    UStaticMeshComponent* MeshComp;
+    UPrimitiveComponent* MeshComp;
     float Score;
 
     bool operator>(const FOccluderScore& Other) const { return Score > Other.Score; }
@@ -78,12 +89,12 @@ struct FOccluderScore
 
 struct alignas(16) BatchProjectionInput
 {
-    __m128 WorldX, WorldY, WorldZ; // 4°³ Á¡ÀÇ X, Y, Z ÁÂÇ¥
+    __m128 WorldX, WorldY, WorldZ; // 4ê°œ ì ì˜ X, Y, Z ì¢Œí‘œ
 };
 
 struct alignas(16) BatchProjectionResult
 {
-    __m128 ScreenX, ScreenY, ScreenZ; // 4°³ Á¡ÀÇ ½ºÅ©¸° ÁÂÇ¥
-    __m128i PixelX, PixelY;          // Á¤¼öÇü ÇÈ¼¿ ÁÂÇ¥
-    __m128 InBoundsMask;             // È­¸é °æ°è ³»ºÎ ¸¶½ºÅ©
+    __m128 ScreenX, ScreenY, ScreenZ; // 4ê°œ ì ì˜ ìŠ¤í¬ë¦° ì¢Œí‘œ
+    __m128i PixelX, PixelY;          // ì •ìˆ˜í˜• í”½ì…€ ì¢Œí‘œ
+    __m128 InBoundsMask;             // í™”ë©´ ê²½ê³„ ë‚´ë¶€ ë§ˆìŠ¤í¬
 };

@@ -145,6 +145,43 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 	}
 }
 
+TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitives(const FVector& FindPos, uint32 MaxPrimitiveCount)
+{
+	TArray<UPrimitiveComponent*> Candidates;
+	FNodeQueue NodeQueue;
+
+	float RootDistance = this->GetBoundingBox().GetCenterDistanceSquared(FindPos);
+	NodeQueue.push({ RootDistance, this });
+
+	while (!NodeQueue.empty() && Candidates.size() < MaxPrimitiveCount)
+	{
+		FOctree* CurrentNode = NodeQueue.top().second;
+		NodeQueue.pop();
+
+		if (CurrentNode->IsLeafNode())
+		{
+			for (UPrimitiveComponent* Primitive : CurrentNode->GetPrimitives())
+			{
+				Candidates.push_back(Primitive);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < 8; ++i)
+			{
+				FOctree* Child = CurrentNode->Children[i];
+				if (Child)
+				{
+					float ChildDistance = Child->GetBoundingBox().GetCenterDistanceSquared(FindPos);
+					NodeQueue.push({ ChildDistance, Child });
+				}
+			}
+		}
+	}
+
+	return Candidates;
+}
+
 void FOctree::Subdivide(UPrimitiveComponent* InPrimitive)
 {
 	const FVector& Min = BoundingBox.Min;

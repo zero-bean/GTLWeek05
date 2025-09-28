@@ -347,11 +347,11 @@
     <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Global\Octree.cpp" />
+    <ClCompile Include="Source\Global\Octree.cpp">
       <Filter>Source\Global</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp" />
-      <Filter>Source\Optimization</Filter>
+    <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp">
+      <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -731,11 +731,11 @@
     <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Global\Octree.h" />
+    <ClInclude Include="Source\Global\Octree.h">
       <Filter>Source\Global</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Optimization\Public\OcclusionCuller.h" />
-      <Filter>Source\Optimization</Filter>
+    <ClInclude Include="Source\Optimization\Public\OcclusionCuller.h">
+      <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
