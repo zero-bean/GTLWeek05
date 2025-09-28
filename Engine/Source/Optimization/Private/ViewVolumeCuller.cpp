@@ -1,124 +1,114 @@
 #include "pch.h"
-#include "Physics/Public/AABB.h"
 #include "Optimization/Public/ViewVolumeCuller.h"
 #include "Core/Public/Object.h"
+#include "Global/Octree.h"
 
-void ViewVolumeCuller::Cull(
-	const TArray<TObjectPtr<UPrimitiveComponent>>& Objects,
-	const FViewProjConstants& ViewProjConstants
-)
+namespace
 {
-
-	// ������ Cull�ߴ� ������ �����.
-	RenderableObjects.clear();
-
-	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
-
-	Objects.size();
-
-	for (const TObjectPtr<UPrimitiveComponent>& Object : Objects)
+	FAABB GetPrimitiveBoundingBox(UPrimitiveComponent* InPrimitive)
 	{
-		FMatrix MVP = Object->GetWorldTransformMatrix() * VP;
+		FVector Min, Max;
+		InPrimitive->GetWorldAABB(Min, Max);
 
-		// 6���� ����ü ��� ����
-		FVector4 Plane[6];
-		Plane[0] = MVP[3] + MVP[0];  // Left
-		Plane[1] = MVP[3] - MVP[0];  // Right
-		Plane[2] = MVP[3] + MVP[1];  // Bottom
-		Plane[3] = MVP[3] - MVP[1];  // Top
-		Plane[4] = MVP[3] + MVP[2];  // Near
-		Plane[5] = MVP[3] - MVP[2];  // Far
+		return FAABB(Min, Max);
+	}
+}
 
-		for (int32 i = 0; i < 6; i++)
-		{
-			float length = sqrt(
-				Plane[i].X * Plane[i].X +
-				Plane[i].Y * Plane[i].Y +
-				Plane[i].Z * Plane[i].Z
-			);
+void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const FViewProjConstants& ViewProjConstants)
+{
+	// 이전의 Cull했던 정보를 지운다.
+	RenderableObjects.clear();
+	CurrentFrustum.Clear();
 
-			// Divide with zero ����
-			if (length > -0.0001f && length < 0.0001f)
-			{
-				RenderableObjects = Objects;
-				Total = Objects.size();
-				Rendered = Total;
-				Culled = 0;
-				return;
-			}
+	// 1. 절두체 'Key' 생성 
+	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
+	CurrentFrustum.Planes[0] = VP[3] + VP[0]; // Left
+	CurrentFrustum.Planes[1] = VP[3] - VP[0]; // Right
+	CurrentFrustum.Planes[2] = VP[3] + VP[1]; // Bottom
+	CurrentFrustum.Planes[3] = VP[3] - VP[1]; // Top
+	CurrentFrustum.Planes[4] = VP[3] + VP[2]; // Near
+	CurrentFrustum.Planes[5] = VP[3] - VP[2]; // Far
 
-			Plane[i] /= -length;
-		}
+	for (int i = 0; i < 6; i++)
+	{
+		const float Length = sqrt((CurrentFrustum.Planes[i].X * CurrentFrustum.Planes[i].X) +
+								(CurrentFrustum.Planes[i].Y * CurrentFrustum.Planes[i].Y) +
+								(CurrentFrustum.Planes[i].Z * CurrentFrustum.Planes[i].Z));
 
-		if (!Object->GetBoundingBox())
-		{
-			RenderableObjects.push_back(Object);
-			continue;
-		}
+		if (Length > -MATH_EPSILON && Length < MATH_EPSILON) { return; }
 
-		const FAABB* AABB = static_cast<const FAABB*>(Object->GetBoundingBox());
-
-		EBoundCheckResult BoundCheckResult = EBoundCheckResult::Inside;
-
-		// �ڽ��� ������ ��鿡 ���� ����� ��, ���� �� ���� ���Ѵ�.
-		for (int32 i = 0; i < 6; i++)
-		{
-			FVector Closest, Farthest;
-
-			if (Plane[i].X > 0.0f)
-			{
-				Closest.X = AABB->Min.X;
-				Farthest.X = AABB->Max.X;
-			}
-			else
-			{
-				Closest.X = AABB->Max.X;
-				Farthest.X = AABB->Min.X;
-			}
-
-			if (Plane[i].Y > 0.0f)
-			{
-				Closest.Y = AABB->Min.Y;
-				Farthest.Y = AABB->Max.Y;
-			}
-			else
-			{
-				Closest.Y = AABB->Max.Y;
-				Farthest.Y = AABB->Min.Y;
-			}
-
-			if (Plane[i].Z > 0.0f)
-			{
-				Closest.Z = AABB->Min.Z;
-				Farthest.Z = AABB->Max.Z;
-			}
-			else
-			{
-				Closest.Z = AABB->Max.Z;
-				Farthest.Z = AABB->Min.Z;
-			}
-
-			if (Plane[i].Dot3(Closest) + Plane[i].W > 0.0f)
-			{
-				BoundCheckResult = EBoundCheckResult::Outside;
-				break;
-			}
-			else if (Plane[i].Dot3(Farthest) + Plane[i].W < 0.0f)
-				;
-			else
-				BoundCheckResult = EBoundCheckResult::Intersect;
-		}
-
-		if (BoundCheckResult != EBoundCheckResult::Outside)
-			RenderableObjects.push_back(Object);
+		CurrentFrustum.Planes[i] /= -Length;
 	}
 
-	Total = Objects.size();
-	Rendered = RenderableObjects.size();
-	Culled = Total - Rendered;
+	// 2. 옥트리를 이용해 보이는 객체만 RenderableObjects에 저장한다.
+	if (StaticOctree)
+	{
+		CullOctree(StaticOctree);
+	}
+
+	if (DynamicOctree)
+	{
+		CullOctree(DynamicOctree);
+	}
+
+	UE_LOG("SIZE: %d", RenderableObjects.size());
 }
 
 const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
 {
 	return RenderableObjects;
+}
+
+void ViewVolumeCuller::CullOctree(FOctree* Octree)
+{
+	if (!Octree)
+	{
+		return;
+	}
+
+	// 1. 현재 옥트리 노드(자신)의 경계와 절두체의 관계를 확인합니다.
+	EBoundCheckResult result = CurrentFrustum.CheckIntersection(Octree->GetBoundingBox());
+
+	// Case 1. 노드가 절두체 밖에 있다면, 즉시 종료합니다. 
+	if (result == EBoundCheckResult::Outside)
+	{
+		return;
+	}
+	// Case 2. 노드가 절두체 안에 완전히 포함된다면, 전부 포함하고 종료합니다.
+	else if (result == EBoundCheckResult::Inside)
+	{
+		TArray<UPrimitiveComponent*> Primitives;
+		Octree->GetAllPrimitives(Primitives);
+		for (UPrimitiveComponent* Primitive : Primitives)
+		{
+			RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+		}
+		return;
+	}
+	// Case 3. 노드가 절두체와 부분적으로 겹쳐진다면, 개별 검사를 합니다.
+	else if (result == EBoundCheckResult::Intersect)
+	{
+		for (UPrimitiveComponent* Primitive : Octree->GetPrimitives())
+		{
+			if (Primitive)
+			{
+				if (CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
+				{
+					RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+				}
+			}
+		}
+
+		// 2. 자식 노드들에게 재귀적으로 검사를 계속 진행시킵니다.
+		if (!Octree->IsLeafNode())
+		{
+			for (int Index = 0; Index < 8; ++Index)
+			{
+				if (Octree->GetChildren()[Index])
+				{
+					CullOctree(Octree->GetChildren()[Index]);
+				}
+			}
+		}
+	}
 }

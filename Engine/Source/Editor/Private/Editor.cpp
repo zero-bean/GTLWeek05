@@ -18,6 +18,7 @@
 #include "Global/Quaternion.h"
 #include "Utility/Public/ScopeCycleCounter.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
+#include "Component/Public/BillBoardComponent.h"
 
 UEditor::UEditor()
 {
@@ -351,6 +352,12 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 	{
 		// 피킹 전 현재 카메라에 맞는 기즈모 스케일 업데이트
 		Gizmo.UpdateScale(CurrentCamera);
+		// 빌보드 갱신
+		PickedBillboard = ActorPicked->GetBillBoardComponent();
+	}
+	else
+	{
+		PickedBillboard = nullptr;
 	}
 
 	const UInputManager& InputManager = UInputManager::GetInstance();
@@ -574,4 +581,9 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 		return Gizmo.GetActorScale();
 	}
 	return Gizmo.GetActorScale();
+}
+
+UBillBoardComponent* UEditor::GetPickedBillboard() const
+{
+	return PickedBillboard;
 }
