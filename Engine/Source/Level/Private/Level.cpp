@@ -78,6 +78,9 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 				}
 			}
 		}
+
+		// 씬이 로드된 후에 BSP를 초기화한다.
+		BSP.Initialize(LevelPrimitiveComponents);
 	}
 
 	// 저장

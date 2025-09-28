@@ -2,6 +2,7 @@
 #include "Manager/Level/Public/LevelManager.h"
 
 #include "Level/Public/Level.h"
+#include "Optimization/Public/BSP.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Editor/Public/Editor.h"

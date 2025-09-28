@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Component/Public/PrimitiveComponent.h"
+#include "Optimization/Public/BSP.h"
 
-enum class EBoundCheckResult
+enum class EPlaneIntersection
 {
 	Outside,
 	Intersect,
@@ -22,8 +23,23 @@ public:
 		const FViewProjConstants& ViewProjConstants
 	);
 
+
+	void Cull(
+		FBSP& BSP,
+		const FViewProjConstants& ViewProjConstants
+	);
+
+	void Clear();
+
 	const TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects() const;
+
 private:
+	static void GetCullingCandidatesFromBSP(
+		FBSP& BSP,
+		const FViewProjConstants& ViewProjConstants,
+		TArray<TObjectPtr<UPrimitiveComponent>>& Primitives
+	);
+
 	uint32 Total = 0;
 	uint32 Rendered = 0;
 	uint32 Culled = 0;

@@ -8,13 +8,10 @@ void FViewVolumeCuller::Cull(
 	const FViewProjConstants& ViewProjConstants
 )
 {
-
 	// 이전의 Cull했던 정보를 지운다.
-	RenderableObjects.clear();
+	Clear();
 
 	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
-
-	Objects.size();
 
 	for (const TObjectPtr<UPrimitiveComponent>& Object : Objects)
 	{
@@ -50,15 +47,15 @@ void FViewVolumeCuller::Cull(
 			Plane[i] /= -length;
 		}
 
-		if (!Object->GetBoundingBox())
+		const FAABB* AABB = static_cast<const FAABB*>(Object->GetBoundingBox());
+		if (!AABB)
 		{
 			RenderableObjects.push_back(Object);
 			continue;
 		}
 
-		const FAABB* AABB = static_cast<const FAABB*>(Object->GetBoundingBox());
 
-		EBoundCheckResult BoundCheckResult = EBoundCheckResult::Inside;
+		EPlaneIntersection BoundCheckResult = EPlaneIntersection::Inside;
 
 		// 박스의 점들중 평면에 가장 가까운 점, 가장 먼 점만 비교한다.
 		for (int32 i = 0; i < 6; i++)
@@ -100,16 +97,16 @@ void FViewVolumeCuller::Cull(
 
 			if (Plane[i].Dot3(Closest) + Plane[i].W > 0.0f)
 			{
-				BoundCheckResult = EBoundCheckResult::Outside;
+				BoundCheckResult = EPlaneIntersection::Outside;
 				break;
 			}
 			else if (Plane[i].Dot3(Farthest) + Plane[i].W < 0.0f)
 				;
 			else
-				BoundCheckResult = EBoundCheckResult::Intersect;
+				BoundCheckResult = EPlaneIntersection::Intersect;
 		}
 
-		if (BoundCheckResult != EBoundCheckResult::Outside)
+		if (BoundCheckResult != EPlaneIntersection::Outside)
 			RenderableObjects.push_back(Object);
 	}
 
@@ -118,7 +115,126 @@ void FViewVolumeCuller::Cull(
 	Culled = Total - Rendered;
 }
 
+void FViewVolumeCuller::Cull(
+	FBSP& BSP,
+	const FViewProjConstants& ViewProjConstants
+)
+{
+	TArray<TObjectPtr<UPrimitiveComponent>> Primitives;
+	GetCullingCandidatesFromBSP(BSP, ViewProjConstants, Primitives);
+
+	Cull(Primitives, ViewProjConstants);
+}
+
+void FViewVolumeCuller::Clear()
+{
+	RenderableObjects.clear();
+
+	Total = 0;
+	Rendered = 0;
+	Culled = 0;
+}
+
 const TArray<TObjectPtr<UPrimitiveComponent>>& FViewVolumeCuller::GetRenderableObjects() const
 {
 	return RenderableObjects;
+}
+
+void FViewVolumeCuller::GetCullingCandidatesFromBSP(
+	FBSP& BSP,
+	const FViewProjConstants& ViewProjConstants,
+	TArray<TObjectPtr<UPrimitiveComponent>>& Primitives
+)
+{
+	FMatrix VP = ViewProjConstants.View * ViewProjConstants.Projection;
+
+	FVector4 Plane[6];
+
+	Plane[0] = VP[3] + VP[0];
+	Plane[1] = VP[3] - VP[0];
+	Plane[2] = VP[3] + VP[1];
+	Plane[3] = VP[3] - VP[1];
+	Plane[5] = VP[3];
+	Plane[4] = VP[3] - VP[2];
+	
+	for (int i = 0; i < 6; i++)
+	{
+		float length = sqrt(
+			Plane[i].X * Plane[i].X +
+			Plane[i].Y * Plane[i].Y +
+			Plane[i].Z * Plane[i].Z
+		);
+
+		// Divide with zero 방지
+		if (length > -0.0001f && length < 0.0001f)
+			return;
+
+		Plane[i] /= -length;
+	}
+
+	FBSP::PreOrderUntil(
+		BSP.GetRoot(),
+		[Plane, &Primitives](BSPNode* Node) -> bool
+		{
+			EPlaneIntersection BoundCheckResult;
+
+			// 박스의 점들중 평면에 가장 가까운 점, 가장 먼 점만 비교한다.
+			for (int32 i = 0; i < 6; i++)
+			{
+				FVector Closest, Farthest;
+
+				if (Plane[i].X > 0.0f)
+				{
+					Closest.X = Node->Position.X - Node->Extent.X / 2.0f;
+					Farthest.X = Node->Position.X + Node->Extent.X / 2.0f;
+				}
+				else
+				{
+					Closest.X = Node->Position.X + Node->Extent.X / 2.0f;
+					Farthest.X = Node->Position.X - Node->Extent.X / 2.0f;
+				}
+
+				if (Plane[i].Y > 0.0f)
+				{
+					Closest.Y = Node->Position.Y - Node->Extent.Y / 2.0f;
+					Farthest.Y = Node->Position.Y + Node->Extent.Y / 2.0f;
+				}
+				else
+				{
+					Closest.Y = Node->Position.Y + Node->Extent.Y / 2.0f;
+					Farthest.Y = Node->Position.Y - Node->Extent.Y / 2.0f;
+				}
+
+				if (Plane[i].Z > 0.0f)
+				{
+					Closest.Z = Node->Position.Z - Node->Extent.Z / 2.0f;
+					Farthest.Z = Node->Position.Z + Node->Extent.Z / 2.0f;
+				}
+				else
+				{
+					Closest.Z = Node->Position.Z + Node->Extent.Z / 2.0f;
+					Farthest.Z = Node->Position.Z - Node->Extent.Z / 2.0f;
+				}
+
+				if (Plane[i].Dot3(Closest) + Plane[i].W > 0.0f)
+				{
+					BoundCheckResult = EPlaneIntersection::Outside;
+					break;
+				}
+				else if (Plane[i].Dot3(Farthest) + Plane[i].W < 0.0f)
+					;
+				else
+					BoundCheckResult = EPlaneIntersection::Intersect;
+			}
+
+			if (BoundCheckResult != EPlaneIntersection::Outside)
+			{
+				for (const TObjectPtr<UPrimitiveComponent> &Primitive : Node->Primitives)
+					Primitives.push_back(Primitive);
+				return true;
+			}
+
+			return false;
+		}
+	);
 }

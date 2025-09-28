@@ -56,6 +56,8 @@ public:
 		return LevelPrimitiveComponents;
 	}
 
+	FBSP& GetBSP() { return BSP; }
+
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone());
@@ -81,6 +83,8 @@ private:
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
 		static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
 		static_cast<uint64>(EEngineShowFlags::SF_Bounds);
+
+	FBSP BSP;
 
 	/**
 	 * @brief Level에서 Actor를 실질적으로 제거하는 함수
