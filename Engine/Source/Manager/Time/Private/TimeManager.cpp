@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Manager/Time/Public/TimeManager.h"
+#include "Utility/Public/ScopeCycleCounter.h"
 
 IMPLEMENT_SINGLETON_CLASS_BASE(UTimeManager)
 

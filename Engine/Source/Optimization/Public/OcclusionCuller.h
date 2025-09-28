@@ -25,7 +25,7 @@ public:
     TArray<TObjectPtr<UPrimitiveComponent>> PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllStaticMeshes, const FVector& CameraPos);
 
     // Constants
-    static constexpr int Z_BUFFER_WIDTH = 256;
+    static constexpr int Z_BUFFER_WIDTH = 356;
     static constexpr int Z_BUFFER_HEIGHT = 256;
     static constexpr int Z_BUFFER_SIZE = Z_BUFFER_WIDTH * Z_BUFFER_HEIGHT;
 
@@ -49,7 +49,7 @@ private:
      * @brief 해당 메시 컴포넌트가 Z-Buffer에 의해 가려지는지 테스트합니다.
      * @return 바운딩 박스의 코너 중 하나라도 보이면 true를 반환합니다.
      */
-    bool IsMeshVisible(const UPrimitiveComponent* MeshComp);
+    bool IsMeshVisible(const struct FWorldAABBData& AABBData);
 
     struct BatchProjectionResult BatchProject4(const struct BatchProjectionInput& Input) const;
 
@@ -62,29 +62,23 @@ private:
     /**
      * @brief PrimitiveComponent의 AABB를 12개의 삼각형 정점으로 변환
      */
-    TArray<FVector> ConvertAABBToTriangles(const class UPrimitiveComponent* PrimitiveComp);
+    TArray<FVector> ConvertAABBToTriangles(class UPrimitiveComponent* PrimitiveComp);
 
     TArray<float> CPU_ZBuffer;
     FMatrix CurrentViewProj;
 
-    TMap<const UPrimitiveComponent*, struct FWorldAABBData> CachedAABBs;
+    TArray<struct FWorldAABBData> CachedAABBs;
+    TMap<UPrimitiveComponent*, int32> AABBIndexMap;  // Map: PrimitiveComp* -> Vector Index
     TArray<FVector> OriginalSamples;
     TArray<FVector> Triangles;
 };
 
 struct FWorldAABBData
 {
+    UPrimitiveComponent* Prim;
     FVector Min;
     FVector Max;
     FVector Center; // 자주 사용되는 Center 값도 저장하여 계산 오버헤드 제거
-};
-
-struct FOccluderScore
-{
-    UPrimitiveComponent* MeshComp;
-    float Score;
-
-    bool operator>(const FOccluderScore& Other) const { return Score > Other.Score; }
 };
 
 struct alignas(16) BatchProjectionInput

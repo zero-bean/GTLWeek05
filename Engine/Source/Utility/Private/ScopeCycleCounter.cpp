@@ -1,53 +1,45 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Utility/Public/ScopeCycleCounter.h"
 
-void FWindowsPlatformTime::InitTiming()
+TMap<FString, FTimeProfile> FScopeCycleCounter::TimeProfileMap;
+
+//Map에 이미 있으면 시간, 콜스택 추가
+void FScopeCycleCounter::AddTimeProfile(const TStatId& Key, double InMilliseconds)
 {
-    if (!bInitialized)
+    auto It = TimeProfileMap.find(Key.Key);
+    if (It != TimeProfileMap.end())
     {
-        bInitialized = true;
-
-        double Frequency = (double)GetFrequency();
-        if (Frequency <= 0.0)
-        {
-            Frequency = 1.0;
-        }
-
-        GSecondsPerCycle = 1.0 / Frequency;
+        TimeProfileMap[Key.Key] = FTimeProfile{ InMilliseconds, 1 };
+    }
+    else
+    {
+        TimeProfileMap[Key.Key].Milliseconds += InMilliseconds;
+        TimeProfileMap[Key.Key].CallCount++;
     }
 }
-
-double FWindowsPlatformTime::GetSecondsPerCycle()
+const FTimeProfile& FScopeCycleCounter::GetTimeProfile(const FString& Key)
 {
-    if (!bInitialized)
+    return TimeProfileMap[Key];
+}
+const TArray<FString> FScopeCycleCounter::GetTimeProfileKeys()
+{
+    TArray<std::string> Keys;
+    Keys.reserve(TimeProfileMap.size());
+    for (const auto& Pair : TimeProfileMap)
     {
-        InitTiming();
+        Keys.push_back(Pair.first);
     }
-    return GSecondsPerCycle;
+    return Keys;
 }
-
-uint64 FWindowsPlatformTime::GetFrequency()
+const TArray<FTimeProfile> FScopeCycleCounter::GetTimeProfileValues()
 {
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    return Frequency.QuadPart;
-}
-
-
-float FWindowsPlatformTime::ToMilliseconds(uint64 CycleDiff)
-{
-    double Ms = static_cast<double>(CycleDiff)
-        * GetSecondsPerCycle()
-        * 1000.0;
-
-    return (float)Ms;
-}
-
-uint64 FWindowsPlatformTime::Cycles64()
-{
-    LARGE_INTEGER CycleCount;
-    QueryPerformanceCounter(&CycleCount);
-    return (uint64)CycleCount.QuadPart;
+    TArray<FTimeProfile> Values;
+    Values.reserve(TimeProfileMap.size());
+    for (const auto& Pair : TimeProfileMap)
+    {
+        Values.push_back(Pair.second);
+    }
+    return Values;
 }
 
 double FWindowsPlatformTime::GSecondsPerCycle = 0.0;

@@ -494,6 +494,16 @@ void UConsoleWidget::HandleStatCommand(const FString& StatCommand)
 		StatOverlay.ShowPicking(true);
 		AddLog(ELogType::Success, "Picking overlay enabled");
 	}
+	else if (StatCommand == "time")
+	{
+		StatOverlay.ShowTime(true);
+		AddLog(ELogType::Success, "Time overlay enabled");
+	}
+	else if (StatCommand == "all")
+	{
+		StatOverlay.ShowAll(true);
+		AddLog(ELogType::Success, "All overlays enabled");
+	}
 	else if (StatCommand == "none")
 	{
 		StatOverlay.ShowAll(false);

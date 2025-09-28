@@ -21,14 +21,16 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
 {    
     // 0. Primitive AABB 데이터 채우기
     CachedAABBs.clear();    
-    for (const UPrimitiveComponent* PrimitiveComp : AllPrimitives)
+    AABBIndexMap.clear();
+    for (UPrimitiveComponent* PrimitiveComp : AllPrimitives)
     {
         if (!PrimitiveComp) continue;
 
-        FWorldAABBData Data;
+        FWorldAABBData Data; Data.Prim = PrimitiveComp;
         PrimitiveComp->GetWorldAABB(Data.Min, Data.Max);
         Data.Center = (Data.Min + Data.Max) * 0.5f;
-        CachedAABBs[PrimitiveComp] = Data;
+        CachedAABBs.push_back(Data);
+        AABBIndexMap[PrimitiveComp] = CachedAABBs.size() - 1;
     }
 
     // 1. 오클루더 동적 선택
@@ -41,11 +43,11 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
 
     // 3. 가시성 테스트
     TArray<TObjectPtr<UPrimitiveComponent>> VisibleMeshComponents;
-    for (TObjectPtr<UPrimitiveComponent> MeshComp : AllPrimitives)
+    for (auto& AABBData : CachedAABBs)
     {
-        if (IsMeshVisible(MeshComp))
+        if (IsMeshVisible(AABBData))
         {
-            VisibleMeshComponents.push_back(MeshComp);
+            VisibleMeshComponents.push_back(TObjectPtr<UPrimitiveComponent>(AABBData.Prim));
         }
     }
 
@@ -54,21 +56,21 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
 
 TArray<UPrimitiveComponent*> COcclusionCuller::SelectOccluders(const TArray<UPrimitiveComponent*>& Candidates, const FVector& CameraPos)
 {
-    TArray<UPrimitiveComponent*> SelectedOccluders;
-    SelectedOccluders.reserve(Candidates.size());
+    TArray<UPrimitiveComponent*> FilteredOccluders;
+    FilteredOccluders.reserve(Candidates.size());
 
     for (UPrimitiveComponent* Occluder : Candidates)
     {
-        const FWorldAABBData& Data = CachedAABBs[Occluder];
+        FWorldAABBData& Data = CachedAABBs[AABBIndexMap[Occluder]];
 
         float AABB_Diagonal_LengthSq = FVector::DistSquared(Data.Min, Data.Max);
         float DistanceToOccluderSq = FVector::DistSquared(CameraPos, Data.Center);
 
         if (DistanceToOccluderSq < AABB_Diagonal_LengthSq) { continue; }
 
-        SelectedOccluders.push_back(Occluder);
+        FilteredOccluders.push_back(Occluder);
     }
-    return SelectedOccluders;
+    return FilteredOccluders;
 }
 
 void COcclusionCuller::RasterizeOccluders(const TArray<UPrimitiveComponent*>& SelectedOccluders, const FVector& CameraPos)
@@ -125,15 +127,18 @@ FVector COcclusionCuller::Project(const FVector& WorldPos) const
     return FVector(ScreenX, ScreenY, ScreenZ);
 }
 
-bool COcclusionCuller::IsMeshVisible(const UPrimitiveComponent* Prim)
+bool COcclusionCuller::IsMeshVisible(const FWorldAABBData& AABBData)
 {
-    const FVector& WorldMin = CachedAABBs[Prim].Min;
-    const FVector& WorldMax = CachedAABBs[Prim].Max;
-    const FVector& WorldCenter = CachedAABBs[Prim].Center;
+    const FVector& WorldMin = AABBData.Min;
+    const FVector& WorldMax = AABBData.Max;
+    const FVector& WorldCenter = AABBData.Center;
 
     OriginalSamples.clear();
 
-    // 6개 면 중심 (기존과 정확히 동일)
+    // 1개 중심점
+    OriginalSamples.push_back(WorldCenter);
+
+    // 6개 면 중심
     OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldCenter.Z));
     OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldCenter.Z));
     OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldCenter.Z));
@@ -141,10 +146,8 @@ bool COcclusionCuller::IsMeshVisible(const UPrimitiveComponent* Prim)
     OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMin.Z));
     OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMax.Z));
 
-    // 1개 중심점
-    OriginalSamples.push_back(WorldCenter);
 
-    // 12개 엣지 중심 (기존 순서와 정확히 동일)
+    // 12개 엣지 중심
     // X 엣지 (4개)
     OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldMin.Z));
     OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldMin.Z));
@@ -352,7 +355,7 @@ void COcclusionCuller::RasterizeTriangle(const FVector& P1, const FVector& P2, c
     // 5. 분모가 0에 가까우면 degenerate triangle
     if (abs(Denom1) < 0.0001f || abs(Denom2) < 0.0001f) { return; }
 
-    // 6. 역수 미리 계산 (나눗셈을 곱셈으로 변환하여 최적화)
+    // 6. 역수 미리 계산
     float InvDenom1 = 1.0f / Denom1;
     float InvDenom2 = 1.0f / Denom2;
 
@@ -388,14 +391,14 @@ void COcclusionCuller::RasterizeTriangle(const FVector& P1, const FVector& P2, c
     }
 }
 
-TArray<FVector> COcclusionCuller::ConvertAABBToTriangles(const UPrimitiveComponent* Prim)
+TArray<FVector> COcclusionCuller::ConvertAABBToTriangles(UPrimitiveComponent* Prim)
 {
     Triangles.clear();
 
     if (!Prim) { return Triangles; }
 
-    const FVector& WorldCenter = CachedAABBs[Prim].Center;
-    FVector Extent = (CachedAABBs[Prim].Min - CachedAABBs[Prim].Max) * 0.5f;
+    const FVector& WorldCenter = CachedAABBs[AABBIndexMap[Prim]].Center;
+    FVector Extent = (CachedAABBs[AABBIndexMap[Prim]].Min - CachedAABBs[AABBIndexMap[Prim]].Max) * 0.5f;
 
     constexpr float OccluderScale = 0.6f;
 

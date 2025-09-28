@@ -319,16 +319,18 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
 		// 오클루전 컬링
+		TIME_PROFILE(Occlusion)
 		static COcclusionCuller Culler;
 		const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
 		Culler.InitializeCuller(ViewProj.View, ViewProj.Projection);
 		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
+		TIME_PROFILE_END(Occlusion)
 
 		TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
 		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
 		for (auto& Prim : FinalVisiblePrims) { FinalVisibleMeshes.push_back(Cast<UStaticMeshComponent>(Prim)); }
 		RenderStaticMeshes(FinalVisibleMeshes);
-		// UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
+		UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
@@ -446,7 +448,9 @@ void URenderer::RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, cons
  */
 void URenderer::RenderEnd() const
 {
+	TIME_PROFILE(DrawCall)
 	GetSwapChain()->Present(0, 0); // 1: VSync 활성화
+	TIME_PROFILE_END(DrawCall)
 }
 
 void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)

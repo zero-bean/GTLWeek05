@@ -154,7 +154,7 @@ void FClientApp::MainLoop()
 	bool bIsExit = false;
 	while (!bIsExit)
 	{
-		TStatId StatId;
+		TStatId StatId("DeltaTime");
 		FScopeCycleCounter CycleCounter(StatId);
 		// Async Message Process
 		while (PeekMessage(&MainMessage, nullptr, 0, 0, PM_REMOVE))
@@ -175,7 +175,7 @@ void FClientApp::MainLoop()
 		// Game System Update
 		UpdateSystem();
 
-		UTimeManager::GetInstance().SetDeltaTime(FPlatformTime::ToMilliseconds(CycleCounter.Finish()) / 1000);
+		UTimeManager::GetInstance().SetDeltaTime(CycleCounter.Finish() / 1000);
 	}
 }
 

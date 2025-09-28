@@ -147,7 +147,7 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 
 TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitives(const FVector& FindPos, uint32 MaxPrimitiveCount)
 {
-	TArray<UPrimitiveComponent*> Candidates;
+	TArray<UPrimitiveComponent*> Candidates; Candidates.reserve(MaxPrimitiveCount);
 	FNodeQueue NodeQueue;
 
 	float RootDistance = this->GetBoundingBox().GetCenterDistanceSquared(FindPos);

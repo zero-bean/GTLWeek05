@@ -64,3 +64,31 @@ bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box)
 
     return true;
 }
+
+float FAABB::GetDistanceSquaredToPoint(const FVector& Point) const
+{
+    float SquaredDistance = 0.0f;
+
+    if (Point.X < Min.X) {
+        SquaredDistance += (Min.X - Point.X) * (Min.X - Point.X);
+    }
+    else if (Point.X > Max.X) {
+        SquaredDistance += (Point.X - Max.X) * (Point.X - Max.X);
+    }
+
+    if (Point.Y < Min.Y) {
+        SquaredDistance += (Min.Y - Point.Y) * (Min.Y - Point.Y);
+    }
+    else if (Point.Y > Max.Y) {
+        SquaredDistance += (Point.Y - Max.Y) * (Point.Y - Max.Y);
+    }
+
+    if (Point.Z < Min.Z) {
+        SquaredDistance += (Min.Z - Point.Z) * (Min.Z - Point.Z);
+    }
+    else if (Point.Z > Max.Z) {
+        SquaredDistance += (Point.Z - Max.Z) * (Point.Z - Max.Z);
+    }
+
+    return SquaredDistance;
+}

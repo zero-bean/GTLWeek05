@@ -20,6 +20,8 @@ struct FAABB : public IBoundingVolume
 
 	bool RaycastHit() const override;
 
+	float GetDistanceSquaredToPoint(const FVector& Point) const;
+
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
 };
 
