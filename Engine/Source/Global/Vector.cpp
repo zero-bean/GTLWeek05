@@ -103,6 +103,15 @@ bool FVector::operator==(const FVector& InOther) const
 	return false;
 }
 
+bool FVector::operator!=(const FVector& InOther) const
+{
+	if (X != InOther.X || Y != InOther.Y || Z != InOther.Z)
+	{
+		return true;
+	}
+	return false;
+}
+
 FArchive& operator<<(FArchive& Ar, FVector& Vector)
 {
 	Ar << Vector.X;

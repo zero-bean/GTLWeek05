@@ -13,6 +13,7 @@ class AGizmo;
 class AGrid;
 class AActor;
 class UPrimitiveComponent;
+class FOctree;
 
 /**
  * @brief Level Show Flag Enum
@@ -51,11 +52,6 @@ public:
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
-	const TArray<TObjectPtr<UPrimitiveComponent>>& GetLevelPrimitiveComponents() const
-	{
-		return LevelPrimitiveComponents;
-	}
-
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
@@ -69,9 +65,13 @@ public:
 	uint64 GetShowFlags() const { return ShowFlags; }
 	void SetShowFlags(uint64 InShowFlags) { ShowFlags = InShowFlags; }
 
+	FOctree* GetStaticOctree() { return StaticOctree; }
+	FOctree* GetDynamicOctree() { return DynamicOctree; }
+
 private:
-	TArray<TObjectPtr<AActor>> LevelActors;
-	TArray<TObjectPtr<UPrimitiveComponent>> LevelPrimitiveComponents;	// 액터의 하위 컴포넌트는 액터에서 관리&해제됨
+	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
+	FOctree* StaticOctree = nullptr;
+	FOctree* DynamicOctree = nullptr;
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;

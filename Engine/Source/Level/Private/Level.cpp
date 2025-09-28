@@ -1,31 +1,29 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
-
-#include "Actor/Public/Actor.h"
-#include "Component/Public/BillBoardComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Manager/UI/Public/UIManager.h"
-#include "Utility/Public/JsonSerializer.h"
+#include "Actor/Public/Actor.h"
 #include "Actor/Public/CubeActor.h"
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/SquareActor.h"
 #include "Factory/Public/NewObject.h"
-#include "Core/Public/Object.h"
 #include "Factory/Public/FactorySystem.h"
+#include "Core/Public/Object.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/Viewport.h"
+#include "Utility/Public/JsonSerializer.h"
 #include "Utility/Public/ActorTypeMapper.h"
-
+#include "Global/Octree.h"
 #include <json.hpp>
-
-ULevel::ULevel() = default;
 
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {
+	StaticOctree = new FOctree(FVector(0,0,0), 500, 0);
+	DynamicOctree = new FOctree(FVector(0, 0, 0), 500, 0);
 }
 
 ULevel::~ULevel()
@@ -140,8 +138,9 @@ void ULevel::Cleanup()
 	LevelActors.clear();
 
 	// 3. 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
+	SafeDelete(StaticOctree);
+	SafeDelete(DynamicOctree);
 	ActorsToDelete.clear();
-	LevelPrimitiveComponents.clear();
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
@@ -183,7 +182,10 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		LevelPrimitiveComponents.push_back(PrimitiveComponent);
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
+
+		PrimitiveComponent->GetMobility() == EComponentMobility::Static ?
+			StaticOctree->Insert(PrimitiveComponent) : DynamicOctree->Insert(PrimitiveComponent);
 	}
 }
 
@@ -216,33 +218,33 @@ void ULevel::SetSelectedActor(AActor* InActor)
 // Level에서 Actor 제거하는 함수
 bool ULevel::DestroyActor(AActor* InActor)
 {
-	if (!InActor)
-	{
-		return false;
-	}
+	if (!InActor) return false;
 
-	for (auto& PrimitiveComponent : InActor->GetOwnedComponents())
+	// 컴포넌트들을 옥트리에서 제거
+	for (auto& Component : InActor->GetOwnedComponents())
 	{
-		// LevelPrimitiveComponents 리스트에서 해당 프리미티브 컴포넌트 검색 및 제거
-		for (auto Iterator = LevelPrimitiveComponents.begin(); Iterator != LevelPrimitiveComponents.end(); ++Iterator)
+		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		if (!PrimitiveComponent) { continue; }
+
+		if (PrimitiveComponent->GetMobility() == EComponentMobility::Static)
 		{
-			if (*Iterator == PrimitiveComponent)
-			{
-				LevelPrimitiveComponents.erase(Iterator);
-				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
-			}
+			if (StaticOctree) { StaticOctree->Remove(PrimitiveComponent); }
+		}
+		else
+		{
+			if (DynamicOctree) { DynamicOctree->Remove(PrimitiveComponent); }
 		}
 	}
 
 	// LevelActors 리스트에서 제거
-	for (auto Iterator = LevelActors.begin(); Iterator != LevelActors.end(); ++Iterator)
+	if (auto It = std::find(LevelActors.begin(), LevelActors.end(), InActor); It != LevelActors.end())
 	{
-		if (*Iterator == InActor)
-		{
-			LevelActors.erase(Iterator);
-			break;
-		}
+		*It = std::move(LevelActors.back());
+		LevelActors.pop_back();
+
+		return true;
 	}
+
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)

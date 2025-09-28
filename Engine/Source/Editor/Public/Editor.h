@@ -8,6 +8,7 @@
 #include "Editor/Public/SplitterWindow.h"
 
 class UPrimitiveComponent;
+class UBillboardComponent;
 class FViewportClient;
 class UCamera;
 class ULevel;
@@ -43,6 +44,8 @@ public:
 	void SetSingleViewportLayout(int InActiveIndex);
 	void RestoreMultiViewportLayout();
 
+	UBillBoardComponent* GetPickedBillboard() const;
+
 private:
 	void InitializeLayout();
 	void UpdateLayout();
@@ -61,6 +64,8 @@ private:
 	}
 
 	UObjectPicker ObjectPicker;
+
+	UBillBoardComponent* PickedBillboard; // 선택된 액터의 빌보드
 
 	const float MinScale = 0.01f;
 	float SavedRootRatio = 0.5f;
