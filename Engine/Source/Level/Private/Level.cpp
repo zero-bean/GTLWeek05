@@ -16,7 +16,7 @@
 #include "Editor/Public/Viewport.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Utility/Public/ActorTypeMapper.h"
-
+#include "Global/Octree.h"
 #include <json.hpp>
 
 ULevel::ULevel(const FName& InName)
@@ -218,33 +218,33 @@ void ULevel::SetSelectedActor(AActor* InActor)
 // Level에서 Actor 제거하는 함수
 bool ULevel::DestroyActor(AActor* InActor)
 {
-	if (!InActor)
-	{
-		return false;
-	}
+	if (!InActor) return false;
 
-	for (auto& PrimitiveComponent : InActor->GetOwnedComponents())
+	// 컴포넌트들을 옥트리에서 제거
+	for (auto& Component : InActor->GetOwnedComponents())
 	{
-		// LevelPrimitiveComponents 리스트에서 해당 프리미티브 컴포넌트 검색 및 제거
-		for (auto Iterator = LevelPrimitiveComponents.begin(); Iterator != LevelPrimitiveComponents.end(); ++Iterator)
+		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		if (!PrimitiveComponent) { continue; }
+
+		if (PrimitiveComponent->GetMobility() == EComponentMobility::Static)
 		{
-			if (*Iterator == PrimitiveComponent)
-			{
-				LevelPrimitiveComponents.erase(Iterator);
-				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
-			}
+			if (StaticOctree) { StaticOctree->Remove(PrimitiveComponent); }
+		}
+		else
+		{
+			if (DynamicOctree) { DynamicOctree->Remove(PrimitiveComponent); }
 		}
 	}
 
 	// LevelActors 리스트에서 제거
-	for (auto Iterator = LevelActors.begin(); Iterator != LevelActors.end(); ++Iterator)
+	if (auto It = std::find(LevelActors.begin(), LevelActors.end(), InActor); It != LevelActors.end())
 	{
-		if (*Iterator == InActor)
-		{
-			LevelActors.erase(Iterator);
-			break;
-		}
+		*It = std::move(LevelActors.back());
+		LevelActors.pop_back();
+
+		return true;
 	}
+
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)

@@ -50,8 +50,6 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, FOctree* DynamicOctree, const
 	{
 		CullOctree(DynamicOctree);
 	}
-
-	UE_LOG("SIZE: %d", RenderableObjects.size());
 }
 
 const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
