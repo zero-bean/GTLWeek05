@@ -176,7 +176,7 @@ void FViewVolumeCuller::GetCullingCandidatesFromBSP(
 		BSP.GetRoot(),
 		[Plane, &Primitives](BSPNode* Node) -> bool
 		{
-			EPlaneIntersection BoundCheckResult;
+			EPlaneIntersection BoundCheckResult = EPlaneIntersection::Inside;
 
 			// 박스의 점들중 평면에 가장 가까운 점, 가장 먼 점만 비교한다.
 			for (int32 i = 0; i < 6; i++)

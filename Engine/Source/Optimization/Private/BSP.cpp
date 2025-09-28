@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Component/Public/PrimitiveComponent.h"
-#include "Optimization/Public/BSP.h"\
+#include "Optimization/Public/BSP.h"
 #include "Manager/Level/Public/LevelManager.h"
+#include "Level/Public/Level.h"
 #include "Physics/Public/AABB.h"
 
 #include <algorithm>
@@ -48,7 +48,7 @@ void FBSP::Initialize(const TArray<TObjectPtr<UPrimitiveComponent>>& LevelPrimit
 	float YGap = WorldMax.Y - WorldMin.Y;
 	float ZGap = WorldMax.Z - WorldMin.Z;
 
-	float MaxGap = std::max(XGap, std::max(YGap, ZGap));
+	float MaxGap = std::max(XGap, std::max(YGap, ZGap)) + 20.0f;
 
 	Root->Extent = FVector(MaxGap, MaxGap, MaxGap);
 	Root->Position = FVector(
@@ -76,6 +76,219 @@ void FBSP::Shutdown()
 
 	Root = nullptr;
 	MinimumExtent = 0;
+}
+
+void FBSP::Remove(const TObjectPtr<UPrimitiveComponent>& Target)
+{
+	PreOrderUntil(
+		Root,
+		[Target](BSPNode* Node) -> bool
+		{
+			for (auto Itr = Node->Primitives.begin(); Itr != Node->Primitives.end(); Itr++)
+			{
+				if (*Itr == Target)
+				{
+					Node->Primitives.erase(Itr);
+					return false;
+				}
+			}
+			return true;
+		}
+	);
+}
+
+/*
+	삽입 전략
+
+	1. 삽입하는 대상이 root의 범위 밖에 있으면 false를 반환하여 외부에서 Shutdown하고 다시 Initialize한다.
+	2. 그렇지 않으면
+		1) 가능한 모든 분할 경계에 걸치면 해당 노드에 삽입한다.
+		2) 그렇지 않다면 자식으로 보낸다.
+	3. 삽입 노드가 정해지면 해당 노드를 다시 Divide한다.
+*/
+
+bool FBSP::Insert(const TObjectPtr<UPrimitiveComponent>& Target)
+{
+	FVector BoxMin, BoxMax;
+
+	Target->GetWorldAABB(BoxMin, BoxMax);
+	if (BoxMin.Empty() && BoxMax.Empty())
+	{
+		Root->Primitives.push_back(Target);
+		return true;
+	}
+
+	if (
+		BoxMax.X < Root->Position.X - Root->Extent.X / 2.0f ||
+		BoxMax.Y < Root->Position.Y - Root->Extent.Y / 2.0f ||
+		BoxMax.Z < Root->Position.Z - Root->Extent.Z / 2.0f ||
+		BoxMin.X > Root->Position.X + Root->Extent.X / 2.0f ||
+		BoxMin.Y > Root->Position.Y + Root->Extent.Y / 2.0f ||
+		BoxMin.Z > Root->Position.Z + Root->Extent.Z / 2.0f
+		)
+		return false;
+
+	FindNodeToInsert(Root, Target, BoxMin, BoxMax);
+	return true;
+}
+
+void FBSP::RenderTree() const
+{
+	
+}
+
+void FBSP::FindNodeToInsert(
+	BSPNode* Node,
+	const TObjectPtr<UPrimitiveComponent>& Target,
+	const FVector& BoxMin,
+	const FVector& BoxMax
+)
+{
+	switch (Node->Type)
+	{
+	case BSPType::Cube:
+		if (!IntersectWithXYPlane(BoxMin.Z, BoxMax.Z))
+		{
+			if (Node->Left && BoxMax.Z <= Node->Position.Z)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Z >= Node->Position.Z)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		if (!IntersectWithYZPlane(BoxMin.X, BoxMax.X))
+		{
+			if (Node->Left && BoxMax.X <= Node->Position.X)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.X >= Node->Position.X)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		if (!IntersectWithXZPlane(BoxMin.Y, BoxMax.Y))
+		{
+			if (Node->Left && BoxMax.Y <= Node->Position.Y)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Y >= Node->Position.Y)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::XYExtended:
+		if (!IntersectWithYZPlane(BoxMin.X, BoxMax.X))
+		{
+			if (Node->Left && BoxMax.X <= Node->Position.X)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.X >= Node->Position.X)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		if (!IntersectWithXZPlane(BoxMin.Y, BoxMax.Y))
+		{
+			if (Node->Left && BoxMax.Y <= Node->Position.Y)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Y >= Node->Position.Y)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::YZExtended:
+		if (!IntersectWithXYPlane(BoxMin.Z, BoxMax.Z))
+		{
+			if (Node->Left && BoxMax.Z <= Node->Position.Z)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Z >= Node->Position.Z)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		if (!IntersectWithXZPlane(BoxMin.Y, BoxMax.Y))
+		{
+			if (Node->Left && BoxMax.Y <= Node->Position.Y)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Y >= Node->Position.Y)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::XZExtended:
+		if (!IntersectWithXYPlane(BoxMin.Z, BoxMax.Z))
+		{
+			if (Node->Left && BoxMax.Z <= Node->Position.Z)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Z >= Node->Position.Z)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		if (!IntersectWithYZPlane(BoxMin.X, BoxMax.X))
+		{
+			if (Node->Left && BoxMax.X <= Node->Position.X)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.X >= Node->Position.X)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::XExtended:
+		if (!IntersectWithYZPlane(BoxMin.X, BoxMax.X))
+		{
+			if (Node->Left && BoxMax.X <= Node->Position.X)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.X >= Node->Position.X)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::YExtended:
+		if (!IntersectWithXZPlane(BoxMin.Y, BoxMax.Y))
+		{
+			if (Node->Left && BoxMax.Y <= Node->Position.Y)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Y >= Node->Position.Y)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	case BSPType::ZExtended:
+		if (!IntersectWithXYPlane(BoxMin.Z, BoxMax.Z))
+		{
+			if (Node->Left && BoxMax.Z <= Node->Position.Z)
+				FindNodeToInsert(Node->Left, Target, BoxMin, BoxMax);
+			else if (Node->Right && BoxMin.Z >= Node->Position.Z)
+				FindNodeToInsert(Node->Right, Target, BoxMin, BoxMax);
+			else
+				break;
+			return;
+		}
+		break;
+	}
+
+	/*
+		위에서 어떠한 조건에도 충족하지 못했을때
+		모든 분할 경계에 걸치거나 자식이 없으므로 자신에게 삽입한다.
+		그리고 자기 자신을 재분할한다.
+	*/
+	Node->Primitives.push_back(Target);
+	Divide(Node);
 }
 
 void FBSP::PreOrder(BSPNode* Node, const std::function<void(BSPNode*)>& Apply)
@@ -139,8 +352,8 @@ void FBSP::PostOrder(BSPNode* Node, const std::function<void(BSPNode*)>& Apply)
 
 	1. 정육면체 = 초기 루트노드 모양 그 자체
 	2. 3. 4) 정육면체를 xy, yz, xz 평면으로 2등분한 것
-	5. 6. 7) 2, 3, 4를 자기가 잘리지 않은 평면으로 이등분한 것
-	8. 5. 6. 7.은 1의 형태로 밖에 분할될 수 밖에 없다.
+	5. 6. 7) (2. 3. 4.)를 자기가 잘리지 않은 평면으로 이등분한 것
+	8. (5. 6. 7.)은 1의 형태로 밖에 분할될 수 밖에 없다.
 
 	부모 노드는 다음과 같은 경우에 자식 노드를 가진다.
 
@@ -801,7 +1014,7 @@ void FBSP::Divide(BSPNode* Node)
 	}
 }
 
-bool FBSP::IntersectWithXYPlane(const float ZMin, const float ZMax)
+bool FBSP::IntersectWithXYPlane(const float ZMin, const float ZMax) const
 {
 	if (!Root)
 		return false;
@@ -809,7 +1022,7 @@ bool FBSP::IntersectWithXYPlane(const float ZMin, const float ZMax)
 	return Root->Position.Z >= ZMin && Root->Position.Z <= ZMax;
 }
 
-bool FBSP::IntersectWithYZPlane(const float XMin, const float XMax)
+bool FBSP::IntersectWithYZPlane(const float XMin, const float XMax) const
 {
 	if (!Root)
 		return false;
@@ -817,7 +1030,7 @@ bool FBSP::IntersectWithYZPlane(const float XMin, const float XMax)
 	return Root->Position.X >= XMin && Root->Position.X <= XMax;
 }
 
-bool FBSP::IntersectWithXZPlane(const float YMin, const float YMax)
+bool FBSP::IntersectWithXZPlane(const float YMin, const float YMax) const
 {
 	if (!Root)
 		return false;
@@ -825,7 +1038,7 @@ bool FBSP::IntersectWithXZPlane(const float YMin, const float YMax)
 	return Root->Position.Y >= YMin && Root->Position.Y <= YMax;
 }
 
-uint32 FBSP::CountXYIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives)
+uint32 FBSP::CountXYIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const
 {
 	uint32 Intersected = 0;
 
@@ -841,7 +1054,7 @@ uint32 FBSP::CountXYIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& P
 	return Intersected;
 }
 
-uint32 FBSP::CountYZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives)
+uint32 FBSP::CountYZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const
 {
 	uint32 Intersected = 0;
 
@@ -857,7 +1070,7 @@ uint32 FBSP::CountYZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& P
 	return Intersected;
 }
 
-uint32 FBSP::CountXZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives)
+uint32 FBSP::CountXZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const
 {
 	uint32 Intersected = 0;
 
@@ -879,7 +1092,7 @@ void FBSP::DivideWithXYPlane(
 	TArray<TObjectPtr<UPrimitiveComponent>>& MinusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& PlusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& Intersected
-)
+) const
 {
 	for (const TObjectPtr<UPrimitiveComponent>& Primitive : Primitives)
 	{
@@ -901,7 +1114,7 @@ void FBSP::DivideWithYZPlane(
 	TArray<TObjectPtr<UPrimitiveComponent>>& MinusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& PlusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& Intersected
-)
+) const
 {
 	for (const TObjectPtr<UPrimitiveComponent>& Primitive : Primitives)
 	{
@@ -923,7 +1136,7 @@ void FBSP::DivideWithXZPlane(
 	TArray<TObjectPtr<UPrimitiveComponent>>& MinusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& PlusSide,
 	TArray<TObjectPtr<UPrimitiveComponent>>& Intersected
-)
+) const
 {
 	for (const TObjectPtr<UPrimitiveComponent>& Primitive : Primitives)
 	{

@@ -58,9 +58,9 @@ public:
 
 	FBSP& GetBSP() { return BSP; }
 
-	void AddLevelPrimitiveComponent(AActor* Actor);
+	void AddLevelPrimitiveComponent(AActor* Actor, bool AddToBSP = true);
 
-	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone());
+	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), bool OnLoad = false);
 
 	bool DestroyActor(AActor* InActor);
 	void MarkActorForDeletion(AActor* InActor);

@@ -100,6 +100,11 @@ void UEditor::Update()
 		BatchLines.DisableRenderBoundingBox();
 	}
 
+	// BSPTree Line Render
+	/*ULevelManager::GetInstance().GetEditor()->GetBatchLines().UpdateBSPVertices(
+		ULevelManager::GetInstance().GetCurrentLevel()->GetBSP()
+	);*/
+
 	BatchLines.UpdateVertexBuffer();
 
 	ProcessMouseInput(ULevelManager::GetInstance().GetCurrentLevel());

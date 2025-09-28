@@ -3,6 +3,8 @@
 
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Utility/Public/JsonSerializer.h"
+#include "Manager/Level/Public/LevelManager.h"
+#include "Level/Public/Level.h"
 
 #include <json.hpp>
 
@@ -74,6 +76,17 @@ void USceneComponent::MarkAsDirty()
 {
 	bIsTransformDirty = true;
 	bIsTransformDirtyInverse = true;
+
+	FBSP& BSP = ULevelManager::GetInstance().GetCurrentLevel()->GetBSP();
+
+	TObjectPtr<UPrimitiveComponent> Primitive = \
+		Cast<UPrimitiveComponent>(TObjectPtr<USceneComponent>(this));
+
+	if (Primitive)
+	{
+		BSP.Remove(Primitive);
+		BSP.Insert(Primitive);
+	}
 
 	for (USceneComponent* Child : Children)
 	{

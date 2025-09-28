@@ -43,6 +43,8 @@ public:
 	void SetSingleViewportLayout(int InActiveIndex);
 	void RestoreMultiViewportLayout();
 
+	UBatchLines& GetBatchLines() { return BatchLines; }
+
 private:
 	void InitializeLayout();
 	void UpdateLayout();

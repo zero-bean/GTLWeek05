@@ -71,7 +71,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 				UClass* NewClass = FActorTypeMapper::TypeToActor(TypeString);
 
-				AActor* NewActor = SpawnActorToLevel(NewClass, IdString);
+				AActor* NewActor = SpawnActorToLevel(NewClass, IdString, true);
 				if (NewActor)
 				{
 					NewActor->Serialize(bInIsLoading, PrimitiveDataJson);
@@ -152,9 +152,11 @@ void ULevel::Cleanup()
 
 	// 4. 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
+
+	BSP.Shutdown();
 }
 
-AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
+AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, bool OnLoad)
 {
 	if (!InActorClass)
 	{
@@ -170,14 +172,14 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName)
 		}
 		LevelActors.push_back(TObjectPtr(NewActor));
 		NewActor->BeginPlay();
-		AddLevelPrimitiveComponent(NewActor);
+		AddLevelPrimitiveComponent(NewActor, !OnLoad);
 		return NewActor;
 	}
 
 	return nullptr;
 }
 
-void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
+void ULevel::AddLevelPrimitiveComponent(AActor* Actor, bool AddToBSP)
 {
 	if (!Actor) return;
 
@@ -187,6 +189,14 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		if (!PrimitiveComponent) { continue; }
 
 		LevelPrimitiveComponents.push_back(PrimitiveComponent);
+		if (AddToBSP)
+		{
+			if (!BSP.Insert(PrimitiveComponent))
+			{
+				BSP.Shutdown();
+				BSP.Initialize(LevelPrimitiveComponents);
+			}
+		}
 	}
 }
 
@@ -232,6 +242,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 			if (*Iterator == PrimitiveComponent)
 			{
 				LevelPrimitiveComponents.erase(Iterator);
+				BSP.Remove(*Iterator);
 				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
 			}
 		}

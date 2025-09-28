@@ -4,6 +4,7 @@
 #include "Editor/Public/EditorPrimitive.h"
 #include "Editor/Public/Grid.h"
 #include "Editor/Public/BoundingBoxLines.h"
+#include "Optimization/Public/BSP.h"
 
 struct FVertex;
 
@@ -16,6 +17,7 @@ public:
 	// 종류별 Vertices 업데이트
 	void UpdateUGridVertices(const float newCellSize);
 	void UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo);
+	void UpdateBSPVertices(FBSP& BSP);
 
 	// 전체 업데이트
 	void UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo);

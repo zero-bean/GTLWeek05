@@ -3,13 +3,25 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Manager/Asset/Public/AssetManager.h"
+#include "Manager/Level/Public/LevelManager.h"
+#include "Level/Public/Level.h"
 
 UBatchLines::UBatchLines()
 	: Grid()
 	, BoundingBoxLines()
 {
-	Vertices.reserve(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices());
-	Vertices.resize(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices());
+	//BSPNode* CurrentLevelBSP =
+	//	ULevelManager::GetInstance().GetCurrentLevel()->GetBSP().GetRoot();
+
+	uint32 BSPLineNum = 0;
+	/*FBSP::PostOrder(CurrentLevelBSP, [&BSPLineNum](BSPNode* Node)
+		{
+			BSPLineNum += 8;
+		}
+	);*/
+
+	Vertices.reserve(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices() + BSPLineNum);
+	Vertices.resize(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices() + BSPLineNum);
 
 	Grid.MergeVerticesAt(Vertices, 0);
 	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
@@ -70,6 +82,102 @@ void UBatchLines::UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo)
 	BoundingBoxLines.UpdateVertices(newBoundingBoxInfo);
 	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
 	bChangedVertices = true;
+}
+
+void UBatchLines::UpdateBSPVertices(FBSP& BSP)
+{
+	const uint32 BoxNumVerices = 12;
+
+	uint32 CurrentIndex = Indices.size();
+
+	FBSP::PostOrder(
+		BSP.GetRoot(),
+		[&](BSPNode* Node)
+		{
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X + Node->Extent.X / 2.0f,
+					Node->Position.Y + Node->Extent.Y / 2.0f,
+					Node->Position.Z + Node->Extent.Z / 2.0f
+					)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X + Node->Extent.X / 2.0f,
+					Node->Position.Y - Node->Extent.Y / 2.0f,
+					Node->Position.Z + Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X - Node->Extent.X / 2.0f,
+					Node->Position.Y - Node->Extent.Y / 2.0f,
+					Node->Position.Z + Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X - Node->Extent.X / 2.0f,
+					Node->Position.Y + Node->Extent.Y / 2.0f,
+					Node->Position.Z + Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X + Node->Extent.X / 2.0f,
+					Node->Position.Y + Node->Extent.Y / 2.0f,
+					Node->Position.Z - Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X + Node->Extent.X / 2.0f,
+					Node->Position.Y - Node->Extent.Y / 2.0f,
+					Node->Position.Z - Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X - Node->Extent.X / 2.0f,
+					Node->Position.Y - Node->Extent.Y / 2.0f,
+					Node->Position.Z - Node->Extent.Z / 2.0f
+				)
+			);
+			this->Vertices.push_back(
+				FVector(
+					Node->Position.X - Node->Extent.X / 2.0f,
+					Node->Position.Y + Node->Extent.Y / 2.0f,
+					Node->Position.Z - Node->Extent.Z / 2.0f
+				)
+			);
+
+			uint32 BSPBoxLineIdx[] = {
+				// 앞면
+				0, 1,
+				1, 2,
+				2, 3,
+				3, 0,
+
+				// 뒷면
+				4, 5,
+				5, 6,
+				6, 7,
+				7, 4,
+
+				// 옆면 연결
+				0, 4,
+				1, 5,
+				2, 6,
+				3, 7
+			};
+
+			// 추가된 8개의 꼭짓점에 맞춰 오프셋 적용
+			for (uint32 i = 0; i < std::size(BSPBoxLineIdx); ++i)
+				this->Indices.push_back(this->Vertices.size() - 8 + BSPBoxLineIdx[i]);
+
+			CurrentIndex += BoxNumVerices;
+		}
+	);
 }
 
 void UBatchLines::UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo)
