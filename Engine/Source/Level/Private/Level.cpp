@@ -116,6 +116,31 @@ void ULevel::Update()
 			if (Actor->CanTick()) { Actor->Tick(); }
 		}
 	}
+
+	/* * 
+	* 해당 코드는 불법 증축을 진행한 코드입니다. 이 코드를 정상화하는 방법은 다음과 같습니다.
+	* 1. 모든 액터 및 컴포넌트의 bEverTick 관련 기능을 싹 걷어야 합니다.
+	* 2. Scencomponent의 TickComponent에 시간 체크 기능을 넣으면 됩니다.
+	* 성능 저하로 인해 Week05 한정으로 만든 코드이니 잘 처리하시길 바랍니다. [PYB]
+	*/
+	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
+	{
+		if (Primitive == nullptr) { continue; }
+
+		Primitive->InactivityTimer += UTimeManager::GetInstance().GetDeltaTime();
+		if (Primitive->InactivityTimer >= Primitive->InactivityThreshold)
+		{
+			if (StaticOctree->Insert(Primitive))
+			{
+				if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), Primitive); It != DynamicPrimitives.end())
+				{
+					*It = std::move(DynamicPrimitives.back());
+					DynamicPrimitives.pop_back();
+				}
+				Primitive->InactivityTimer = 0.f;
+			}
+		}
+	}
 }
 
 void ULevel::Render()
@@ -294,11 +319,23 @@ void ULevel::MarkActorForDeletion(AActor* InActor)
 	}
 }
 
-void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* InComponent)
+void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* Primitive)
 {
-	if(StaticOctree->Remove(InComponent))
+	if (!Primitive) { return; }
+
+	// 1. StaticOctree에서 제거 먼저 시도
+	if (StaticOctree->Remove(Primitive))
 	{
-		DynamicPrimitives.push_back(InComponent);
+		// 2. DynamicPrimitives로 등록
+		DynamicPrimitives.push_back(Primitive);
+	}
+	else
+	{
+		// 3. Static에 없으면 그냥 Dynamic에 넣어줌 (중복 방지 체크 필요)
+		if (std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), Primitive) == DynamicPrimitives.end())
+		{
+			DynamicPrimitives.push_back(Primitive);
+		}
 	}
 }
 

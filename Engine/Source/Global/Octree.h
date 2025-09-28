@@ -15,7 +15,7 @@ public:
 	FOctree(const FAABB& InBoundingBox, int InDepth);
 	~FOctree();
 
-	void Insert(UPrimitiveComponent* InPrimitive);
+	bool Insert(UPrimitiveComponent* InPrimitive);
 	bool Remove(UPrimitiveComponent* InPrimitive);
 	void Clear();
 

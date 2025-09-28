@@ -40,13 +40,13 @@ FOctree::~FOctree()
 	for (int Index = 0; Index < 8; ++Index) { SafeDelete(Children[Index]); }
 }
 
-void FOctree::Insert(UPrimitiveComponent* InPrimitive)
+bool FOctree::Insert(UPrimitiveComponent* InPrimitive)
 {
 	// nullptr 체크
-	if (!InPrimitive) { return; }
+	if (!InPrimitive) { return false; }
 
 	// 0. 영역 내에 객체가 없으면 종료
-	if (BoundingBox.IsIntersected(GetPrimitiveBoundingBox(InPrimitive)) == false) { return; }
+	if (BoundingBox.IsIntersected(GetPrimitiveBoundingBox(InPrimitive)) == false) { return false; }
 
 	if (IsLeaf())
 	{
@@ -54,32 +54,31 @@ void FOctree::Insert(UPrimitiveComponent* InPrimitive)
 		if (Primitives.size() < MAX_PRIMITIVES || Depth == MAX_DEPTH)
 		{
 			Primitives.push_back(InPrimitive); // 해당 객체를 추가한다
+			return true;
 		}
 		else // 여유 공간이 없고, 최대 깊이에 도달하지 않았다면
 		{
 			// 분할 및 재귀적 추가를 한다
 			Subdivide(InPrimitive);
+			return true;
 		}
 	}
 	else
 	{
-		bool bWasInsertedIntoChild = false;
 		for (int Index = 0; Index < 8; ++Index)
 		{
 			// 자식 노드를 보유하고 있고, 영역 내에 해당 객체가 존재한다면
-			if (Children[Index]->BoundingBox.IsContains(GetPrimitiveBoundingBox(InPrimitive)))
+			if (Children[Index] && Children[Index]->BoundingBox.IsContains(GetPrimitiveBoundingBox(InPrimitive)))
 			{
-				Children[Index]->Insert(InPrimitive); // 자식 노드에게 넘겨준다
-				bWasInsertedIntoChild = true;
-				break;
+				return Children[Index]->Insert(InPrimitive); // 자식 노드에게 넘겨준다
 			}
 		}
 
-		if (!bWasInsertedIntoChild)
-		{
-			Primitives.push_back(InPrimitive);
-		}
+		Primitives.push_back(InPrimitive);
+		return true;
 	}
+
+	return false;
 }
 
 bool FOctree::Remove(UPrimitiveComponent* InPrimitive)
