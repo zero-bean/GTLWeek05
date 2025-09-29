@@ -5,6 +5,7 @@
 #include "Manager/Level/Public/LevelManager.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Level/Public/Level.h"
+#include "Optimization/Public/OptimizationHelper.h"
 
 #include <json.hpp>
 
@@ -87,6 +88,8 @@ void USceneComponent::MarkAsDirty()
 {
 	bIsTransformDirty = true;
 	bIsTransformDirtyInverse = true;
+
+	Optimization::NotifyPrimitiveDirtyToOthers();
 
 	for (USceneComponent* Child : Children)
 	{
