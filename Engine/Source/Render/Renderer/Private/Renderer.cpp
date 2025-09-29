@@ -354,7 +354,6 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		}
 		TIME_PROFILE_END(FinalVisiblePrims)
 		RenderStaticMeshes(FinalVisibleMeshes);
-		//UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
 		TIME_PROFILE(PrimitiveComponent)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
