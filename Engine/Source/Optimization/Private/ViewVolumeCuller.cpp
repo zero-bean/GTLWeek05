@@ -26,7 +26,7 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, TArray<UPrimitiveComponent*>&
 	CurrentFrustum.Planes[1] = VP[3] - VP[0]; // Right
 	CurrentFrustum.Planes[2] = VP[3] + VP[1]; // Bottom
 	CurrentFrustum.Planes[3] = VP[3] - VP[1]; // Top
-	CurrentFrustum.Planes[4] = VP[3]; // Near
+	CurrentFrustum.Planes[4] = VP[2]; // Near
 	CurrentFrustum.Planes[5] = VP[3] - VP[2]; // Far
 
 	for (int i = 0; i < 6; i++)
