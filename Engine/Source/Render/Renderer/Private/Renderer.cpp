@@ -328,14 +328,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 		TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
 		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
-		for (auto& Prim : FinalVisiblePrims)
-		{
-			TObjectPtr<UStaticMeshComponent> StaticMesh = Cast<UStaticMeshComponent>(Prim);
-			if (StaticMesh)
-			{
-				FinalVisibleMeshes.push_back(StaticMesh);
-			}
-		}
+		for (auto& Prim : FinalVisiblePrims) { FinalVisibleMeshes.push_back(Cast<UStaticMeshComponent>(Prim)); }
 		RenderStaticMeshes(FinalVisibleMeshes);
 		//UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
