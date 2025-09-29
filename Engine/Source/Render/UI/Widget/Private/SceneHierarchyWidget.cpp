@@ -79,27 +79,41 @@ void USceneHierarchyWidget::RenderWidget()
 	// Actor 리스트를 스크롤 가능한 영역으로 표시
 	if (ImGui::BeginChild("ActorList", ImVec2(0, 0), true))
 	{
+		// IMGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
 		if (SearchFilter.empty())
 		{
 			// 검색어가 없으면 모든 Actor 표시
-			for (int32 i = 0; i < static_cast<int32>(LevelActors.size()); ++i)
+			ImGuiListClipper clipper;
+			clipper.Begin(LevelActors.size());
+			while (clipper.Step())
 			{
-				if (LevelActors[i])
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					RenderActorInfo(LevelActors[i], i);
+					if (LevelActors[i])
+						RenderActorInfo(LevelActors[i], i);
 				}
 			}
+			clipper.End();
+
 		}
 		else
 		{
 			// 필터링된 Actor들만 표시
-			for (int32 FilteredIndex : FilteredIndices)
+			ImGuiListClipper clipper;
+			clipper.Begin(FilteredIndices.size());
+			while (clipper.Step())
 			{
-				if (FilteredIndex < LevelActors.size() && LevelActors[FilteredIndex])
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					RenderActorInfo(LevelActors[FilteredIndex], FilteredIndex);
+					int32 FilterIndex = FilteredIndices[i];
+
+					if (FilterIndex < LevelActors.size() && LevelActors[FilterIndex])
+					{
+						RenderActorInfo(LevelActors[FilterIndex], FilterIndex);
+					}
 				}
 			}
+			clipper.End();
 
 			// 검색 결과가 없으면 메시지 표시
 			if (FilteredIndices.empty())
