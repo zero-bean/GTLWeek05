@@ -241,8 +241,8 @@ bool ULevel::DestroyActor(AActor* InActor)
 		{
 			if (*Iterator == PrimitiveComponent)
 			{
-				LevelPrimitiveComponents.erase(Iterator);
 				BSP.Remove(*Iterator);
+				LevelPrimitiveComponents.erase(Iterator);
 				break; // 해당 컴포넌트를 찾았으므로 내부 루프 종료
 			}
 		}

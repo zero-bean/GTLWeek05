@@ -167,7 +167,9 @@ void FViewVolumeCuller::GetCullingCandidatesFromBSP(
 
 		// Divide with zero ¹æÁö
 		if (length > -0.0001f && length < 0.0001f)
+		{
 			return;
+		}
 
 		Plane[i] /= -length;
 	}
@@ -233,6 +235,7 @@ void FViewVolumeCuller::GetCullingCandidatesFromBSP(
 					Primitives.push_back(Primitive);
 				return true;
 			}
+			UE_LOG("Getting candidate failed");
 
 			return false;
 		}

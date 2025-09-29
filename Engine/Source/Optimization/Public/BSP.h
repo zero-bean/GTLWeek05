@@ -47,21 +47,21 @@ public:
 
 private:
 	void DivideCube(BSPNode* Cube);
-	void DevideXYExtended(BSPNode* XYExtended);
-	void DevideYZExtended(BSPNode* YZExtended);
-	void DevideXZExtended(BSPNode* XZExtended);
-	void DevideXExtended(BSPNode* XExtended);
-	void DevideYExtended(BSPNode* YExtended);
-	void DevideZExtended(BSPNode* ZExtended);
+	void DivideXYExtended(BSPNode* XYExtended);
+	void DivideYZExtended(BSPNode* YZExtended);
+	void DivideXZExtended(BSPNode* XZExtended);
+	void DivideXExtended(BSPNode* XExtended);
+	void DivideYExtended(BSPNode* YExtended);
+	void DivideZExtended(BSPNode* ZExtended);
 	void Divide(BSPNode* Node);
 
-	bool IntersectWithXYPlane(const float ZMin, const float ZMax) const;
-	bool IntersectWithYZPlane(const float XMin, const float XMax) const;
-	bool IntersectWithXZPlane(const float YMin, const float YMax) const;
+	bool IntersectWithXYPlane(BSPNode* Node, const float ZMin, const float ZMax) const;
+	bool IntersectWithYZPlane(BSPNode* Node, const float XMin, const float XMax) const;
+	bool IntersectWithXZPlane(BSPNode* Node, const float YMin, const float YMax) const;
 
-	uint32 CountXYIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const;
-	uint32 CountYZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const;
-	uint32 CountXZIntersected(const TArray<TObjectPtr<UPrimitiveComponent>>& Primitives) const;
+	uint32 CountXYIntersected(BSPNode* Node) const;
+	uint32 CountYZIntersected(BSPNode* Node) const;
+	uint32 CountXZIntersected(BSPNode* Node) const;
 
 	void DivideWithXYPlane(
 		BSPNode* N,
@@ -93,5 +93,5 @@ private:
 		);
 
 	BSPNode* Root = nullptr;
-	int MinimumExtent = 0;
+	float MinimumExtent = 0.0f;
 };

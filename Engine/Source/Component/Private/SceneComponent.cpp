@@ -77,6 +77,8 @@ void USceneComponent::MarkAsDirty()
 	bIsTransformDirty = true;
 	bIsTransformDirtyInverse = true;
 
+	const TObjectPtr<ULevel>& CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+
 	FBSP& BSP = ULevelManager::GetInstance().GetCurrentLevel()->GetBSP();
 
 	TObjectPtr<UPrimitiveComponent> Primitive = \
@@ -85,7 +87,11 @@ void USceneComponent::MarkAsDirty()
 	if (Primitive)
 	{
 		BSP.Remove(Primitive);
-		BSP.Insert(Primitive);
+		if (!BSP.Insert(Primitive))
+		{
+			BSP.Shutdown();
+			BSP.Initialize(CurrentLevel->GetLevelPrimitiveComponents());
+		}
 	}
 
 	for (USceneComponent* Child : Children)
