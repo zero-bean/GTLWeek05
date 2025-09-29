@@ -18,6 +18,8 @@ struct FAABB : public IBoundingVolume
 
 	bool IsIntersected(const FAABB& Other) const;
 
+	float GetSurfaceArea() const;
+
 	bool RaycastHit() const override;
 
 	float GetDistanceSquaredToPoint(const FVector& Point) const;
@@ -26,3 +28,5 @@ struct FAABB : public IBoundingVolume
 };
 
 bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box);
+
+FAABB Union(const FAABB& Box1, const FAABB& Box2);

@@ -17,6 +17,7 @@ public:
 	bool IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane);
 
 private:
+	void GatherCandidateTriangles(UPrimitiveComponent* Primitive, const FRay& ModelRay, TArray<int32>& OutCandidateTriangleIndices);
 	bool IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& WorldRay, UPrimitiveComponent* Primitive, const FMatrix& ModelMatrix, float* ShortestDistance);
 	FRay GetModelRay(const FRay& Ray, UPrimitiveComponent* Primitive);
 	bool IsRayTriangleCollided(UCamera* InActiveCamera, const FRay& Ray, const FVector& Vertex1, const FVector& Vertex2, const FVector& Vertex3,
