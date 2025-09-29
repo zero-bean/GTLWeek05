@@ -23,6 +23,12 @@ bool FAABB::IsIntersected(const FAABB& Other) const
 		(Min.Z <= Other.Max.Z && Max.Z >= Other.Min.Z);
 }
 
+float FAABB::GetSurfaceArea() const
+{
+    FVector Extent = Max - Min;
+    return 2.f * (Extent.X * Extent.Y + Extent.Y * Extent.Z + Extent.Z * Extent.X);
+}
+
 bool FAABB::RaycastHit() const
 {
 	return false;
@@ -64,6 +70,22 @@ bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box)
 
     return true;
 }
+
+FAABB Union(const FAABB& Box1, const FAABB& Box2)
+{
+    FVector NewMin(
+        std::min(Box1.Min.X, Box2.Min.X),
+        std::min(Box1.Min.Y, Box2.Min.Y),
+        std::min(Box1.Min.Z, Box2.Min.Z)
+    );
+    FVector NewMax(
+        std::max(Box1.Max.X, Box2.Max.X),
+        std::max(Box1.Max.Y, Box2.Max.Y),
+        std::max(Box1.Max.Z, Box2.Max.Z)
+    );
+    return FAABB(NewMin, NewMax);
+}
+
 
 float FAABB::GetDistanceSquaredToPoint(const FVector& Point) const
 {

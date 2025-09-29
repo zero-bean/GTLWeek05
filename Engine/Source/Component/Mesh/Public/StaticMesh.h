@@ -3,6 +3,7 @@
 #include "Core/Public/Object.h"       // UObject 기반 클래스 및 매크로
 #include "Core/Public/ObjectPtr.h" // TObjectPtr 사용
 #include "Global/CoreTypes.h"        // TArray 등
+#include "Global/BVH.h"
 
 // 전방 선언: FStaticMesh의 전체 정의를 포함할 필요 없이 포인터만 사용
 struct FMeshSection
@@ -22,6 +23,7 @@ struct FStaticMesh
 
 	TArray<FNormalVertex> Vertices;
 	TArray<uint32> Indices;
+	FBVH BVH; // 메시의 가속 구조
 
 	// --- 2. 재질 정보 (Materials) ---
 	// 이 메시에 사용되는 모든 고유 재질의 목록 (페인트 팔레트)
