@@ -60,12 +60,6 @@ public:
 
 	void SetFocusPoint(const FVector& NewFocusPoint);
 
-	void NotifyViewVolumeCullerDirtyToClientCamera()
-	{
-		for (FViewportClient Client : ViewportClients)
-			Client.Camera.MakeViewVolumeCullerStateDirty();
-	}
-
 private:
 	TArray<FViewportClient> ViewportClients = {};
 	TArray<ViewVolumeCuller> ViewVolumeCullers{4, ViewVolumeCuller()};

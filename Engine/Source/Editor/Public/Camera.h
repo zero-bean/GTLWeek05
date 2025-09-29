@@ -27,26 +27,22 @@ public:
 	* UpdateInput 함수는 사용자 입력으로 비롯된 변화의 갱신를 담당합니다.
 	* Update, UpdateMatrix 함수들은 카메라의 변환 행렬의 갱신을 담당합니다.
 	*/
+	FVector UpdateInput();
 	void Update(const D3D11_VIEWPORT& InViewport);
 	void UpdateMatrixByPers();
 	void UpdateMatrixByOrth();
 
 	/**
 	 * @brief Setter
-	 * 이하의 함수는 카메라의 상태를 변화시킵니다.
-	 * 카메라의 상태가 변경되면 ViewVolumeCuller 및 카메라 행렬을 갱신해야 하므로
-	 * Dirty Flag를 활성화합니다.
 	 */
-	FVector UpdateInput();
-
-	void SetLocation(const FVector& InOtherPosition);
-	void SetRotation(const FVector& InOtherRotation);
-	void SetFovY(const float InOtherFovY);
-	void SetAspect(const float InOtherAspect);
-	void SetNearZ(const float InOtherNearZ);
-	void SetFarZ(const float InOtherFarZ);
-	void SetOrthoWidth(const float InOrthoWidth);
-	void SetCameraType(const ECameraType InCameraType);
+	void SetLocation(const FVector& InOtherPosition) { RelativeLocation = InOtherPosition; }
+	void SetRotation(const FVector& InOtherRotation) { RelativeRotation = InOtherRotation; }
+	void SetFovY(const float InOtherFovY) { FovY = InOtherFovY; }
+	void SetAspect(const float InOtherAspect) { Aspect = InOtherAspect; }
+	void SetNearZ(const float InOtherNearZ) { NearZ = InOtherNearZ; }
+	void SetFarZ(const float InOtherFarZ) { FarZ = InOtherFarZ; }
+	void SetOrthoWidth(const float InOrthoWidth) { OrthoWidth = InOrthoWidth; }
+	void SetCameraType(const ECameraType InCameraType) { CameraType = InCameraType; }
 
 	/**
 	 * @brief Getter
@@ -95,29 +91,7 @@ public:
 		return Result;
 	}
 
-	// 제한적으로 절두체 정보만 갱신하는 경우(ex. 레벨에 액터 추가, 제거, 이동 등)
-	// 이 함수에 한하여 외부에서 접근할 필요가 있다(ex. 레벨)
-	void MakeViewVolumeCullerStateDirty()
-	{
-		ViewVolumeCullerStateDirty = true;
-	}
 private:
-	void MakeCameraStateDirty() {
-		CameraStateDirty = true;
-		// 카메라 상태가 변하면 절두체 정보는 무조건 갱신한다.
-		MakeViewVolumeCullerStateDirty();
-	}
-
-	// Dirty 플래그 복구
-	void MakeCameraStateClean() {
-		CameraStateDirty = false;
-	}
-
-	void MakeViewVolumeCullerStateClean()
-	{
-		ViewVolumeCullerStateDirty = false;
-	}
-
 	FViewProjConstants ViewProjConstants = {};
 	FVector RelativeLocation = {};
 	FVector RelativeRotation = {};
@@ -130,11 +104,6 @@ private:
 	float FarZ = {};
 	float OrthoWidth = {};
 	ECameraType CameraType = {};
-
-	// 카메라 행렬 갱신 여부를 판별
-	bool CameraStateDirty = false;
-	// 절두체 정보 갱신 여부를 판별
-	bool ViewVolumeCullerStateDirty = false;
 
 	// 절두체 컬링을 이용한 최적화
 	ViewVolumeCuller ViewVolumeCuller;

@@ -17,8 +17,6 @@
 #include "Utility/Public/JsonSerializer.h"
 #include "Utility/Public/ActorTypeMapper.h"
 #include "Global/Octree.h"
-#include "Optimization/Public/OptimizationHelper.h"
-
 #include <json.hpp>
 
 ULevel::ULevel(const FName& InName)
@@ -215,8 +213,6 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
 
 		StaticOctree->Insert(PrimitiveComponent);
-
-		Optimization::NotifyPrimitiveAdditionToOthers();
 	}
 }
 
@@ -268,8 +264,6 @@ bool ULevel::DestroyActor(AActor* InActor)
 				}
 			}
 		}
-
-		Optimization::NotifyPrimitiveDeletionToOthers();
 	}
 
 	// LevelActors 리스트에서 제거

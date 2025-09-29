@@ -356,10 +356,6 @@
     <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
-    <ClCompile Include="Source\Optimization\Private\OptimizationHelper.cpp">
-      <Filter>Source\Optimization\Private</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -746,9 +742,6 @@
     </ClInclude>
     <ClInclude Include="Source\Global\BVH.h">
       <Filter>Source\Global</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Optimization\Public\OptimizationHelper.h">
-      <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
