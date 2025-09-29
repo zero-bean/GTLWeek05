@@ -68,7 +68,7 @@ TArray<UPrimitiveComponent*> COcclusionCuller::SelectOccluders(const TArray<UPri
         if (Occluder->CachedFrame != Frame) { continue; }
         FWorldAABBData& Data = CachedAABBs[Occluder->CachedAABBIndex];
 
-        float AABB_Diagonal_LengthSq = FVector::DistSquared(Data.Center, Data.Max);
+        float AABB_Diagonal_LengthSq = FVector::DistSquared(Data.Min, Data.Max);
         float DistanceToOccluderSq = FVector::DistSquared(CameraPos, Data.Center);
 
         if (DistanceToOccluderSq < AABB_Diagonal_LengthSq) { continue; }
