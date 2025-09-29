@@ -389,14 +389,12 @@ bool FBVH::TraverseRay(const FRay& Ray, TArray<int32>& OutTriangleIndices) const
 	// 빈 트리이거나 루트가 유효하지 않은 경우
 	if (RootIndex < 0 || RootIndex >= static_cast<int32>(Nodes.size()))
 	{
-		return false;
+		return false; // Traverse failed
 	}
 	
 	// 스택을 사용한 반복적 순회로 구현 (재귀보다 성능상 유리)
 	TArray<int32> NodeStack;
 	NodeStack.push_back(RootIndex);
-	
-	bool bFoundIntersection = false;
 	
 	while (!NodeStack.empty())
 	{
@@ -414,8 +412,12 @@ bool FBVH::TraverseRay(const FRay& Ray, TArray<int32>& OutTriangleIndices) const
 		if (CurrentNode.bIsLeaf)
 		{
 			// 리프 노드인 경우 삼각형 인덱스 추가
-			OutTriangleIndices.push_back(CurrentNode.TriangleBaseIndex);
-			bFoundIntersection = true;
+			// ------------------------------------------------------------------------------------
+			// 주의: BVH 내부에서는 삼각형 인덱스 = 인덱스 배열에서 삼각형을 이루는 첫 인덱스의 위치이지만(Index buffer offset),
+			// BVH 외부에서는 삼각형 인덱스 = 인덱스 버퍼를 3개 단위로 묶었을 때의 삼각형 번호를 의미하므로(Triangle ordinal)
+			// 의미 통일을 위해 외부 반환시 3으로 나누어 사용
+			// ------------------------------------------------------------------------------------
+			OutTriangleIndices.push_back(CurrentNode.TriangleBaseIndex / 3);
 		}
 		else
 		{
@@ -432,7 +434,7 @@ bool FBVH::TraverseRay(const FRay& Ray, TArray<int32>& OutTriangleIndices) const
 		}
 	}
 	
-	return bFoundIntersection;
+	return true; // Traverse successful
 }
 
 void FBVH::Build(FStaticMesh* InMesh)

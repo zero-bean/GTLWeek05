@@ -182,91 +182,40 @@ bool UObjectPicker::IsRayPrimitiveCollided(UCamera* InActiveCamera, const FRay& 
 	// 2. 삼각형 단위로 정밀 충돌 체크
 	float Distance = D3D11_FLOAT32_MAX; //Distance 초기화
 	bool bIsHit = false;
-
-	FRay ModelRay = GetModelRay(WorldRay, Primitive);
-
-	const uint32 NumVertices = Primitive->GetNumVertices();
-	const uint32 NumIndices = Primitive->GetNumIndices();
 	
-	// 스태틱메시 컴포넌트인 경우 BVH로 충돌 검사
-	//FScopeCycleCounter Counter{ TStatId{} };
-	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Primitive))
-	{
-		if (FStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh()->GetStaticMeshAsset())
-		{
-			// BVH를 이용하여 Ray와 교차하는 후보 삼각형들 추려내기
-			TArray<int32> CandidateTriangleIndices;
-			if (StaticMesh->BVH.TraverseRay(ModelRay, CandidateTriangleIndices))
-			{
-				// BVH에서 추려낸 후보 삼각형들만 정밀 검사
-				const TArray<FNormalVertex>& Vertices = StaticMesh->Vertices;
-				const TArray<uint32>& Indices = StaticMesh->Indices;
-
-				for (int32 TriangleBaseIndex : CandidateTriangleIndices)
-				{
-					// 인덱스 유효성 검사
-					if (TriangleBaseIndex < 0 || TriangleBaseIndex + 2 >= static_cast<int32>(Indices.size()))
-					{
-						continue;
-					}
-
-					FVector TriangleVertices[3] = {
-						Vertices[Indices[TriangleBaseIndex + 0]].Position,
-						Vertices[Indices[TriangleBaseIndex + 1]].Position,
-						Vertices[Indices[TriangleBaseIndex + 2]].Position
-					};
-
-					if (IsRayTriangleCollided(InActiveCamera, ModelRay, TriangleVertices[0], TriangleVertices[1], TriangleVertices[2], ModelMatrix, &Distance))
-					{
-						bIsHit = true;
-						if (Distance < *ShortestDistance)
-						{
-							*ShortestDistance = Distance;
-						}
-					}
-				}
-				//float ElapsedMS = FWindowsPlatformTime::ToMilliseconds(Counter.Finish());
-				//UE_LOG("BVH Raycast Time: %f ms, Candidates: %d", ElapsedMS, CandidateTriangleIndices.size());
-				return bIsHit; // BVH를 사용한 경우 일반적인 루프는 건너뜀
-			}
-		}
-	}
-	
-	//FScopeCycleCounter Counter2{ TStatId{} };
 	const TArray<FNormalVertex>* Vertices = Primitive->GetVerticesData();
 	const TArray<uint32>* Indices = Primitive->GetIndicesData();
 
-	const int32 NumTriangles = (NumIndices > 0) ? (NumIndices / 3) : (NumVertices / 3);
+	FRay ModelRay = GetModelRay(WorldRay, Primitive);
+	
+	// 충돌 가능성 있는 삼각형 인덱스 수집
+	// Triangle Ordinal(인덱스 버퍼를 3개 단위로 묶었을 때의 삼각형 번호)로 반환
+	TArray<int32> CandidateTriangleIndices;
+	GatherCandidateTriangles(Primitive, ModelRay, CandidateTriangleIndices);
 
-	for (int32 TriIndex = 0; TriIndex < NumTriangles; TriIndex++) //삼각형 단위로 Vertex 위치정보 읽음
+	for (int32 TriIndex : CandidateTriangleIndices)
 	{
-		FVector TriangleVertices[3];
-
-		// 인덱스 버퍼 사용 여부에 따라 정점 구성
+		FVector V0, V1, V2;
 		if (Indices)
 		{
-			TriangleVertices[0] = (*Vertices)[(*Indices)[TriIndex * 3 + 0]].Position;
-			TriangleVertices[1] = (*Vertices)[(*Indices)[TriIndex * 3 + 1]].Position;
-			TriangleVertices[2] = (*Vertices)[(*Indices)[TriIndex * 3 + 2]].Position;
+			V0 = (*Vertices)[(*Indices)[TriIndex * 3 + 0]].Position;
+			V1 = (*Vertices)[(*Indices)[TriIndex * 3 + 1]].Position;
+			V2 = (*Vertices)[(*Indices)[TriIndex * 3 + 2]].Position;
 		}
 		else
 		{
-			TriangleVertices[0] = (*Vertices)[TriIndex * 3 + 0].Position;
-			TriangleVertices[1] = (*Vertices)[TriIndex * 3 + 1].Position;
-			TriangleVertices[2] = (*Vertices)[TriIndex * 3 + 2].Position;
+			V0 = (*Vertices)[TriIndex * 3 + 0].Position;
+			V1 = (*Vertices)[TriIndex * 3 + 1].Position;
+			V2 = (*Vertices)[TriIndex * 3 + 2].Position;
 		}
 
-		if (IsRayTriangleCollided(InActiveCamera, ModelRay, TriangleVertices[0], TriangleVertices[1], TriangleVertices[2], ModelMatrix, &Distance)) //Ray와 삼각형이 충돌하면 거리 비교 후 최단거리 갱신
+		if (IsRayTriangleCollided(InActiveCamera, ModelRay, V0, V1, V2, ModelMatrix, &Distance))
 		{
 			bIsHit = true;
-			if (Distance < *ShortestDistance)
-			{
-				*ShortestDistance = Distance;
-			}
+			*ShortestDistance = std::min(*ShortestDistance, Distance);
 		}
 	}
-	//float ElapsedMS2 = FWindowsPlatformTime::ToMilliseconds(Counter2.Finish());
-	//UE_LOG("Raycast Time: %f ms", ElapsedMS2);
+
 	return bIsHit;
 }
 
@@ -348,4 +297,33 @@ bool UObjectPicker::IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoi
 
 
 	return true;
+}
+
+void UObjectPicker::GatherCandidateTriangles(UPrimitiveComponent* Primitive, const FRay& ModelRay, TArray<int32>& OutCandidateIndices)
+{
+	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Primitive))
+	{
+		if (FStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh()->GetStaticMeshAsset())
+		{
+			if (StaticMesh->BVH.TraverseRay(ModelRay, OutCandidateIndices))
+            {
+				return;
+            }
+		}
+	}
+
+	// fallback: 전체 삼각형 인덱스 채우기
+	const TArray<FNormalVertex>* Vertices = Primitive->GetVerticesData();
+	const TArray<uint32>* Indices = Primitive->GetIndicesData();
+
+	const int32 NumVertices = Primitive->GetNumVertices();
+	const int32 NumIndices = Primitive->GetNumIndices();
+	const int32 NumTriangles = (NumIndices > 0) ? (NumIndices / 3) : (NumVertices / 3);
+
+	OutCandidateIndices.reserve(NumTriangles);
+	for (int32 TriIndex = 0; TriIndex < NumTriangles; TriIndex++)
+	{
+		OutCandidateIndices.push_back(TriIndex);
+	}
+	return;
 }

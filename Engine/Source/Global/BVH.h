@@ -16,9 +16,7 @@ struct FNode
 	int32 TriangleBaseIndex; // �ε��� ���ۿ��� �ﰢ���� ���� �ε���
 };
 
-/**
-* @brief: Narrow Phase Picking�� ���Ǵ� FBVH (Bounding Volume Hierarchy) Ŭ����
-*/
+//  Phase Picking에 사용되는 BVH (Bounding Volume Hierarchy)
 class FBVH
 {
 public:
@@ -33,10 +31,10 @@ public:
 	void Clear();
 
 	/**
-	* @brief ����Ʈ���� cost(����Ʈ���� ��� AABB�� ǥ������ ��)�� ���.
-	* @param SubTreeRootIndex: ����Ʈ���� ��Ʈ ��� �ε���
-	* @param bInternalOnly: true�� ���� ����� cost�� �����ϰ� ���
-	* @return cost ��	
+	* @brief 서브트리의 cost(노드가 가진 AABB의 표면적 합)을 계산.
+	* @param SubTreeRootIndex: cost 계산 시작 노드 인덱스
+	* @param bInternalOnly: true로 설정하면 leaf의 코스트는 포함 안시킴
+	* @return cost 값
 	*/
 	float GetCost(int32 SubTreeRootIndex, bool bInternalOnly = false) const;
 
@@ -63,25 +61,25 @@ public:
 
 private:
 	/**
-	* @brief ���ο� leaf node�� ����.
-	* @note: cost�� ���� �������� ������ sibling node�� ã�Ƽ� ���Եǵ��� ��.
-	* @return ���Ե� leaf node�� �ε���
+	* @brief 새로운 leaf node를 삽입.
+	* @note cost가 가장 낮아지는 최적의 sibling node를 찾아서 삽입되도록 함.
+	* @return 삽입된 leaf node의 인덱스, 실패 시 -1 반환
 	*/
 	int32 InsertLeaf(int32 InTriangleBaseIndex);
 
-	// --- �� leaf node ���� ���� ���� �޼ҵ�� ---
+	// --- 새 leaf node 삽입 과정 보조 메소드들 ---
 
-	//@brief ���ο� leaf node�� �߰��Ǿ��� �� cost�� ���� ���� �����ϴ� sibling node Ž��.
+	//@brief 새로운 leaf node가 추가되었을 때 cost가 가장 조금 증가하는 sibling node 탐색.
 	int32 FindBestSibling(const FAABB& NewLeafAABB);
-	//@brief ���ο� leaf node�� ���� sibling node�� ���� internal node�� �����ϰ� Ʈ���� ����.
+	//@brief 새로운 leaf node와 기존 sibling node를 묶는 internal node를 생성하고 트리에 삽입.
 	void InsertInternalNode(int32 LeafIndex, int32 SiblingIndex);
-	//@brief �־��� ����� '�θ�'���� ��Ʈ���� �ö󰡸� AABB Refit ����.
+	//@brief 주어진 노드의 '부모'부터 루트까지 올라가며 AABB Refit 수행.
 	void RefitAncestors(int32 RefitStartIndex);
 
-	FStaticMesh* Mesh = nullptr; // BVH ���� ����ƽ �޽�
+	FStaticMesh* Mesh = nullptr; // BVH 원본 메시
 	TArray<FNode> Nodes;
 	int32 RootIndex = -1;
-	float Cost = 0.0f; // ��ü Ʈ���� cost
+	float Cost = 0.0f;
 };
 
 FAABB GetTriangleAABB(const FNormalVertex& V0, const FNormalVertex& V1, const FNormalVertex& V2);
