@@ -129,12 +129,30 @@ int32 FBVH::FindBestSibling(const FAABB& NewLeafAABB)
 		const FNode& CurrentNode = Nodes[CurrentIndex];
 		FAABB CombinedAABB = Union(NewLeafAABB, CurrentNode.Box);
 
-		// 현재 노드와 새 리프를 합쳤을 때의 Direct Cost (새 internal node cost)
-		float DirectCost = CombinedAABB.GetSurfaceArea();
+		// 하한 비용 계산: 이 서브트리의 어떤 리프를 선택하더라도 최소한 발생하는 '증가' 비용
+		float DirectIncrease = CombinedAABB.GetSurfaceArea() - CurrentNode.Box.GetSurfaceArea();
+		float InheritedIncrease = 0.0f;
+		int32 AncestorIndex = CurrentNode.ParentIndex;
+		int32 CurrentChildIndex = CurrentIndex;
+		FAABB CurrentAABB = CombinedAABB;
+		while(AncestorIndex != -1)
+		{
+			const FNode& AncestorNode = Nodes[AncestorIndex];
+			int32 SiblingOfCurrentChildIndex = (AncestorNode.Child1 == CurrentChildIndex)
+				? AncestorNode.Child2
+				: AncestorNode.Child1;
+			const FNode& SiblingOfCurrentChild = Nodes[SiblingOfCurrentChildIndex];
 
-		// Branch and Bound: 이미 찾은 최적해보다 Direct Cost가 큰 경우
-		// 이 서브트리는 더 이상 탐색할 필요 없음
-		if (DirectCost >= MinCostIncrease)
+			FAABB AncestorNewAABB = Union(SiblingOfCurrentChild.Box, CurrentAABB);
+			InheritedIncrease += AncestorNewAABB.GetSurfaceArea() - AncestorNode.Box.GetSurfaceArea();
+			AncestorIndex = AncestorNode.ParentIndex;
+			CurrentChildIndex = AncestorNode.ObjectIndex;
+			CurrentAABB = AncestorNewAABB;
+		}
+		float LowerBoundIncrease = DirectIncrease + InheritedIncrease;
+
+		// 하한 비용이 현재 최적 증가 비용 이상이면 이 서브트리에서는 더 나은 해를 찾을 수 없으므로 탐색 중단
+		if (LowerBoundIncrease >= MinCostIncrease)
 		{
 			continue; // 조기 포기
 		}
@@ -154,9 +172,8 @@ int32 FBVH::FindBestSibling(const FAABB& NewLeafAABB)
 		{
 			// 내부 노드인 경우: 자식들을 스택에 추가
 			// 하지만 Lower Bound가 현재 최적해보다 좋을 때만
-			float LowerBound = DirectCost; // 가능한 최소 비용
 
-			if (LowerBound < MinCostIncrease)
+			if (LowerBoundIncrease < MinCostIncrease)
 			{
 				// 자식 노드들을 후보에 추가
 				if (CurrentNode.Child1 >= 0 && CurrentNode.Child1 < static_cast<int32>(Nodes.size()))
