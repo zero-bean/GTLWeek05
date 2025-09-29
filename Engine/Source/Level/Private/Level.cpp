@@ -212,7 +212,10 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 
 		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
 
-		StaticOctree->Insert(PrimitiveComponent);
+		if (StaticOctree->Insert(PrimitiveComponent) == false)
+		{
+			DynamicPrimitives.push_back(PrimitiveComponent);
+		}
 	}
 }
 

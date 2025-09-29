@@ -124,12 +124,26 @@ void FClientApp::UpdateSystem() const
 	auto& UIManager = UUIManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
 	auto& LevelManager = ULevelManager::GetInstance();
-
-	LevelManager.Update();
-	TimeManager.Update();
-	InputManager.Update(Window);
-	UIManager.Update();
-	Renderer.Update();
+	{
+		TIME_PROFILE(LevelManager)
+		LevelManager.Update();
+	}
+	{
+		TIME_PROFILE(TimeManager)
+		TimeManager.Update();
+	}
+	{
+		TIME_PROFILE(InputManager)
+		InputManager.Update(Window);
+	}
+	{
+		TIME_PROFILE(UIManager)
+		UIManager.Update();
+	}	
+	{
+		TIME_PROFILE(Renderer)
+		Renderer.Update();
+	}
 }
 
 /**

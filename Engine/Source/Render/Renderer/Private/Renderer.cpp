@@ -253,15 +253,28 @@ void URenderer::Update()
 		UpdateConstantBuffer(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true);
 
 		// 3. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
-		RenderLevel(CurrentCamera);
+		{
+			TIME_PROFILE(RenderLevel)
+				RenderLevel(CurrentCamera);
+		}
 
 		// 4. 에디터를 렌더링합니다.
-		ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
+		{
+			TIME_PROFILE(RenderEditor)
+				ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
+		}
+
 	}
 
 	// 최상위 에디터/GUI는 프레임에 1회만
-	UUIManager::GetInstance().Render();
-	UStatOverlay::GetInstance().Render();
+	{
+		TIME_PROFILE(UUIManager)
+			UUIManager::GetInstance().Render();
+	}
+	{
+		TIME_PROFILE(UStatOverlay)
+			UStatOverlay::GetInstance().Render();
+	}
 
 	RenderEnd(); // Present 1회
 }
@@ -301,6 +314,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
 
+	TIME_PROFILE(GetViewVolumeCuller)
 	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
 	{
 		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible()) { continue; }
@@ -315,6 +329,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 			break;
 		}
 	}
+	TIME_PROFILE_END(GetViewVolumeCuller)
 
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
@@ -326,6 +341,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
 		TIME_PROFILE_END(Occlusion)
 
+			TIME_PROFILE(FinalVisiblePrims)
 		TArray<TObjectPtr<UStaticMeshComponent>> FinalVisibleMeshes;
 		FinalVisibleMeshes.reserve(FinalVisiblePrims.size());
 		for (auto& Prim : FinalVisiblePrims)
@@ -336,9 +352,11 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 				FinalVisibleMeshes.push_back(StaticMesh);
 			}
 		}
+		TIME_PROFILE_END(FinalVisiblePrims)
 		RenderStaticMeshes(FinalVisibleMeshes);
-		//UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
+		UE_LOG("Occlusion Count %d", OcclusionCandidates.size() - FinalVisiblePrims.size());
 
+		TIME_PROFILE(PrimitiveComponent)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
@@ -352,8 +370,11 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
 		}
+
+		TIME_PROFILE_END(PrimitiveComponent)
 	}
 
+	TIME_PROFILE(RenderBillboard)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
 		if (UBillBoardComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
@@ -462,6 +483,7 @@ void URenderer::RenderEnd() const
 
 void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)
 {
+	TIME_PROFILE(RenderStaticMeshes)
 	sort(MeshComponents.begin(), MeshComponents.end(),
 		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
 			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Global/Octree.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Manager/Level/Public/LevelManager.h"
+#include "Level/Public/Level.h"
 
 namespace
 {
@@ -146,7 +148,8 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 
 TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitives(const FVector& FindPos, uint32 MaxPrimitiveCount)
 {
-	TArray<UPrimitiveComponent*> Candidates; Candidates.reserve(MaxPrimitiveCount);
+	TArray<UPrimitiveComponent*> Candidates = ULevelManager::GetInstance().GetCurrentLevel()->GetDynamicPrimitives();
+	Candidates.reserve(MaxPrimitiveCount);
 	FNodeQueue NodeQueue;
 
 	float RootDistance = this->GetBoundingBox().GetCenterDistanceSquared(FindPos);
