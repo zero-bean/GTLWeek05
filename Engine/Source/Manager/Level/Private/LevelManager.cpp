@@ -103,12 +103,13 @@ bool ULevelManager::LoadLevel(const FString& InFilePath)
 {
 	UE_LOG("LevelManager: Loading Level: %s", InFilePath.data());
 
-	path FilePath(InFilePath);
-	FString LevelName = FilePath.stem().string();
-
-	TObjectPtr<ULevel> NewLevel = TObjectPtr(new ULevel(LevelName));
+	TObjectPtr<ULevel> NewLevel;
 	try
 	{
+		path FilePath(InFilePath);
+		FString LevelName = FilePath.stem().string();
+
+		NewLevel = TObjectPtr(new ULevel(LevelName));
 		JSON LevelJsonData;
 		if (FJsonSerializer::LoadJsonFromFile(LevelJsonData, InFilePath))
 		{
@@ -119,21 +120,20 @@ bool ULevelManager::LoadLevel(const FString& InFilePath)
 		else
 		{
 			UE_LOG("LevelManager: Failed To Load Level From: %s", InFilePath.c_str());
-			delete NewLevel;
+			if (NewLevel) { delete NewLevel; }
+
 			return false;
 		}
 	}
 	catch (const exception& InException)
 	{
 		UE_LOG("LevelManager: Exception During Load: %s", InException.what());
-		delete NewLevel;
+		if (NewLevel) { delete NewLevel; }
 		return false;
 	}
 
 	// 새 레벨을 등록하고 활성 레벨로 전환합니다.
 	SwitchToLevel(NewLevel);
-
-	UE_LOG("LevelManager: Level '%s' (으)로 레벨을 교체 완료했습니다", LevelName.c_str());
 	return true;
 }
 
