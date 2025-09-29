@@ -8,7 +8,6 @@
 COcclusionCuller::COcclusionCuller()
 { 
     CPU_ZBuffer.resize(Z_BUFFER_SIZE);
-    OriginalSamples.reserve(19);
 }
 
 void COcclusionCuller::InitializeCuller(const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
@@ -19,19 +18,25 @@ void COcclusionCuller::InitializeCuller(const FMatrix& ViewMatrix, const FMatrix
 
 TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllPrimitives, const FVector& CameraPos)
 {    
+    Frame++;
     // 0. Primitive AABB 데이터 채우기
-    CachedAABBs.clear();    
-    AABBIndexMap.clear();
-    for (UPrimitiveComponent* PrimitiveComp : AllPrimitives)
+    CachedAABBs.clear();
+    for (int32 i = 0; i < AllPrimitives.size(); ++i)
     {
+        UPrimitiveComponent* PrimitiveComp = AllPrimitives[i];
         if (!PrimitiveComp) continue;
 
-        FWorldAABBData Data; Data.Prim = PrimitiveComp;
+        FWorldAABBData Data;
+        Data.Prim = PrimitiveComp;
         PrimitiveComp->GetWorldAABB(Data.Min, Data.Max);
         Data.Center = (Data.Min + Data.Max) * 0.5f;
         CachedAABBs.push_back(Data);
-        AABBIndexMap[PrimitiveComp] = CachedAABBs.size() - 1;
+
+        // 인덱스를 컴포넌트에 직접 캐시
+        PrimitiveComp->CachedAABBIndex = i;
+        PrimitiveComp->CachedFrame = Frame;
     }
+
 
     // 1. 오클루더 동적 선택
     ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
@@ -60,7 +65,8 @@ TArray<UPrimitiveComponent*> COcclusionCuller::SelectOccluders(const TArray<UPri
 
     for (UPrimitiveComponent* Occluder : Candidates)
     {
-        FWorldAABBData& Data = CachedAABBs[AABBIndexMap[Occluder]];
+        if (Occluder->CachedFrame != Frame) { continue; }
+        FWorldAABBData& Data = CachedAABBs[Occluder->CachedAABBIndex];
 
         float AABB_Diagonal_LengthSq = FVector::DistSquared(Data.Min, Data.Max);
         float DistanceToOccluderSq = FVector::DistSquared(CameraPos, Data.Center);
@@ -76,6 +82,7 @@ void COcclusionCuller::RasterizeOccluders(const TArray<UPrimitiveComponent*>& Se
 {
     for (UPrimitiveComponent* OccluderComp : SelectedOccluders)
     {
+        if (OccluderComp->CachedFrame != Frame) { continue; }
         // 1. AABB를 12개 삼각형의 월드 정점 리스트로 변환
         TArray<FVector> BoxTriangles = ConvertAABBToTriangles(OccluderComp);
 
@@ -132,121 +139,91 @@ bool COcclusionCuller::IsMeshVisible(const FWorldAABBData& AABBData)
     const FVector& WorldMax = AABBData.Max;
     const FVector& WorldCenter = AABBData.Center;
 
-    OriginalSamples.clear();
+    constexpr int32 NumSamples = 19;
+    FVector OriginalSamplesArray[NumSamples];
+    int32 Index = 0; // 배열 인덱스 카운터
 
     // 1개 중심점
-    OriginalSamples.push_back(WorldCenter);
+    OriginalSamplesArray[Index++] = WorldCenter;
 
     // 6개 면 중심
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMin.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldCenter.Y, WorldMax.Z));
-
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMin.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMax.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMin.X, WorldCenter.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMax.X, WorldCenter.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldCenter.Y, WorldMin.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldCenter.Y, WorldMax.Z);
 
     // 12개 엣지 중심
     // X 엣지 (4개)
-    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldMin.Z));
-    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldMin.Z));
-    OriginalSamples.push_back(FVector(WorldMin.X, WorldCenter.Y, WorldMax.Z));
-    OriginalSamples.push_back(FVector(WorldMax.X, WorldCenter.Y, WorldMax.Z));
+    OriginalSamplesArray[Index++] = FVector(WorldMin.X, WorldCenter.Y, WorldMin.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMax.X, WorldCenter.Y, WorldMin.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMin.X, WorldCenter.Y, WorldMax.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMax.X, WorldCenter.Y, WorldMax.Z);
 
     // Y 엣지 (4개)
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldMin.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldMin.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMin.Y, WorldMax.Z));
-    OriginalSamples.push_back(FVector(WorldCenter.X, WorldMax.Y, WorldMax.Z));
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMin.Y, WorldMin.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMax.Y, WorldMin.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMin.Y, WorldMax.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldCenter.X, WorldMax.Y, WorldMax.Z);
 
     // Z 엣지 (4개)
-    OriginalSamples.push_back(FVector(WorldMin.X, WorldMin.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldMax.X, WorldMin.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldMin.X, WorldMax.Y, WorldCenter.Z));
-    OriginalSamples.push_back(FVector(WorldMax.X, WorldMax.Y, WorldCenter.Z));
+    OriginalSamplesArray[Index++] = FVector(WorldMin.X, WorldMin.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMax.X, WorldMin.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMin.X, WorldMax.Y, WorldCenter.Z);
+    OriginalSamplesArray[Index++] = FVector(WorldMax.X, WorldMax.Y, WorldCenter.Z);
 
-    // 3. SIMD 배치 처리를 위해 20개로 패딩 (4의 배수)
-    alignas(16) float SampleX[20], SampleY[20], SampleZ[20];
+    // SIMD 배치 처리를 위해 20개로 패딩
+    const int32 BatchCount = (NumSamples + 3) / 4;
+
     for (int32 i = 0; i < 19; ++i)
     {
-        SampleX[i] = OriginalSamples[i].X;
-        SampleY[i] = OriginalSamples[i].Y;
-        SampleZ[i] = OriginalSamples[i].Z;
+        SampleCoords[0][i] = OriginalSamplesArray[i].X;  // X
+        SampleCoords[1][i] = OriginalSamplesArray[i].Y;  // Y
+        SampleCoords[2][i] = OriginalSamplesArray[i].Z;  // Z
     }
 
-    // 패딩 (20번째) - 화면 밖으로 설정하여 무시되도록
-    SampleX[19] = -999999.0f;
-    SampleY[19] = -999999.0f;
-    SampleZ[19] = -999999.0f;
-
-    const int32 NumSamples = 19;
-    const int32 BatchCount = (NumSamples + 3) / 4; // 5 배치 (19/4 = 4.75 -> 5)
-
-    // 2. SIMD 배치 처리를 위해 20개로 패딩된 배열 준비
-    // 원본 배열이 OriginalSamples[19] 라고 가정합니다.
-    alignas(16) float WorldX_Padded[20], WorldY_Padded[20], WorldZ_Padded[20];
-
-    // OriginalSamples 배열에서 Padded 배열로 데이터 복사 및 패딩
-    for (int32 i = 0; i < NumSamples; ++i)
+    // 패딩
+    for (int32 i = 19; i < 20; ++i)
     {
-        WorldX_Padded[i] = OriginalSamples[i].X;
-        WorldY_Padded[i] = OriginalSamples[i].Y;
-        WorldZ_Padded[i] = OriginalSamples[i].Z;
-    }
-    // 나머지 19~20번 인덱스에 대해 패딩 (W > 0 검사를 통과하지 않도록 큰 값으로)
-    for (int32 i = NumSamples; i < 20; ++i)
-    {
-        WorldX_Padded[i] = 1e30f;
-        WorldY_Padded[i] = 1e30f;
-        WorldZ_Padded[i] = 1e30f;
+        SampleCoords[0][i] = 1e30f;
+        SampleCoords[1][i] = 1e30f;
+        SampleCoords[2][i] = 1e30f;
     }
 
-    // 3. 4개씩 묶어서 배치 투영 및 가시성 테스트
-    const float Z_TOLERANCE = 0.001f;
-
+    constexpr float Z_TOLERANCE = 0.001f;
     for (int32 BatchIdx = 0; BatchIdx < BatchCount; ++BatchIdx)
     {
-        // 4개 샘플 배치 준비
         BatchProjectionInput Input;
-        Input.WorldX = _mm_load_ps(&WorldX_Padded[BatchIdx * 4]);
-        Input.WorldY = _mm_load_ps(&WorldY_Padded[BatchIdx * 4]);
-        Input.WorldZ = _mm_load_ps(&WorldZ_Padded[BatchIdx * 4]);
+        Input.WorldX = _mm_load_ps(&SampleCoords[0][BatchIdx * 4]);
+        Input.WorldY = _mm_load_ps(&SampleCoords[1][BatchIdx * 4]);
+        Input.WorldZ = _mm_load_ps(&SampleCoords[2][BatchIdx * 4]);
 
-        // 4개 동시 투영
         BatchProjectionResult ProjectionResult = BatchProject4(Input);
 
-        // 결과 추출 (uint64가 아닌 int32로 변환된 픽셀 좌표 추출)
-        alignas(16) int32 PixelX[4], PixelY[4];
-        alignas(16) float ScreenZ[4];
+        // 멤버 배열에 저장
+        _mm_store_si128((__m128i*)TempPixelCoords[0], ProjectionResult.PixelX);
+        _mm_store_si128((__m128i*)TempPixelCoords[1], ProjectionResult.PixelY);
+        _mm_store_ps(TempScreenZ, ProjectionResult.ScreenZ);
 
-        // _mm_storeu_si128 (비정렬 메모리 접근 허용) 또는 _mm_store_si128 사용
-        _mm_store_si128((__m128i*)PixelX, ProjectionResult.PixelX);
-        _mm_store_si128((__m128i*)PixelY, ProjectionResult.PixelY);
-        _mm_store_ps(ScreenZ, ProjectionResult.ScreenZ);
-
-        // 개별 Z-buffer 테스트 (정확성 및 Z-Buffer 접근을 위해 스칼라 사용)
         for (int32 i = 0; i < 4; ++i)
         {
             int32 SampleIdx = BatchIdx * 4 + i;
-            if (SampleIdx >= NumSamples) break; // 패딩 제외
+            if (SampleIdx >= 19) break;
 
-            int32 X = PixelX[i];
-            int32 Y = PixelY[i];
+            int32 X = TempPixelCoords[0][i];  // PixelX
+            int32 Y = TempPixelCoords[1][i];  // PixelY
 
-            // 화면 경계 내부인지 확인
             if (X >= 0 && X < Z_BUFFER_WIDTH && Y >= 0 && Y < Z_BUFFER_HEIGHT)
             {
                 int32 Index = Y * Z_BUFFER_WIDTH + X;
-
-                // 깊이 테스트 (Z_TOLERANCE 포함)
-                if (ScreenZ[i] < CPU_ZBuffer[Index] + Z_TOLERANCE)
+                if (TempScreenZ[i] < CPU_ZBuffer[Index] + Z_TOLERANCE)
                 {
                     return true;
                 }
             }
         }
     }
-
     return false;
 }
 
@@ -255,8 +232,7 @@ BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput
     // 1. 4개 월드 좌표를 동질 좌표로 변환 (W = 1.0f)
     __m128 Ones = _mm_set1_ps(1.0f);
 
-    // 2. ViewProjection 행렬 접근 - 더 안전한 방법
-    // FMatrix의 메모리 레이아웃을 명시적으로 확인
+    // 2. ViewProjection 행렬 접근
     const float* MatrixData = (const float*)&CurrentViewProj;
 
     __m128 Row0 = _mm_load_ps(&MatrixData[0]);
@@ -289,13 +265,13 @@ BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput
         _mm_mul_ps(Ones, _mm_shuffle_ps(Row3, Row3, 0xFF)));
 
     // -----------------------------------------------------------
-    // 3. Perspective divide 안전성 체크 및 수행 (SSE2 호환으로 수정)
+    // 3. Perspective divide 안전성 체크 및 수행
     // -----------------------------------------------------------
 
     // 3-1. W > 0 (프러스텀 앞)인 항목만 유효하게 만듦
     __m128 W_is_positive = _mm_cmpgt_ps(ClipW, _mm_set1_ps(1e-6f)); // W > 0.000001f
 
-    // 3-2. 안전한 역수 (InvW) 계산
+    // 3-2. 역수 (InvW) 계산
     __m128 SafeW = _mm_or_ps(ClipW, _mm_andnot_ps(W_is_positive, Ones));
     // W > 0이면 ClipW, 아니면 1.0f (0으로 나누는 것을 방지)
 
@@ -324,13 +300,9 @@ BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput
     Result.ScreenZ = ClipZ; // ScreenZ (NDC Z)
 
     // 5. 정수형 픽셀 좌표로 변환
-    // _mm_cvtps_epi32는 기본적으로 TRUNCATE (버림)을 수행합니다.
+    // _mm_cvtps_epi32는 기본적으로 TRUNCATE (버림)을 수행
     Result.PixelX = _mm_cvtps_epi32(Result.ScreenX);
     Result.PixelY = _mm_cvtps_epi32(Result.ScreenY);
-
-    // 6. 화면 경계 검사는 IsMeshVisible에서 정수 픽셀 좌표로 수행하는 것이 더 정확합니다.
-    // InBoundsMask는 반환하지 않거나, W <= 0 체크 마스크를 넘겨주는 것이 유용합니다.
-    // 여기서는 SIMD 오버헤드를 줄이기 위해 InBoundsMask 계산을 삭제합니다.
 
     return Result;
 }
@@ -396,10 +368,11 @@ TArray<FVector> COcclusionCuller::ConvertAABBToTriangles(UPrimitiveComponent* Pr
 
     if (!Prim) { return Triangles; }
 
-    const FVector& WorldCenter = CachedAABBs[AABBIndexMap[Prim]].Center;
-    FVector Extent = (CachedAABBs[AABBIndexMap[Prim]].Min - CachedAABBs[AABBIndexMap[Prim]].Max) * 0.5f;
+    FWorldAABBData& Data = CachedAABBs[Prim->CachedAABBIndex];
+    const FVector& WorldCenter = Data.Center;
+    FVector Extent = (Data.Min - Data.Max) * 0.5f;
 
-    constexpr float OccluderScale = 0.55f;
+    constexpr float OccluderScale = 0.5f;
 
     FVector WorldMin = WorldCenter - Extent * OccluderScale;
     FVector WorldMax = WorldCenter + Extent * OccluderScale;

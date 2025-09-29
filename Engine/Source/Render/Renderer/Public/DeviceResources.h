@@ -29,7 +29,6 @@ public:
 	void UpdateViewport(float InMenuBarHeight = 0.f);
 
 	// Direct2D/DirectWrite factory getters
-	ID2D1Factory* GetD2DFactory() const { return D2DFactory; }
 	IDWriteFactory* GetDWriteFactory() const { return DWriteFactory; }
 
 private:

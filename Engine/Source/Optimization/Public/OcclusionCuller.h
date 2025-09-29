@@ -25,7 +25,7 @@ public:
     TArray<TObjectPtr<UPrimitiveComponent>> PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllStaticMeshes, const FVector& CameraPos);
 
     // Constants
-    static constexpr int Z_BUFFER_WIDTH = 512;
+    static constexpr int Z_BUFFER_WIDTH = 256;
     static constexpr int Z_BUFFER_HEIGHT = 256;
     static constexpr int Z_BUFFER_SIZE = Z_BUFFER_WIDTH * Z_BUFFER_HEIGHT;
 
@@ -68,11 +68,15 @@ private:
     FMatrix CurrentViewProj;
 
     TArray<struct FWorldAABBData> CachedAABBs;
-    TMap<UPrimitiveComponent*, int32> AABBIndexMap;  // Map: PrimitiveComp* -> Vector Index
-    TArray<FVector> OriginalSamples;
     TArray<FVector> Triangles;
     TArray<UPrimitiveComponent*> FilteredOccluders;    
     TArray<TObjectPtr<UPrimitiveComponent>> VisibleMeshComponents;
+    uint32 Frame = 0;
+
+    // For SIMD
+    alignas(16) float SampleCoords[3][20];     // [0]=X, [1]=Y, [2]=Z
+    alignas(16) int32 TempPixelCoords[2][4];   // [0]=X, [1]=Y  
+    alignas(16) float TempScreenZ[4];
 };
 
 struct FWorldAABBData

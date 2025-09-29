@@ -12,7 +12,9 @@
 
 // D2D Library
 #include <d2d1.h>
+#include <d2d1_1.h>
 #include <dwrite.h>
+#include <dxgi1_3.h>
 
 // Standard Library
 #include <cmath>
@@ -84,5 +86,6 @@ using filesystem::create_directories;
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 #pragma comment(lib, "d2d1")
+#pragma comment(lib, "dxgi")
 #pragma comment(lib, "dwrite")
 #pragma comment(lib, DIRECTX_TOOL_KIT)

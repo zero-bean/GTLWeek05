@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Component/Public/SceneComponent.h"
 #include "Physics/Public/BoundingVolume.h"
 
@@ -41,6 +41,10 @@ public:
 	EPrimitiveType GetPrimitiveType() const { return Type; }
 
 	virtual void MarkAsDirty() override;
+
+	// 다른 곳에서 사용할 인덱스
+	mutable int32 CachedAABBIndex = -1;
+	mutable uint32 CachedFrame = 0;
 
 protected:
 	const TArray<FNormalVertex>* Vertices = nullptr;

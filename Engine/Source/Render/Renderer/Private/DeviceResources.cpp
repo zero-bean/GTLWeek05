@@ -206,9 +206,6 @@ void UDeviceResources::UpdateViewport(float InMenuBarHeight)
 
 void UDeviceResources::CreateFactories()
 {
-	// Direct2D 팩토리 생성
-	D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &D2DFactory);
-
 	// DirectWrite 팩토리 생성
 	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory),
 	                    reinterpret_cast<IUnknown**>(&DWriteFactory));
@@ -220,11 +217,5 @@ void UDeviceResources::ReleaseFactories()
 	{
 		DWriteFactory->Release();
 		DWriteFactory = nullptr;
-	}
-
-	if (D2DFactory)
-	{
-		D2DFactory->Release();
-		D2DFactory = nullptr;
 	}
 }

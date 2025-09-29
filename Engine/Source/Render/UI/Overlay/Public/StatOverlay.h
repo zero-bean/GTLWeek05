@@ -23,10 +23,6 @@ public:
 	void Initialize();
 	void Release();
 	void Render();
-	void CreateRenderTarget();
-
-	void PreResize();
-	void OnResize();
 
 	// Stat control methods
 	void ShowFPS(bool bShow) { bShow ? EnableStat(EStatType::FPS) : DisableStat(EStatType::FPS); }
@@ -39,11 +35,20 @@ public:
 	void RecordPickingStats(float ElapsedMS);
 
 private:
-	void RenderFPS();
-	void RenderMemory();
-	void RenderPicking();
-	void RenderTimeInfo();
-	void RenderText(const FString& Text, float X, float Y, float R, float G, float B);
+	void RenderFPS(ID2D1DeviceContext* d2dCtx);
+	void RenderMemory(ID2D1DeviceContext* d2dCtx);
+	void RenderPicking(ID2D1DeviceContext* d2dCtx);
+	void RenderTimeInfo(ID2D1DeviceContext* d2dCtx);
+	void RenderText(ID2D1DeviceContext* d2dCtx, const FString& Text, float X, float Y, float R, float G, float B);
+	template <typename T>
+	inline void SafeRelease(T*& ptr)
+	{
+		if (ptr)
+		{
+			ptr->Release();
+			ptr = nullptr;
+		}
+	}
 
 	// FPS Stats
 	float CurrentFPS = 0.0f;
@@ -67,10 +72,7 @@ private:
 	void SetStatType(EStatType InStatType);
 	bool IsStatEnabled(EStatType InStatType) const;
 
-	ID2D1RenderTarget* D2DRenderTarget = nullptr;
-	ID2D1SolidColorBrush* TextBrush = nullptr;
 	IDWriteTextFormat* TextFormat = nullptr;
 	
-	ID2D1Factory* D2DFactory = nullptr;
 	IDWriteFactory* DWriteFactory = nullptr;
 };

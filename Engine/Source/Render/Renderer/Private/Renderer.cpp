@@ -722,7 +722,6 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
 	GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
 
 	// SwapChain 버퍼 크기 재설정
-	UStatOverlay::GetInstance().PreResize();
 	HRESULT Result = GetSwapChain()->ResizeBuffers(2, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(Result))
 	{
@@ -739,7 +738,6 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
 	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
 	ID3D11RenderTargetView* RenderTargetViews[] = { RenderTargetView };
 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
-	UStatOverlay::GetInstance().OnResize();
 }
 
 /**

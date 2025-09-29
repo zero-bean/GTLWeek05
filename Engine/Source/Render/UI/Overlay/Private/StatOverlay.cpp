@@ -12,228 +12,205 @@ UStatOverlay::~UStatOverlay() = default;
 
 void UStatOverlay::Initialize()
 {
-	auto* DeviceResources = URenderer::GetInstance().GetDeviceResources();
-	D2DFactory = DeviceResources->GetD2DFactory();
-	DWriteFactory = DeviceResources->GetDWriteFactory();
+    auto* DeviceResources = URenderer::GetInstance().GetDeviceResources();
+    DWriteFactory = DeviceResources->GetDWriteFactory();
 
-	if (DWriteFactory)
-	{
-		DWriteFactory->CreateTextFormat(
-			L"monospace",				// Font-name
-			nullptr,
-			DWRITE_FONT_WEIGHT_NORMAL,
-			DWRITE_FONT_STYLE_NORMAL,
-			DWRITE_FONT_STRETCH_NORMAL,
-			15.0f,						// Font-size
-			L"en-us",
-			&TextFormat
-		);
-	}
-	CreateRenderTarget();
-}
-
-void UStatOverlay::PreResize()
-{
-	if (TextBrush)		 { TextBrush->Release(); TextBrush = nullptr; }
-	if (D2DRenderTarget) { D2DRenderTarget->Release(); D2DRenderTarget = nullptr; }
-}
-
-void UStatOverlay::OnResize()
-{
-	CreateRenderTarget();	// Recreate only back buffer dependent resources
+    if (DWriteFactory)
+    {
+        DWriteFactory->CreateTextFormat(
+            L"Consolas",
+            nullptr,
+            DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            15.0f,
+            L"en-us",
+            &TextFormat
+        );
+    }
 }
 
 void UStatOverlay::Release()
 {
-	if (TextBrush)		 { TextBrush->Release(); TextBrush = nullptr; }
-	if (D2DRenderTarget) { D2DRenderTarget->Release(); D2DRenderTarget = nullptr; }
-	if (TextFormat)		 { TextFormat->Release(); TextFormat = nullptr; }
-	
-	// Factories are managed by the Renderer
-	D2DFactory = nullptr;
-	DWriteFactory = nullptr;
+    SafeRelease(TextFormat);
+
+    DWriteFactory = nullptr;
 }
 
 void UStatOverlay::Render()
 {
-	if (!D2DRenderTarget) return;
+    TIME_PROFILE(StatDrawn);
 
-	D2DRenderTarget->BeginDraw();
+    auto* DeviceResources = URenderer::GetInstance().GetDeviceResources();
+    IDXGISwapChain* SwapChain = DeviceResources->GetSwapChain();
+    ID3D11Device* D3DDevice = DeviceResources->GetDevice();
 
-	if (IsStatEnabled(EStatType::FPS))		{ RenderFPS(); }
-	if (IsStatEnabled(EStatType::Memory))	{ RenderMemory(); }
-	if (IsStatEnabled(EStatType::Picking))	{ RenderPicking(); }
-	if (IsStatEnabled(EStatType::Time))	{ RenderTimeInfo(); }
+    ID2D1Factory1* D2DFactory = nullptr;
+    D2D1_FACTORY_OPTIONS opts{};
+#ifdef _DEBUG
+    opts.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+#endif
+    if (FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &opts, (void**)&D2DFactory)))
+        return;
 
-	D2DRenderTarget->EndDraw();
+    IDXGISurface* Surface = nullptr;
+    SwapChain->GetBuffer(0, __uuidof(IDXGISurface), (void**)&Surface);
+
+    IDXGIDevice* DXGIDevice = nullptr;
+    D3DDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&DXGIDevice);
+
+    ID2D1Device* D2DDevice = nullptr;
+    D2DFactory->CreateDevice(DXGIDevice, &D2DDevice);
+
+    ID2D1DeviceContext* D2DCtx = nullptr;
+    D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &D2DCtx);
+
+    D2D1_BITMAP_PROPERTIES1 BmpProps = {};
+    BmpProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    BmpProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+    BmpProps.dpiX = 96.0f;
+    BmpProps.dpiY = 96.0f;
+    BmpProps.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+
+    ID2D1Bitmap1* TargetBmp = nullptr;
+    D2DCtx->CreateBitmapFromDxgiSurface(Surface, &BmpProps, &TargetBmp);
+
+    D2DCtx->SetTarget(TargetBmp);
+    D2DCtx->BeginDraw();
+
+    if (IsStatEnabled(EStatType::FPS))     RenderFPS(D2DCtx);
+    if (IsStatEnabled(EStatType::Memory))  RenderMemory(D2DCtx);
+    if (IsStatEnabled(EStatType::Picking)) RenderPicking(D2DCtx);
+    if (IsStatEnabled(EStatType::Time))    RenderTimeInfo(D2DCtx);
+
+    D2DCtx->EndDraw();
+    D2DCtx->SetTarget(nullptr);
+
+    SafeRelease(TargetBmp);
+    SafeRelease(D2DCtx);
+    SafeRelease(D2DDevice);
+    SafeRelease(DXGIDevice);
+    SafeRelease(Surface);
+    SafeRelease(D2DFactory);
 }
 
-void UStatOverlay::CreateRenderTarget()
+void UStatOverlay::RenderFPS(ID2D1DeviceContext* D2DCtx)
 {
-	if (D2DRenderTarget) { D2DRenderTarget->Release(); D2DRenderTarget = nullptr; }
-	if (TextBrush) { TextBrush->Release(); TextBrush = nullptr; }
+    auto& timeManager = UTimeManager::GetInstance();
+    CurrentFPS = timeManager.GetFPS();
+    FrameTime = timeManager.GetDeltaTime() * 1000;
 
-	auto* DeviceResources = URenderer::GetInstance().GetDeviceResources();
-	if (!DeviceResources || !D2DFactory) return;
+    char buf[64];
+    sprintf_s(buf, sizeof(buf), "FPS: %.1f (%.2f ms)", CurrentFPS, FrameTime);
+    FString text = buf;
 
-	ID3D11Texture2D* BackBuffer = nullptr;
-	HRESULT hr = DeviceResources->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&BackBuffer));
-	if (FAILED(hr) || !BackBuffer)
-		return;
+    float r = 0.5f, g = 1.0f, b = 0.5f;
+    if (CurrentFPS < 30.0f) { r = 1.0f; g = 0.0f; b = 0.0f; }
+    else if (CurrentFPS < 60.0f) { r = 1.0f; g = 1.0f; b = 0.0f; }
 
-	IDXGISurface* DxgiSurface = nullptr;
-	hr = BackBuffer->QueryInterface(IID_PPV_ARGS(&DxgiSurface));
-	if (FAILED(hr) || !DxgiSurface)
-		return;
-
-	D2D1_RENDER_TARGET_PROPERTIES Props = D2D1::RenderTargetProperties(
-		D2D1_RENDER_TARGET_TYPE_DEFAULT,
-		D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED)
-	);
-
-	if (SUCCEEDED(D2DFactory->CreateDxgiSurfaceRenderTarget(DxgiSurface, &Props, &D2DRenderTarget)))
-	{
-		if (D2DRenderTarget && !TextBrush)
-		{
-			D2DRenderTarget->CreateSolidColorBrush(D2D1::ColorF(1, 1, 1), &TextBrush);
-		}
-	}
-
-	DxgiSurface->Release();
-	BackBuffer->Release();
+    RenderText(D2DCtx, text, OverlayX, OverlayY, r, g, b);
 }
 
-void UStatOverlay::RenderFPS()
+void UStatOverlay::RenderMemory(ID2D1DeviceContext* d2dCtx)
 {
-	auto& TimeManager = UTimeManager::GetInstance();
-	CurrentFPS = TimeManager.GetFPS();
-	FrameTime = TimeManager.GetDeltaTime() * 1000;
+    float MemoryMB = static_cast<float>(TotalAllocationBytes) / (1024.0f * 1024.0f);
 
-	char FpsBuffer[64];
-	sprintf_s(FpsBuffer, sizeof(FpsBuffer), "FPS: %.1f (%.2f ms)", CurrentFPS, FrameTime);
-	FString FpsText = FpsBuffer;
+    char Buf[64];
+    sprintf_s(Buf, sizeof(Buf), "Memory: %.1f MB (%u objects)", MemoryMB, TotalAllocationCount);
+    FString text = Buf;
 
-	float R = 0.5f, G = 1.0f, B = 0.5f;
-	if (CurrentFPS < 30.0f) { R = 1.0f; G = 0.0f; B = 0.0f; }
-	else if (CurrentFPS < 60.0f) { R = 1.0f; G = 1.0f; B = 0.0f; }
-
-	RenderText(FpsText, OverlayX, OverlayY, R, G, B);
+    float OffsetY = IsStatEnabled(EStatType::FPS) ? 20.0f : 0.0f;
+    RenderText(d2dCtx, text, OverlayX, OverlayY + OffsetY, 1.0f, 1.0f, 0.0f);
 }
 
-void UStatOverlay::RenderMemory()
+void UStatOverlay::RenderPicking(ID2D1DeviceContext* D2DCtx)
 {
-	float MemoryMB = static_cast<float>(TotalAllocationBytes) / (1024.0f * 1024.0f);
+    float AvgMs = PickAttempts > 0 ? AccumulatedPickingTimeMs / PickAttempts : 0.0f;
 
-	char MemoryBuffer[64];
-	sprintf_s(MemoryBuffer, sizeof(MemoryBuffer), "Memory: %.1f MB (%u objects)", MemoryMB, TotalAllocationCount);
-	FString MemoryText = MemoryBuffer;
+    char Buf[128];
+    sprintf_s(Buf, sizeof(Buf), "Picking Time %.2f ms (Attempts %u, Accum %.2f ms, Avg %.2f ms)",
+        LastPickingTimeMs, PickAttempts, AccumulatedPickingTimeMs, AvgMs);
+    FString Text = Buf;
 
-	float OffsetY = IsStatEnabled(EStatType::FPS) ? 20.0f : 0.0f;
-	RenderText(MemoryText, OverlayX, OverlayY + OffsetY, 1.0f, 1.0f, 0.0f);
+    float OffsetY = 0.0f;
+    if (IsStatEnabled(EStatType::FPS))    OffsetY += 20.0f;
+    if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
+
+    float r = 0.0f, g = 1.0f, b = 0.8f;
+    if (LastPickingTimeMs > 5.0f) { r = 1.0f; g = 0.0f; b = 0.0f; }
+    else if (LastPickingTimeMs > 1.0f) { r = 1.0f; g = 1.0f; b = 0.0f; }
+
+    RenderText(D2DCtx, Text, OverlayX, OverlayY + OffsetY, r, g, b);
 }
 
-void UStatOverlay::RenderPicking()
+void UStatOverlay::RenderTimeInfo(ID2D1DeviceContext* D2DCtx)
 {
-	float AveragePickingTimeMs = PickAttempts > 0 ? AccumulatedPickingTimeMs / PickAttempts : 0.0f;
+    const TArray<FString> ProfileKeys = FScopeCycleCounter::GetTimeProfileKeys();
 
-	char PickingBuffer[128];
-	sprintf_s(PickingBuffer, sizeof(PickingBuffer), "Picking Time %.2f ms (Attempts %u, Accumulated %.2f ms, Average %.2f ms)", 
-	         LastPickingTimeMs, PickAttempts, AccumulatedPickingTimeMs, AveragePickingTimeMs);
-	FString PickingText = PickingBuffer;
+    float OffsetY = 0.0f;
+    if (IsStatEnabled(EStatType::FPS))    OffsetY += 20.0f;
+    if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
+    if (IsStatEnabled(EStatType::Picking)) OffsetY += 20.0f;
 
-	// Calculate Y offset based on enabled stats
-	float OffsetY = 0.0f;
-	if (IsStatEnabled(EStatType::FPS)) OffsetY += 20.0f;
-	if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
+    float CurrentY = OverlayY + OffsetY;
+    const float LineHeight = 20.0f;
 
-	// Color coding: Green for fast, Yellow for medium, Red for slow picking
-	float R = 0.0f, G = 1.0f, B = 0.8f;  // Default cyan
-	if (LastPickingTimeMs > 5.0f) { R = 1.0f; G = 0.0f; B = 0.0f; }      // Red for > 5ms
-	else if (LastPickingTimeMs > 1.0f) { R = 1.0f; G = 1.0f; B = 0.0f; }  // Yellow for > 1ms
+    for (const FString& Key : ProfileKeys)
+    {
+        const FTimeProfile& Profile = FScopeCycleCounter::GetTimeProfile(Key);
 
-	RenderText(PickingText, OverlayX, OverlayY + OffsetY, R, G, B);
+        char buf[128];
+        sprintf_s(buf, sizeof(buf), "%s: %.2f ms", Key.c_str(), Profile.Milliseconds);
+        FString text = buf;
+
+        float r = 0.8f, g = 0.8f, b = 0.8f;
+        if (Profile.Milliseconds > 1.0f) { r = 1.0f; g = 1.0f; b = 0.0f; }
+
+        RenderText(D2DCtx, text, OverlayX, CurrentY, r, g, b);
+        CurrentY += LineHeight;
+    }
 }
 
-void UStatOverlay::RenderTimeInfo()
-{   
-	const TArray<FString> ProfileKeys = FScopeCycleCounter::GetTimeProfileKeys();
-
-	float OffsetY = 0.0f;
-	if (IsStatEnabled(EStatType::FPS)) OffsetY += 20.0f;
-	if (IsStatEnabled(EStatType::Memory)) OffsetY += 20.0f;
-	if (IsStatEnabled(EStatType::Picking)) OffsetY += 20.0f;
-
-	float CurrentY = OverlayY + OffsetY;
-	const float LINE_HEIGHT = 20.0f;
-
-	for (const std::string& Key : ProfileKeys)
-	{
-		const FTimeProfile& Profile = FScopeCycleCounter::GetTimeProfile(Key);
-
-		float AverageTimeMs = Profile.Milliseconds;
-		char TimeBuffer[128];
-		sprintf_s(TimeBuffer, sizeof(TimeBuffer), "%s: %.2f ms", Key.c_str(), AverageTimeMs);
-
-		FString TimeText = TimeBuffer;
-
-		float R = 0.8f, G = 0.8f, B = 0.8f;
-		if (AverageTimeMs > 1.0f) { R = 1.0f; G = 1.0f; B = 0.0f; } 
-
-		RenderText(TimeText, OverlayX, CurrentY, R, G, B);
-		CurrentY += LINE_HEIGHT;
-	}
-}
-
-void UStatOverlay::RenderText(const FString& Text, float X, float Y, float R, float G, float B)
+void UStatOverlay::RenderText(ID2D1DeviceContext* D2DCtx, const FString& Text, float x, float y, float r, float g, float b)
 {
-	if (!D2DRenderTarget || !TextBrush || !TextFormat) return;
+    if (!D2DCtx || Text.empty() || !TextFormat) return;
 
-	TextBrush->SetColor(D2D1::ColorF(R, G, B));
-	std::wstring wText = ToWString(Text);
+    std::wstring wText = ToWString(Text);
 
-	D2D1_RECT_F layoutRect = D2D1::RectF(X, Y, X + 800.0f, Y + 20.0f);
-	D2DRenderTarget->DrawText(
-		wText.c_str(),
-		static_cast<UINT32>(wText.length()),
-		TextFormat,
-		&layoutRect,
-		TextBrush
-	);
+    ID2D1SolidColorBrush* Brush = nullptr;
+    if (FAILED(D2DCtx->CreateSolidColorBrush(D2D1::ColorF(r, g, b), &Brush)))
+        return;
+
+    D2D1_RECT_F rect = D2D1::RectF(x, y, x + 800.0f, y + 20.0f);
+    D2DCtx->DrawTextW(
+        wText.c_str(),
+        static_cast<UINT32>(wText.length()),
+        TextFormat,
+        &rect,
+        Brush
+    );
+
+    SafeRelease(Brush);
 }
 
 std::wstring UStatOverlay::ToWString(const FString& InStr)
 {
-	if (InStr.empty()) return std::wstring();
+    if (InStr.empty()) return std::wstring();
 
-	int SizeNeeded = MultiByteToWideChar(CP_UTF8, 0, InStr.c_str(), (int)InStr.size(), NULL, 0);
-	std::wstring wStr(SizeNeeded, 0);
-	MultiByteToWideChar(CP_UTF8, 0, InStr.c_str(), (int)InStr.size(), &wStr[0], SizeNeeded);
-	return wStr;
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, InStr.c_str(), (int)InStr.size(), NULL, 0);
+    std::wstring wStr(sizeNeeded, 0);
+    MultiByteToWideChar(CP_UTF8, 0, InStr.c_str(), (int)InStr.size(), &wStr[0], sizeNeeded);
+    return wStr;
 }
 
-void UStatOverlay::EnableStat(EStatType Type)
-{
-	StatMask |= static_cast<uint8>(Type);
-}
+void UStatOverlay::EnableStat(EStatType type) { StatMask |= static_cast<uint8>(type); }
+void UStatOverlay::DisableStat(EStatType type) { StatMask &= ~static_cast<uint8>(type); }
+void UStatOverlay::SetStatType(EStatType type) { StatMask = static_cast<uint8>(type); }
+bool UStatOverlay::IsStatEnabled(EStatType type) const { return (StatMask & static_cast<uint8>(type)) != 0; }
 
-void UStatOverlay::DisableStat(EStatType Type)
+void UStatOverlay::RecordPickingStats(float elapsedMs)
 {
-	StatMask &= ~static_cast<uint8>(Type);
-}
-
-void UStatOverlay::SetStatType(EStatType Type)
-{
-	StatMask = static_cast<uint8>(Type);
-}
-
-bool UStatOverlay::IsStatEnabled(EStatType Type) const
-{
-	return (StatMask & static_cast<uint8>(Type)) != 0;
-}
-
-void UStatOverlay::RecordPickingStats(float ElapsedMs)
-{
-	++PickAttempts;
-	LastPickingTimeMs = ElapsedMs;
-	AccumulatedPickingTimeMs += ElapsedMs;
+    ++PickAttempts;
+    LastPickingTimeMs = elapsedMs;
+    AccumulatedPickingTimeMs += elapsedMs;
 }
