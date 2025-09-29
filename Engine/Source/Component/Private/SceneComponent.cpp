@@ -3,6 +3,7 @@
 
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Utility/Public/JsonSerializer.h"
+#include "Optimization/Public/OptimizationHelper.h"
 
 #include <json.hpp>
 
@@ -112,6 +113,8 @@ void USceneComponent::MarkAsDirty()
 {
 	bIsTransformDirty = true;
 	bIsTransformDirtyInverse = true;
+
+	Optimization::NotifyPrimitiveDirtyToOthers();
 
 	for (USceneComponent* Child : Children)
 	{
