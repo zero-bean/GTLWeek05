@@ -4,11 +4,11 @@
 
 class AActor;
 
-class UBillBoardComponent : public UPrimitiveComponent
+class UTextComponent : public UPrimitiveComponent
 {
 public:
-	UBillBoardComponent(AActor* InOwnerActor, float InYOffset);
-	~UBillBoardComponent();
+	UTextComponent(AActor* InOwnerActor, float InYOffset);
+	~UTextComponent();
 
 	virtual void OnSelected() override;
 	virtual void OnDeselected() override;

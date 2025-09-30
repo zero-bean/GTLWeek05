@@ -18,7 +18,7 @@
 #include "Global/Quaternion.h"
 #include "Utility/Public/ScopeCycleCounter.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
-#include "Component/Public/BillBoardComponent.h"
+#include "Component/Public/TextComponent.h"
 
 UEditor::UEditor()
 {
@@ -592,7 +592,7 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 	return Gizmo.GetActorScale();
 }
 
-UBillBoardComponent* UEditor::GetPickedBillboard() const
+UTextComponent* UEditor::GetPickedBillboard() const
 {
 	return PickedBillboard;
 }

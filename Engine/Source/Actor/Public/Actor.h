@@ -5,7 +5,7 @@
 #include "Component/Public/SceneComponent.h"
 #include "Factory/Public/NewObject.h"
 
-class UBillBoardComponent;
+class UTextComponent;
 /**
  * @brief Level에서 렌더링되는 UObject 클래스
  * UWorld로부터 업데이트 함수가 호출되면 component들을 순회하며 위치, 애니메이션, 상태 처리
@@ -41,7 +41,7 @@ public:
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
-	UBillBoardComponent* GetBillBoardComponent() const { return BillBoardComponent.Get(); }
+	UTextComponent* GetBillBoardComponent() const { return BillBoardComponent.Get(); }
 
 	const FVector& GetActorLocation() const;
 	const FVector& GetActorRotation() const;
@@ -77,6 +77,6 @@ protected:
 
 private:
 	TObjectPtr<USceneComponent> RootComponent = nullptr;
-	TObjectPtr<UBillBoardComponent> BillBoardComponent = nullptr;
+	TObjectPtr<UTextComponent> BillBoardComponent = nullptr;
 	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
 };

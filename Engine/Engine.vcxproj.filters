@@ -68,7 +68,7 @@
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp">
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Component\Private\BillBoardComponent.cpp">
+    <ClCompile Include="Source\Component\Private\TextComponent.cpp">
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Component\Private\LineComponent.cpp">
@@ -356,6 +356,7 @@
     <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -407,7 +408,7 @@
     <ClInclude Include="Source\Component\Public\ActorComponent.h">
       <Filter>Source\Component\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Component\Public\BillBoardComponent.h">
+    <ClInclude Include="Source\Component\Public\TextComponent.h">
       <Filter>Source\Component\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\Public\LineComponent.h">

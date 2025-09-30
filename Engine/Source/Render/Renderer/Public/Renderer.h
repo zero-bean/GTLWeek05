@@ -8,7 +8,7 @@
 class UDeviceResources;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
-class UBillBoardComponent;
+class UTextComponent;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -71,7 +71,7 @@ public:
 	void RenderLevel(UCamera* InCurrentCamera);
 	void RenderEnd() const;
 	void RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents);
-	void RenderBillboard(UBillBoardComponent* InBillBoardComp, UCamera* InCurrentCamera);
+	void RenderBillboard(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
 	void RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState,

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/FontRenderer/Public/FontRenderer.h"
-#include "Component/Public/BillBoardComponent.h"
+#include "Component/Public/TextComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Editor/Public/Editor.h"
@@ -311,7 +311,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
 
 	TArray<TObjectPtr<UPrimitiveComponent>> OcclusionCandidates;
-	TArray<TObjectPtr<UBillBoardComponent>> BillboardComponents;
+	TArray<TObjectPtr<UTextComponent>> BillboardComponents;
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
 
 	TIME_PROFILE(GetViewVolumeCuller)
@@ -376,7 +376,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TIME_PROFILE(RenderBillboard)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UBillBoardComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
 		{
 			RenderBillboard(PickedBillboard, InCurrentCamera);
 		}
@@ -601,7 +601,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	}
 }
 
-void URenderer::RenderBillboard(UBillBoardComponent* InBillBoardComp, UCamera* InCurrentCamera)
+void URenderer::RenderBillboard(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
 {
 	if (!InCurrentCamera)	return;
 

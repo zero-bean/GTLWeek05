@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Component/Public/BillBoardComponent.h"
+#include "Component/Public/TextComponent.h"
 #include "Manager/Level/Public/LevelManager.h"
 #include "Editor/Public/Editor.h"
 #include "Actor/Public/Actor.h"
@@ -8,7 +8,7 @@
  * @brief Level에서 각 Actor마다 가지고 있는 UUID를 출력해주기 위한 빌보드 클래스
  * Actor has a UBillBoardComponent
  */
-UBillBoardComponent::UBillBoardComponent(AActor* InOwnerActor, float InYOffset)
+UTextComponent::UTextComponent(AActor* InOwnerActor, float InYOffset)
 	: POwnerActor(InOwnerActor)
 	, ZOffset(InYOffset)
 {
@@ -16,22 +16,22 @@ UBillBoardComponent::UBillBoardComponent(AActor* InOwnerActor, float InYOffset)
 	SetVisibility(false); // 현재는 시작하자마자 Visibility False, Select 시 True되는 시스템
 }
 
-UBillBoardComponent::~UBillBoardComponent()
+UTextComponent::~UTextComponent()
 {
 	POwnerActor = nullptr;
 }
 
-void UBillBoardComponent::OnSelected()
+void UTextComponent::OnSelected()
 {
 	SetVisibility(true);
 }
 
-void UBillBoardComponent::OnDeselected()
+void UTextComponent::OnDeselected()
 {
 	SetVisibility(false);
 }
 
-void UBillBoardComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
+void UTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
 {
 	const FVector& OwnerActorLocation = POwnerActor->GetActorLocation();
 
