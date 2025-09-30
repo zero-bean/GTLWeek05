@@ -19,25 +19,25 @@
 // 하드 코딩으로 구현
 FString FActorTypeMapper::ActorToType(UClass* InClass)
 {
-	FName TypeName = InClass->GetClassTypeName();
+	FName TypeName = InClass->GetName();
 
-	if (TypeName == ACubeActor::StaticClass()->GetClassTypeName())
+	if (TypeName == ACubeActor::StaticClass()->GetName())
 	{
 		return "Cube";
 	}
-	else if (TypeName == ASphereActor::StaticClass()->GetClassTypeName())
+	else if (TypeName == ASphereActor::StaticClass()->GetName())
 	{
 		return "Sphere";
 	}
-	else if (TypeName == ASquareActor::StaticClass()->GetClassTypeName())
+	else if (TypeName == ASquareActor::StaticClass()->GetName())
 	{
 		return "Square";
 	}
-	else if (TypeName == ATriangleActor::StaticClass()->GetClassTypeName())
+	else if (TypeName == ATriangleActor::StaticClass()->GetName())
 	{
 		return "Triangle";
 	}
-	else if (TypeName == AStaticMeshActor::StaticClass()->GetClassTypeName())
+	else if (TypeName == AStaticMeshActor::StaticClass()->GetName())
 	{
 		return "StaticMeshComp";
 	}

@@ -41,6 +41,9 @@
 #include "Source/Global/Macro.h"
 #include "Source/Global/Function.h"
 #include "Utility/Public/ScopeCycleCounter.h"
+#include "Editor/Public/Editor.h"
+#include "Editor/Public/EditorEngine.h"
+#include "Core/Public/Class.h"
 
 using std::clamp;
 using std::unordered_map;

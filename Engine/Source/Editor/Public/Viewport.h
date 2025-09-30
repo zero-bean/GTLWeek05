@@ -54,7 +54,7 @@ public:
 	* @brief 활성 뷰포트의 카메라를 반환하는 헬퍼 함수.
 	* @return 활성 카메라의 포인터. 없으면 nullptr.
 	*/
-	UCamera* GetActiveCamera() const { return ActiveViewportClient ? &ActiveViewportClient->Camera : nullptr; }
+	UCamera* GetActiveCamera() const { return ActiveViewportClient ? ActiveViewportClient->Camera : nullptr; }
 
 	TArray<FViewportClient>& GetViewports() { return ViewportClients; }
 

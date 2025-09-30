@@ -5,15 +5,14 @@
 #include "Manager/Config/Public/ConfigManager.h"
 
 
-UGrid::UGrid()
-	: Vertices(TArray<FVector>())
-	, NumLines(250)
-	, CellSize(0) // 아래 UpdateVerticesBy에 넣어주는 값과 달라야 함
+IMPLEMENT_CLASS(UGrid, UObject)
+UGrid::UGrid() : Vertices(TArray<FVector>()), NumLines(250), CellSize(0)
 {
 	NumVertices = NumLines * 4;
 	Vertices.reserve(NumVertices);
 	UpdateVerticesBy(UConfigManager::GetInstance().GetCellSize());
 }
+
 UGrid::~UGrid()
 {
 	UConfigManager::GetInstance().SetCellSize(CellSize);
@@ -22,10 +21,7 @@ UGrid::~UGrid()
 void UGrid::UpdateVerticesBy(float NewCellSize)
 {
 	// 중복 삽입 방지
-	if (CellSize == NewCellSize)
-	{
-		return;
-	}
+	if (CellSize == NewCellSize) { return; }
 
 	CellSize = NewCellSize; // 필요하다면 멤버 변수도 갱신
 
@@ -69,26 +65,26 @@ void UGrid::UpdateVerticesBy(float NewCellSize)
 }
 
 
-void UGrid::MergeVerticesAt(TArray<FVector>& destVertices, size_t insertStartIndex)
+void UGrid::MergeVerticesAt(TArray<FVector>& DestVertices, size_t InsertStartIndex)
 {
 	// 인덱스 범위 보정
-	if (insertStartIndex > destVertices.size())
-		insertStartIndex = destVertices.size();
+	if (InsertStartIndex > DestVertices.size())
+		InsertStartIndex = DestVertices.size();
 
-	// 미리 메모리 확보
-	destVertices.reserve(destVertices.size() + std::distance(Vertices.begin(), Vertices.end()));
+    // 미리 메모리 확보
+	DestVertices.reserve(DestVertices.size() + std::distance(Vertices.begin(), Vertices.end()));
 
 	// 덮어쓸 수 있는 개수 계산
-	size_t overwriteCount = std::min(
+	size_t OverwriteCount = std::min(
 		Vertices.size(),
-		destVertices.size() - insertStartIndex
+		DestVertices.size() - InsertStartIndex
 	);
 
 	// 기존 요소 덮어쓰기
 	std::copy(
 		Vertices.begin(),
-		Vertices.begin() + overwriteCount,
-		destVertices.begin() + insertStartIndex
+		Vertices.begin() + OverwriteCount,
+		DestVertices.begin() + InsertStartIndex
 	);
 
 	// 원하는 위치에 삽입

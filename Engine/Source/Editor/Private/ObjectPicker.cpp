@@ -49,7 +49,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(UCamera* InActiveCamera, const
 	return ShortestPrimitive;
 }
 
-void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint)
+void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGizmo* Gizmo, FVector& CollisionPoint)
 {
 	//Forward, Right, Up순으로 테스트할거임.
 	//원기둥 위의 한 점 P, 축 위의 임의의 점 A에(기즈모 포지션) 대해, AP벡터와 축 벡터 V와 피타고라스 정리를 적용해서 점 P의 축부터의 거리 r을 구할 수 있음.
@@ -59,12 +59,12 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 	//dot(PointOnCylinder - GizmoLocation)*Dot(PointOnCylinder - GizmoLocation) - Dot(PointOnCylinder - GizmoLocation, GizmoAxis)^2 = r^2 = radiusOfGizmo
 	//이 t에 대한 방정식을 풀어서 근의공식 적용하면 됨.
 
-	FVector GizmoLocation = Gizmo.GetGizmoLocation();
+	FVector GizmoLocation = Gizmo->GetGizmoLocation();
 	FVector GizmoAxises[3] = { FVector{1, 0, 0}, FVector{0, 1, 0}, FVector{0, 0, 1} };
 
-	if (Gizmo.GetGizmoMode() == EGizmoMode::Scale || !Gizmo.IsWorldMode())
+	if (Gizmo->GetGizmoMode() == EGizmoMode::Scale || !Gizmo->IsWorldMode())
 	{
-		FVector Rad = FVector::GetDegreeToRadian(Gizmo.GetActorRotation());
+		FVector Rad = FVector::GetDegreeToRadian(Gizmo->GetActorRotation());
 		FMatrix R = FMatrix::RotationMatrix(Rad);
 		//FQuaternion q = FQuaternion::FromEuler(Rad);
 
@@ -84,7 +84,7 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 	FVector WorldRayDirection(WorldRay.Direction.X, WorldRay.Direction.Y, WorldRay.Direction.Z);
 	WorldRayDirection.Normalize();
 
-	switch (Gizmo.GetGizmoMode())
+	switch (Gizmo->GetGizmoMode())
 	{
 	case EGizmoMode::Translate:
 	case EGizmoMode::Scale:
@@ -92,8 +92,8 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 		FVector GizmoDistanceVector = WorldRayOrigin - GizmoLocation;
 		bool bIsCollide = false;
 
-		float GizmoRadius = Gizmo.GetTranslateRadius();
-		float GizmoHeight = Gizmo.GetTranslateHeight();
+		float GizmoRadius = Gizmo->GetTranslateRadius();
+		float GizmoHeight = Gizmo->GetTranslateHeight();
 		float A, B, C; //Ax^2 + Bx + C의 ABC
 		float X; //해
 		float Det; //판별식
@@ -132,9 +132,9 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 				{
 					switch (a)
 					{
-					case 0:	Gizmo.SetGizmoDirection(EGizmoDirection::Forward);	return;
-					case 1:	Gizmo.SetGizmoDirection(EGizmoDirection::Right);	return;
-					case 2:	Gizmo.SetGizmoDirection(EGizmoDirection::Up);		return;
+					case 0:	Gizmo->SetGizmoDirection(EGizmoDirection::Forward);	return;
+					case 1:	Gizmo->SetGizmoDirection(EGizmoDirection::Right);	return;
+					case 2:	Gizmo->SetGizmoDirection(EGizmoDirection::Up);		return;
 					}
 				}
 			}
@@ -147,13 +147,13 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 			if (IsRayCollideWithPlane(WorldRay, GizmoLocation, GizmoAxises[a], CollisionPoint))
 			{
 				FVector RadiusVector = CollisionPoint - GizmoLocation;
-				if (Gizmo.IsInRadius(RadiusVector.Length()))
+				if (Gizmo->IsInRadius(RadiusVector.Length()))
 				{
 					switch (a)
 					{
-					case 0:	Gizmo.SetGizmoDirection(EGizmoDirection::Forward);	return;
-					case 1:	Gizmo.SetGizmoDirection(EGizmoDirection::Right);	return;
-					case 2:	Gizmo.SetGizmoDirection(EGizmoDirection::Up);		return;
+					case 0:	Gizmo->SetGizmoDirection(EGizmoDirection::Forward);	return;
+					case 1:	Gizmo->SetGizmoDirection(EGizmoDirection::Right);	return;
+					case 2:	Gizmo->SetGizmoDirection(EGizmoDirection::Up);		return;
 					}
 				}
 			}
@@ -162,7 +162,7 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 	default: break;
 	}
 
-	Gizmo.SetGizmoDirection(EGizmoDirection::None);
+	Gizmo->SetGizmoDirection(EGizmoDirection::None);
 }
 
 //개별 primitive와 ray 충돌 검사

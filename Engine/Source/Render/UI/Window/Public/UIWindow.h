@@ -71,9 +71,9 @@ struct FUIWindowConfig
  * @param LastWindowSize 마지막 윈도우 크기
  * @param LastWindowPos 마지막 윈도우 위치
  */
-class UUIWindow :
-	public UObject
+class UUIWindow : public UObject
 {
+    DECLARE_CLASS(UUIWindow, UObject)
 	friend class UUIManager;
 
 public:

@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
-#include "Editor/Public/Editor.h"
 #include "Core/Public/AppWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
@@ -54,9 +53,6 @@ int FClientApp::Run(HINSTANCE InInstanceHandle, int InCmdShow)
 	// 	Window->InitializeConsole();
 	// #endif
 
-	// Keyboard Accelerator Table Setting
-	// AcceleratorTable = LoadAccelerators(InInstanceHandle, MAKEINTRESOURCE(IDC_CLIENT));
-
 	// Initialize Base System
 	int InitResult = InitializeSystem();
 	if (InitResult != S_OK)
@@ -86,8 +82,10 @@ int FClientApp::InitializeSystem() const
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
 
+	GEditorEngine = NewObject<UEditorEngine>();
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
+	GEditor = NewObject<UEditor>();
 
 	// StatOverlay Initialize
 	auto& StatOverlay = UStatOverlay::GetInstance();
@@ -102,11 +100,8 @@ int FClientApp::InitializeSystem() const
 
 	// Create Default Level
 	FString LastSavedLevelPath = UConfigManager::GetInstance().GetLastSavedLevelPath();
-	if (ULevelManager::GetInstance().LoadLevel(LastSavedLevelPath))
-	{
-		// 마지막을 저장한 레벨을 성공적으로 로드
-	}
-	else
+	bool bSuccess = ULevelManager::GetInstance().LoadLevel(LastSavedLevelPath);
+	if (!bSuccess)
 	{
 		ULevelManager::GetInstance().CreateNewLevel();
 	}
@@ -121,12 +116,20 @@ void FClientApp::UpdateSystem() const
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
+	auto& LevelManager = ULevelManager::GetInstance();
 	auto& UIManager = UUIManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
-	auto& LevelManager = ULevelManager::GetInstance();
 	{
 		TIME_PROFILE(LevelManager)
 		LevelManager.Update();
+	}
+	{
+		TIME_PROFILE(EditorEngine)
+		GEditorEngine->Tick(DT);
+	}
+	{
+		TIME_PROFILE(Editor)
+		GEditor->Update();
 	}
 	{
 		TIME_PROFILE(TimeManager)
@@ -139,7 +142,7 @@ void FClientApp::UpdateSystem() const
 	{
 		TIME_PROFILE(UIManager)
 		UIManager.Update();
-	}	
+	}
 	{
 		TIME_PROFILE(Renderer)
 		Renderer.Update();
@@ -204,10 +207,5 @@ void FClientApp::ShutdownSystem() const
 	UUIManager::GetInstance().Shutdown();
 	ULevelManager::GetInstance().Shutdown();
 	UAssetManager::GetInstance().Release();
-
-	// Release되지 않은 UObject의 메모리 할당 해제
-	// 추후 GC가 처리할 것
-	UClass::Shutdown();
-
 	delete Window;
 }

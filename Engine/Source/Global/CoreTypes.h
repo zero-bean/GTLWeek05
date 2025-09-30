@@ -2,6 +2,7 @@
 #include "Global/Vector.h"
 #include "Global/Matrix.h"
 #include "Global/Types.h"
+#include "Global/Quaternion.h"
 #include "Core/Public/Name.h"
 #include <Texture/Public/Material.h>
 

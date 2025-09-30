@@ -2,9 +2,8 @@
 #include "Editor/Public/BoundingBoxLines.h"
 #include "Physics/Public/AABB.h"
 
-UBoundingBoxLines::UBoundingBoxLines()
-	: Vertices(TArray<FVector>())
-	, NumVertices(8)
+IMPLEMENT_CLASS(UBoundingBoxLines, UObject)
+UBoundingBoxLines::UBoundingBoxLines() : Vertices(TArray<FVector>()), NumVertices(8)
 {
 	Vertices.reserve(NumVertices);
 	UpdateVertices(FAABB({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}));
@@ -40,16 +39,16 @@ void UBoundingBoxLines::MergeVerticesAt(TArray<FVector>& destVertices, size_t in
 	);*/
 }
 
-void UBoundingBoxLines::UpdateVertices(FAABB boundingBoxInfo)
+void UBoundingBoxLines::UpdateVertices(FAABB BoundingBoxInfo)
 {
 	// 중복 삽입 방지
-	if (RenderedBoxInfo.Min == boundingBoxInfo.Min && RenderedBoxInfo.Max == boundingBoxInfo.Max)
+	if (RenderedBoxInfo.Min == BoundingBoxInfo.Min && RenderedBoxInfo.Max == BoundingBoxInfo.Max)
 	{
 		return;
 	}
 
-	float MinX = boundingBoxInfo.Min.X, MinY = boundingBoxInfo.Min.Y, MinZ = boundingBoxInfo.Min.Z;
-	float MaxX = boundingBoxInfo.Max.X, MaxY = boundingBoxInfo.Max.Y, MaxZ = boundingBoxInfo.Max.Z;
+	float MinX = BoundingBoxInfo.Min.X, MinY = BoundingBoxInfo.Min.Y, MinZ = BoundingBoxInfo.Min.Z;
+	float MaxX = BoundingBoxInfo.Max.X, MaxY = BoundingBoxInfo.Max.Y, MaxZ = BoundingBoxInfo.Max.Z;
 
 	if (Vertices.size() < NumVertices)
 	{
@@ -67,6 +66,6 @@ void UBoundingBoxLines::UpdateVertices(FAABB boundingBoxInfo)
 	Vertices[vertexIndex++] = { MaxX, MaxY, MaxZ }; // Back-Top-Right
 	Vertices[vertexIndex++] = { MinX, MaxY, MaxZ }; // Back-Top-Left
 
-	RenderedBoxInfo = boundingBoxInfo;
+	RenderedBoxInfo = BoundingBoxInfo;
 }
 

@@ -10,7 +10,8 @@
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/ObjManager.h"
 
-IMPLEMENT_SINGLETON_CLASS_BASE(UAssetManager)
+IMPLEMENT_CLASS(UAssetManager, UObject)
+IMPLEMENT_SINGLETON(UAssetManager)
 
 UAssetManager::UAssetManager() = default;
 
@@ -262,7 +263,7 @@ ID3D11PixelShader* UAssetManager::GetPixelShader(EShaderType Type)
 	return PixelShaders[Type];
 }
 
-ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
+ID3D11InputLayout* UAssetManager::GetInputLayout(EShaderType Type)
 {
 	return InputLayouts[Type];
 }

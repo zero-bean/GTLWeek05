@@ -1,11 +1,5 @@
 #pragma once
 #include "Core/Public/Object.h"
-#include "Editor/Public/Gizmo.h"
-#include "Editor/Public/Grid.h"
-#include "Editor/public/Axis.h"
-#include "Editor/Public/ObjectPicker.h"
-#include "Editor/Public/BatchLines.h"
-#include "Editor/Public/SplitterWindow.h"
 
 class UPrimitiveComponent;
 class UTextComponent;
@@ -13,7 +7,14 @@ class FViewportClient;
 class UCamera;
 class ULevel;
 class USplitterWidget;
-struct FRay;
+struct FRay; 
+class UObjectPicker;
+class SSplitter; class SSplitterV; class SSplitterH;
+class SWindow;
+class UGizmo;
+class UAxis;
+class UBatchLines;
+
 
 enum class EViewModeIndex : uint32
 {
@@ -29,62 +30,51 @@ enum class EViewportLayoutState
 	Animating,
 };
 
+extern class UEditor* GEditor;
+
 class UEditor : public UObject
 {
+	DECLARE_CLASS(UEditor, UObject)
+
 public:
 	UEditor();
 	~UEditor();
 
 	void Update();
-	void RenderEditor(UCamera* InCamera);
 
 	void SetViewMode(EViewModeIndex InNewViewMode) { CurrentViewMode = InNewViewMode; }
 	EViewModeIndex GetViewMode() const { return CurrentViewMode; }
 
-	void SetSingleViewportLayout(int InActiveIndex);
+	void SetSingleViewportLayout(int32 InActiveIndex);
 	void RestoreMultiViewportLayout();
 
-	UTextComponent* GetPickedBillboard() const;
+	SSplitterV* GetRootSplitter() const { return RootSplitter; }
+	SSplitterH* GetLeftSplitter() const { return LeftSplitter; }
+	SSplitterH* GetRightSplitter() const { return RightSplitter; }
 
+    UGizmo* GetGizmo() const { return Gizmo; }
+    UAxis* GetAxis() const { return Axis; }
+    UBatchLines* GetBatchLines() const { return BatchLines; }
+
+    void RenderViewportOverlay(class UCamera* InCamera);
+    
 private:
 	void InitializeLayout();
 	void UpdateLayout();
 
-	void ProcessMouseInput(ULevel* InLevel);
-	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
+	float Lerp(const float A, const float B, const float Alpha) { return A * (1 - Alpha) + B * Alpha; }
 
-	// 모든 기즈모 드래그 함수가 ActiveCamera를 받도록 통일
-	FVector GetGizmoDragLocation(UCamera* InActiveCamera, FRay& WorldRay);
-	FVector GetGizmoDragRotation(UCamera* InActiveCamera, FRay& WorldRay);
-	FVector GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay);
-
-	inline float Lerp(const float A, const float B, const float Alpha)
-	{
-		return A * (1 - Alpha) + B * Alpha;
-	}
-
-	UObjectPicker ObjectPicker;
-
-	UTextComponent* PickedBillboard; // 선택된 액터의 빌보드
-
-	const float MinScale = 0.01f;
-	float SavedRootRatio = 0.5f;
-	float SavedLeftRatio = 0.5f;
-	float SavedRightRatio = 0.5f;
-	UGizmo Gizmo;
-	UAxis Axis;
-	UBatchLines BatchLines;
-
-	SSplitterV RootSplitter;
-	SSplitterH LeftSplitter;
-	SSplitterH RightSplitter;
-	SWindow ViewportWindows[4]; // 최종 뷰포트 영역의 정보, 쉽게 참조하도록 선언했습니다.
-	SSplitter* DraggedSplitter = nullptr; // 드래그 상태를 추적하는 포인터
-	FViewportClient* InteractionViewport = nullptr; // 뷰포트의 상호작용을 고정하는 포인터
-
+	// -- Viewport Slate --
 	EViewModeIndex CurrentViewMode = EViewModeIndex::VMI_Lit;
 
-	// Animation
+	SSplitterV* RootSplitter;
+	SSplitterH* LeftSplitter;
+	SSplitterH* RightSplitter;
+	SWindow* ViewportWindows;
+
+	SSplitter* DraggedSplitter = nullptr;
+
+	// Viewport Animation
 	EViewportLayoutState ViewportLayoutState = EViewportLayoutState::Multi;
 	EViewportLayoutState TargetViewportLayoutState = EViewportLayoutState::Multi;
 	float AnimationStartTime = 0.0f;
@@ -95,4 +85,11 @@ private:
 	float TargetRootRatio = 0.5f;
 	float TargetLeftRatio = 0.5f;
 	float TargetRightRatio = 0.5f;
+	float SavedRootRatio = 0.5f;
+	float SavedLeftRatio = 0.5f;
+	float SavedRightRatio = 0.5f;
+
+    UGizmo* Gizmo;
+    UAxis* Axis;
+    UBatchLines* BatchLines;
 };

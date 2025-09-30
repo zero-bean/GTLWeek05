@@ -50,7 +50,8 @@ UCLASS()
 class UConfigManager : public UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UConfigManager, UObject)
+	DECLARE_CLASS(UConfigManager, UObject)
+    DECLARE_SINGLETON(UConfigManager)
 
 public:
 	void SaveEditorSetting();

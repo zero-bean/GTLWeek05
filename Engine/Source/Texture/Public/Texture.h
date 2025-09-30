@@ -1,11 +1,10 @@
 #pragma once
 #include "Core/Public/Object.h"
 
-class FTextureRenderProxy;
+struct FTextureRenderProxy;
 
 UCLASS()
-class UTexture :
-	public UObject
+class UTexture : public UObject
 {
 	GENERATED_BODY()
 	DECLARE_CLASS(UTexture, UObject)

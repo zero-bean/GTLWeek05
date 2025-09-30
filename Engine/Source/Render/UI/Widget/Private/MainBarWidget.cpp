@@ -13,7 +13,6 @@ class ULevelManager;
 IMPLEMENT_CLASS(UMainBarWidget, UWidget)
 
 UMainBarWidget::UMainBarWidget()
-	: UWidget("MainBarWidget")
 {
 }
 
@@ -204,7 +203,7 @@ void UMainBarWidget::RenderViewMenu()
 	{
 		// LevelManager에서 Editor 가져오기
 		ULevelManager& LevelMgr = ULevelManager::GetInstance();
-		UEditor* EditorInstance = LevelMgr.GetEditor();
+		UEditor* EditorInstance = GEditor;
 		if (!EditorInstance)
 		{
 			ImGui::Text("에디터를 사용할 수 없습니다");

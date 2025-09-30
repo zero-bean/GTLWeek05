@@ -23,6 +23,7 @@ struct FVector
 	 * @brief FVector를 Param으로 넘기는 생성자
 	 */
 	FVector(const FVector& InOther);
+	FVector(const FVector4& InOther);
 
 	void operator=(const FVector4& InOther);
 

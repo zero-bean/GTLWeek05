@@ -17,32 +17,22 @@ IMPLEMENT_CLASS_BASE(UObject)
 
 UObject::~UObject()
 {
-	/** @todo: 이후에 리뷰 필요 */
-
-	// std::vector에 맞는 올바른 인덱스 유효성 검사
-	if (InternalIndex < GetUObjectArray().size())
+	auto& ObjectArray = GetUObjectArray();
+	if (InternalIndex >= ObjectArray.size() || ObjectArray[InternalIndex] == nullptr) { return; }
+	UObject* LastObject = ObjectArray.back();
+	if (this != LastObject)
 	{
-		GetUObjectArray()[InternalIndex] = nullptr;
+		ObjectArray[InternalIndex] = LastObject;
+		LastObject->InternalIndex = InternalIndex;
 	}
+	ObjectArray.pop_back();
 }
 
 void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 }
 
-UObject::UObject()
-	: Name(FName::GetNone()), Outer(nullptr)
-{
-	UUID = UEngineStatics::GenUUID();
-	Name = FName("Object_" + to_string(UUID));
-
-	GetUObjectArray().emplace_back(this);
-	InternalIndex = static_cast<uint32>(GetUObjectArray().size()) - 1;
-}
-
-UObject::UObject(const FName& InName)
-	: Name(InName)
-	, Outer(nullptr)
+UObject::UObject() : Name(FName::GetNone()), Outer(nullptr)
 {
 	UUID = UEngineStatics::GenUUID();
 

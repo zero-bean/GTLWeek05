@@ -11,8 +11,9 @@ class UConsoleWidget;
 UCLASS()
 class UConsoleWindow : public UUIWindow
 {
-	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UConsoleWindow, UUIWindow)
+    GENERATED_BODY()
+    DECLARE_CLASS(UConsoleWindow, UUIWindow)
+    DECLARE_SINGLETON(UConsoleWindow)
 
 public:
 	void AddLog(const char* fmt, ...) const;

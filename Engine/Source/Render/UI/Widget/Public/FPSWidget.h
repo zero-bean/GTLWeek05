@@ -5,9 +5,9 @@ class UBatchLines;
 /**
  * @brief Frame과 관련된 내용을 제공하는 UI Widget
  */
-class UFPSWidget :
-	public UWidget
+class UFPSWidget : public UWidget
 {
+	DECLARE_CLASS(UFPSWidget, UWidget)
 public:
 	void Initialize() override;
 	void Update() override;
@@ -15,17 +15,14 @@ public:
 
 	static ImVec4 GetFPSColor(float InFPS);
 
-	void SetBatchLine(UBatchLines* pBatchLine)
-	{
-		PbatchLine = pBatchLine;
-	}
+	void SetBatchLine(UBatchLines* InBatchLines) { BatchLines = InBatchLines; }
 
 	// Special Member Function
 	UFPSWidget();
 	~UFPSWidget() override;
 
 private:
-	UBatchLines* PbatchLine;
+	UBatchLines* BatchLines;
 
 	float FrameTimeHistory[60] = {};
 	int32 FrameTimeIndex = 0;

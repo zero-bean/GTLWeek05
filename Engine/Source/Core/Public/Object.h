@@ -15,7 +15,6 @@ class UObject
 public:
 	// 생성자 및 소멸자
 	UObject();
-	explicit UObject(const FName& InName);
 	virtual ~UObject();
 
 	// 2. 가상 함수 (인터페이스)
@@ -35,7 +34,6 @@ public:
 
 	void SetName(const FName& InName) { Name = InName; }
 	void SetOuter(UObject* InObject);
-	void SetDisplayName(const FString& InName) const { Name.SetDisplayName(InName); }
 
 private:
 	// 4. Private 멤버 함수

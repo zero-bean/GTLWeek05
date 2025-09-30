@@ -357,6 +357,7 @@
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
+    <ClCompile Include="Source\Editor\Private\EditorEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -744,6 +745,7 @@
     <ClInclude Include="Source\Global\BVH.h">
       <Filter>Source\Global</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

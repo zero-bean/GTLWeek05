@@ -1,13 +1,12 @@
 #pragma once
 #include "Global/Types.h"
-#include "Global/CoreTypes.h"
 #include "Editor/Public/EditorPrimitive.h"
-#include "Editor/Public/Grid.h"
-#include "Editor/Public/BoundingBoxLines.h"
 
-struct FVertex;
+class UGrid;
+class UBoundingBoxLines;
+struct FAABB;
 
-class UBatchLines : UObject
+class UBatchLines : public UObject
 {
 public:
 	UBatchLines();
@@ -15,40 +14,20 @@ public:
 
 	// 종류별 Vertices 업데이트
 	void UpdateUGridVertices(const float newCellSize);
-	void UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo);
+	void UpdateBoundingBoxVertices(const FAABB& NewBoundingBoxInfo);
 
 	// 전체 업데이트
-	void UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo);
+	void UpdateBatchLineVertices(const float NewCellSize, const FAABB& NewBoundingBoxInfo);
 
 	// GPU VertexBuffer에 복사
 	void UpdateVertexBuffer();
 
-	float GetCellSize() const
-	{
-		return Grid.GetCellSize();
-	}
-
-	/*void SetCellSize(const float newCellSize)
-	{
-		Grid.SetCellSize(newCellSize);
-	}*/
-
-	void DisableRenderBoundingBox()
-	{
-		UpdateBoundingBoxVertices({ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} });
-	}
-
-	//void UpdateConstant(FBoundingBox boundingBoxInfo);
-
-	//void Update();
-
+	float GetCellSize() const;
+	void DisableRenderBoundingBox();
 	void Render();
 
 private:
 	void SetIndices();
-
-	/*void AddWorldGridVerticesAndConstData();
-	void AddBoundingBoxVertices();*/
 
 	bool bChangedVertices = false;
 
@@ -57,8 +36,6 @@ private:
 
 	FEditorPrimitive Primitive;
 
-	UGrid Grid;
-	UBoundingBoxLines BoundingBoxLines;
-
-	bool bRenderBox;
+	UGrid* Grid;
+	UBoundingBoxLines* BoundingBoxLines;
 };

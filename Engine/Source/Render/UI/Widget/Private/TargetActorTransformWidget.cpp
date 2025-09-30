@@ -4,10 +4,8 @@
 #include "Level/Public/Level.h"
 #include "Manager/Level/Public/LevelManager.h"
 
-UTargetActorTransformWidget::UTargetActorTransformWidget()
-	: UWidget("Target Actor Tranform Widget")
-{
-}
+IMPLEMENT_CLASS(UTargetActorTransformWidget, UWidget)
+UTargetActorTransformWidget::UTargetActorTransformWidget() = default;
 
 UTargetActorTransformWidget::~UTargetActorTransformWidget() = default;
 

@@ -3,7 +3,8 @@
 
 #include "Render/UI/Widget/Public/MainBarWidget.h"
 
-IMPLEMENT_SINGLETON_CLASS(UMainMenuWindow, UUIWindow)
+IMPLEMENT_CLASS(UMainMenuWindow, UUIWindow)
+IMPLEMENT_SINGLETON(UMainMenuWindow)
 
 UMainMenuWindow::UMainMenuWindow()
 {

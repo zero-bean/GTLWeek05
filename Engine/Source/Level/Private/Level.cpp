@@ -19,8 +19,7 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
-ULevel::ULevel(const FName& InName)
-	: UObject(InName)
+ULevel::ULevel()
 {
 	StaticOctree = new FOctree(FVector(0, 0, -5), 75, 0);
 }
@@ -50,7 +49,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		if (FJsonSerializer::ReadObject(InOutHandle, "PerspectiveCamera", PerspectiveCameraData))
 		{
 			UConfigManager::GetInstance().SetCameraSettingsFromJson(PerspectiveCameraData);
-			URenderer::GetInstance().GetViewportClient()->ApplyAllCameraDataToViewportClients();
+			GEditorEngine->GetViewportClient()->ApplyAllCameraDataToViewportClients();
 		}
 
 		JSON PrimitivesJson;
@@ -83,7 +82,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["NextUUID"] = 0;
 
 		// GetCameraSetting 호출 전에 뷰포트 클라이언트의 최신 데이터를 ConfigManager로 동기화합니다.
-		URenderer::GetInstance().GetViewportClient()->UpdateCameraSettingsToConfig();
+		GEditorEngine->GetViewportClient()->UpdateCameraSettingsToConfig();
 		InOutHandle["PerspectiveCamera"] = UConfigManager::GetInstance().GetCameraSettingsAsJson();
 
 		JSON PrimitivesJson = json::Object();
@@ -177,10 +176,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		return nullptr;
 	}
 
-	AActor* NewActor = NewObject<AActor>(nullptr, TObjectPtr(InActorClass), InName);
+	AActor* NewActor = Cast<AActor>(NewObject(InActorClass));
 	if (NewActor)
 	{
-		if (InName != FName::GetNone())
+		if (!InName.IsNone())
 		{
 			NewActor->SetName(InName);
 		}

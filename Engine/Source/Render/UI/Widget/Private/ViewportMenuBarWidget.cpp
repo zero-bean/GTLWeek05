@@ -3,6 +3,7 @@
 #include "Editor/Public/Viewport.h"
 #include "Editor/Public/ViewportClient.h"
 #include "Editor/Public/Editor.h"
+#include "Editor/Public/Camera.h"
 
 /* *
 * @brief UI에 적용할 색상을 정의합니다.
@@ -19,6 +20,8 @@ const ImVec4 FrameBg = ImVec4(pow(0.1f, 2.2f), pow(0.1f, 2.2f), pow(0.1f, 2.2f),
 const ImVec4 FrameBgHovered = ImVec4(pow(0.25f, 2.2f), pow(0.25f, 2.2f), pow(0.25f, 2.2f), 1.00f);
 const ImVec4 SliderGrab = ImVec4(pow(0.6f, 2.2f), pow(0.6f, 2.2f), pow(0.6f, 2.2f), 1.00f);
 const ImVec4 SliderGrabActive = ImVec4(pow(0.8f, 2.2f), pow(0.8f, 2.2f), pow(0.8f, 2.2f), 1.00f);
+
+IMPLEMENT_CLASS(UViewportMenuBarWidget, UWidget)
 
 UViewportMenuBarWidget::~UViewportMenuBarWidget()
 {
@@ -126,7 +129,7 @@ void UViewportMenuBarWidget::RenderWidget()
 
 				if (ImGui::Button(LayoutIcon, ImVec2(ButtonWidth, 0)))
 				{
-					if (Editor)
+					if (GEditor)
 					{
 						bIsSingleViewportClient = !bIsSingleViewportClient;
 						if (bIsSingleViewportClient)
@@ -140,11 +143,11 @@ void UViewportMenuBarWidget::RenderWidget()
 									if (&ViewportClients[i] == ActiveClient) { ActiveIndex = i; break; }
 								}
 							}
-							Editor->SetSingleViewportLayout(ActiveIndex);
+							GEditor->SetSingleViewportLayout(ActiveIndex);
 						}
 						else
 						{
-							Editor->RestoreMultiViewportLayout();
+							GEditor->RestoreMultiViewportLayout();
 						}
 					}
 				}
@@ -164,17 +167,17 @@ void UViewportMenuBarWidget::RenderWidget()
 	}
 }
 
-void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
+void UViewportMenuBarWidget::RenderCameraControls(UCamera* InCamera)
 {
 	// --- UI를 그리기 직전에 항상 카메라로부터 최신 값을 가져옵니다 ---
-	auto& Location = InCamera.GetLocation();
-	auto& Rotation = InCamera.GetRotation();
-	float FovY = InCamera.GetFovY();
-	float NearZ = InCamera.GetNearZ();
-	float FarZ = InCamera.GetFarZ();
-	float OrthoWidth = InCamera.GetOrthoWidth();
-	float MoveSpeed = InCamera.GetMoveSpeed();
-	int ModeIndex = (InCamera.GetCameraType() == ECameraType::ECT_Perspective) ? 0 : 1;
+	auto& Location = InCamera->GetLocation();
+	auto& Rotation = InCamera->GetRotation();
+	float FovY = InCamera->GetFovY();
+	float NearZ = InCamera->GetNearZ();
+	float FarZ = InCamera->GetFarZ();
+	float OrthoWidth = InCamera->GetOrthoWidth();
+	float MoveSpeed = InCamera->GetMoveSpeed();
+	int ModeIndex = (InCamera->GetCameraType() == ECameraType::ECT_Perspective) ? 0 : 1;
 	static const char* CameraMode[] = { "Perspective", "Orthographic" };
 
 
@@ -184,14 +187,14 @@ void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
 	// --- UI 렌더링 및 상호작용 ---
 	if (ImGui::SliderFloat("Move Speed", &MoveSpeed, UCamera::MIN_SPEED, UCamera::MAX_SPEED, "%.1f"))
 	{
-		InCamera.SetMoveSpeed(MoveSpeed); // 변경 시 즉시 적용
+		InCamera->SetMoveSpeed(MoveSpeed); // 변경 시 즉시 적용
 	}
 
 	ImGui::DragFloat3("Location", &Location.X, 0.05f);
 	ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f);
 
 	bool bOpticsChanged = false;
-	if (ModeIndex == 0) // 원근 투영 
+	if (ModeIndex == 0) // 원근 투영
 	{
 		bOpticsChanged |= ImGui::SliderFloat("FOV", &FovY, 1.0f, 170.0f, "%.1f");
 		bOpticsChanged |= ImGui::DragFloat("Z Near", &NearZ, 0.01f, 0.0001f, 1e6f, "%.4f");
@@ -205,9 +208,9 @@ void UViewportMenuBarWidget::RenderCameraControls(UCamera& InCamera)
 	// 변경된 값을 카메라에 다시 적용
 	if (bOpticsChanged)
 	{
-		InCamera.SetFovY(FovY);
-		InCamera.SetNearZ(NearZ);
-		InCamera.SetFarZ(FarZ);
-		InCamera.SetOrthoWidth(OrthoWidth);
+		InCamera->SetFovY(FovY);
+		InCamera->SetNearZ(NearZ);
+		InCamera->SetFarZ(FarZ);
+		InCamera->SetOrthoWidth(OrthoWidth);
 	}
 }

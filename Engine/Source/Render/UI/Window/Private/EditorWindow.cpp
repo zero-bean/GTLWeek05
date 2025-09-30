@@ -26,7 +26,7 @@ UEditorWindow::UEditorWindow()
 	SetConfig(Config);
 
 	// 위젯 생성 및 초기화
-	if (SplitterDebugWidget = new USplitterDebugWidget("Splitter WIdget"))
+	if ((SplitterDebugWidget = NewObject<USplitterDebugWidget>()))
 	{
 		SplitterDebugWidget->Initialize();
 		AddWidget(SplitterDebugWidget);

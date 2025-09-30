@@ -1,9 +1,10 @@
 #pragma once
 #include "Widget.h"
 
-class UPrimitiveSpawnWidget
-	:public UWidget
+class UPrimitiveSpawnWidget :public UWidget
 {
+    GENERATED_BODY()
+    DECLARE_CLASS(UPrimitiveSpawnWidget, UWidget)
 public:
 	void Initialize() override;
 	void Update() override;

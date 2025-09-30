@@ -43,7 +43,8 @@ UCLASS()
 class UConsoleWidget : public UWidget
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UConsoleWidget, UWidget)
+	DECLARE_CLASS(UConsoleWidget, UWidget)
+	DECLARE_SINGLETON(UConsoleWidget)
 
 public:
 	// Widget interface

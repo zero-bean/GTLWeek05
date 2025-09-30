@@ -2,11 +2,11 @@
 #include "Core/Public/Object.h"
 
 UCLASS()
-class UPathManager :
-	public UObject
+class UPathManager : public UObject
 {
-	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UPathManager, UObject)
+    GENERATED_BODY()
+    DECLARE_CLASS(UPathManager, UObject)
+    DECLARE_SINGLETON(UPathManager)
 
 public:
 	void Init();

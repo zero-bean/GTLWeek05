@@ -15,11 +15,11 @@ class UWidget : public UObject
 public:
 	// Essential Role
 	// 필요하지 않은 기능이 있을 수 있으나 구현 시 반드시 고려하라는 의미의 순수 가상 함수 처리
-	virtual void Initialize() {};
-	virtual void Update() {};
-	virtual void RenderWidget() {};
+	virtual void Initialize() {}
+    virtual void Update() {}
+    virtual void RenderWidget() {}
 
-	// 후처리는 취사 선택
+    // 후처리는 취사 선택
 	virtual void PostProcess() {}
 
 	// Singleton 판별 함수 (default는 false)
@@ -27,6 +27,5 @@ public:
 
 	// Special Member Function
 	UWidget() = default;
-	UWidget(const FString& InName);
 	~UWidget() override = default;
 };

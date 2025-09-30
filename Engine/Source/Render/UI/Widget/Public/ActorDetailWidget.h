@@ -8,9 +8,10 @@ class UActorComponent;
  * @brief 선택된 Actor의 이름과 컴포넌트 트리를 표시하는 Widget
  * Rename 기능이 추가되어 있음
  */
-class UActorDetailWidget :
-	public UWidget
+class UActorDetailWidget : public UWidget
 {
+    GENERATED_BODY()
+    DECLARE_CLASS(UActorDetailWidget, UWidget)
 public:
 	void Initialize() override;
 	void Update() override;

@@ -1,5 +1,4 @@
 #pragma once
-#include "Editor/Public/Camera.h"
 
 // 뷰포트의 카메라 모드를 정의하는 열거형
 enum class EViewportCameraType : uint8_t
@@ -51,8 +50,8 @@ inline const char* ClientCameraTypeToString(EViewportCameraType InType)
 class FViewportClient
 {
 public:
-	FViewportClient() = default;
-	~FViewportClient() = default;
+	FViewportClient();
+	~FViewportClient();
 
 	/* *
 	* @brief 출력될 화면의 너비, 높이, 깊이 등을 적용합니다.
@@ -80,7 +79,7 @@ public:
 	void SetCameraType(EViewportCameraType InViewportCameraType);
 
 	D3D11_VIEWPORT ViewportInfo = {};
-	UCamera Camera;
+	UCamera* Camera;
 	bool bIsActive = false;
 	EViewportCameraType CameraType = EViewportCameraType::Perspective;
 };

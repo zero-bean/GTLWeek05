@@ -131,7 +131,7 @@ public:
 	}
 
 	// 객체 포인터 생성자
-	explicit TObjectPtr(T* InObject) : ObjectPtr(InObject)
+	TObjectPtr(T* InObject) : ObjectPtr(InObject)
 	{
 	}
 

@@ -7,7 +7,8 @@
 #include "Render/UI/Window/Public/MainMenuWindow.h"
 #include "Render/UI/Widget/Public/MainBarWidget.h"
 
-IMPLEMENT_SINGLETON_CLASS_BASE(UUIManager)
+IMPLEMENT_CLASS(UUIManager, UObject)
+IMPLEMENT_SINGLETON(UUIManager)
 
 UUIManager::UUIManager()
 {

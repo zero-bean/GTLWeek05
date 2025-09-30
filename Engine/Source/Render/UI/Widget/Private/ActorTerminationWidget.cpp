@@ -5,10 +5,9 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Level/Public/LevelManager.h"
 
+IMPLEMENT_CLASS(UActorTerminationWidget, UWidget);
 
-UActorTerminationWidget::UActorTerminationWidget()
-	: UWidget("Actor Termination Widget")
-	  , SelectedActor(nullptr)
+UActorTerminationWidget::UActorTerminationWidget() : SelectedActor(nullptr)
 {
 }
 

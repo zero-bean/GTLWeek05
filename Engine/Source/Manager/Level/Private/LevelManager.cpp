@@ -11,7 +11,8 @@
 
 using JSON = json::JSON;
 
-IMPLEMENT_SINGLETON_CLASS_BASE(ULevelManager)
+IMPLEMENT_CLASS(ULevelManager, UObject)
+IMPLEMENT_SINGLETON(ULevelManager)
 
 // =================================================================
 // Public Functions
@@ -19,7 +20,6 @@ IMPLEMENT_SINGLETON_CLASS_BASE(ULevelManager)
 
 ULevelManager::ULevelManager()
 {
-	Editor = new UEditor;
 }
 
 ULevelManager::~ULevelManager()
@@ -36,12 +36,6 @@ void ULevelManager::Shutdown()
 		delete CurrentLevel;
 		CurrentLevel = nullptr;
 	}
-
-	if (Editor)
-	{
-		delete Editor;
-		Editor = nullptr;
-	}
 }
 
 void ULevelManager::Update() const
@@ -49,10 +43,6 @@ void ULevelManager::Update() const
 	if (CurrentLevel)
 	{
 		CurrentLevel->Update();
-	}
-	if (Editor)
-	{
-		Editor->Update();
 	}
 }
 
@@ -109,7 +99,7 @@ bool ULevelManager::LoadLevel(const FString& InFilePath)
 		path FilePath(InFilePath);
 		FString LevelName = FilePath.stem().string();
 
-		NewLevel = TObjectPtr(new ULevel(LevelName));
+		NewLevel = NewObject<ULevel>(); NewLevel->SetName(LevelName);
 		JSON LevelJsonData;
 		if (FJsonSerializer::LoadJsonFromFile(LevelJsonData, InFilePath))
 		{
@@ -140,7 +130,8 @@ bool ULevelManager::LoadLevel(const FString& InFilePath)
 bool ULevelManager::CreateNewLevel(const FString& InLevelName)
 {
 	// 새 레벨을 생성하고 등록합니다.
-	TObjectPtr<ULevel> NewLevel = TObjectPtr(new ULevel(InLevelName));
+	TObjectPtr<ULevel> NewLevel = NewObject<ULevel>();
+    NewLevel->SetName(InLevelName);
 	// 새 레벨로 전환합니다.
 	SwitchToLevel(NewLevel);
 	return true;

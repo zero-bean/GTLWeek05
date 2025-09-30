@@ -8,6 +8,7 @@ class UViewportMenuBarWidget;
  */
 class UViewportClientWindow : public UUIWindow
 {
+    DECLARE_CLASS(UViewportClientWindow, UUIWindow)
 public:
 	UViewportClientWindow();
 	virtual ~UViewportClientWindow() override {}

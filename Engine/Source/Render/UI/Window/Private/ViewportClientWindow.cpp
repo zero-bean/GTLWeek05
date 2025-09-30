@@ -4,20 +4,20 @@
 #include "Render/Renderer/Public/Renderer.h" 
 #include "Editor/Public/ViewportClient.h"
 
+IMPLEMENT_CLASS(UViewportClientWindow, UUIWindow)
+
 UViewportClientWindow::UViewportClientWindow()
 {
 	SetupConfig();
 
 	// 위젯 생성 및 초기화
-	if (ViewportMenuBarWidget = new UViewportMenuBarWidget())
+	ViewportMenuBarWidget = new UViewportMenuBarWidget();
+	if (FViewport* ViewportClient = GEditorEngine->GetViewportClient())
 	{
-		if (FViewport* ViewportClient = URenderer::GetInstance().GetViewportClient())
-		{
-			ViewportMenuBarWidget->SetViewportClient(ViewportClient);
-			ViewportMenuBarWidget->Initialize();
-			AddWidget(ViewportMenuBarWidget);
-			UE_LOG("ViewportClientWindow: ViewportMenuBarWidget이 생성되고 초기화되었습니다");
-		}
+		ViewportMenuBarWidget->SetViewportClient(ViewportClient);
+		ViewportMenuBarWidget->Initialize();
+		AddWidget(ViewportMenuBarWidget);
+		UE_LOG("ViewportClientWindow: ViewportMenuBarWidget이 생성되고 초기화되었습니다");
 	}
 	else
 	{

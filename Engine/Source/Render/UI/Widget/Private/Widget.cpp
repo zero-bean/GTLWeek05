@@ -3,7 +3,3 @@
 
 IMPLEMENT_CLASS(UWidget, UObject);
 
-UWidget::UWidget(const FString& InName)
-	: UObject(InName)
-{
-}

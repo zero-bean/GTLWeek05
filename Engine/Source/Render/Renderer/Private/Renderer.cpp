@@ -18,8 +18,8 @@
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "Optimization/Public/OcclusionCuller.h"
 
-IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
-
+IMPLEMENT_CLASS(URenderer, UObject)
+IMPLEMENT_SINGLETON(URenderer)
 URenderer::URenderer() = default;
 
 URenderer::~URenderer() = default;
@@ -28,7 +28,6 @@ void URenderer::Init(HWND InWindowHandle)
 {
 	DeviceResources = new UDeviceResources(InWindowHandle);
 	Pipeline = new UPipeline(GetDeviceContext());
-	ViewportClient = new FViewport();
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
@@ -38,14 +37,14 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateConstantBuffer();
 
 	// FontRenderer 초기화
-	FontRenderer = new UFontRenderer();
+	FontRenderer = new FFontRenderer();
 	if (!FontRenderer->Initialize())
 	{
 		UE_LOG("FontRenderer 초기화 실패");
 		SafeDelete(FontRenderer);
 	}
 
-	ViewportClient->InitializeLayout(DeviceResources->GetViewportInfo());
+	GEditorEngine->GetViewportClient()->InitializeLayout(DeviceResources->GetViewportInfo());
 }
 
 void URenderer::Release()
@@ -55,9 +54,7 @@ void URenderer::Release()
 	ReleaseDepthStencilState();
 	ReleaseRasterizerState();
 
-	SafeDelete(ViewportClient);
-
-	// FontRenderer 해제
+    // FontRenderer 해제
 	SafeDelete(FontRenderer);
 
 	SafeDelete(Pipeline);
@@ -239,7 +236,7 @@ void URenderer::Update()
 	RenderBegin();
 
 	// FViewportClient로부터 모든 뷰포트를 가져옵니다.
-	for (FViewportClient& ViewportClient : ViewportClient->GetViewports())
+	for (FViewportClient& ViewportClient : GEditorEngine->GetViewportClient()->GetViewports())
 	{
 		// 0. 현재 뷰포트가 닫혀있다면 렌더링을 하지 않습니다.
 		if (ViewportClient.GetViewportInfo().Width < 1.0f || ViewportClient.GetViewportInfo().Height < 1.0f) { continue; }
@@ -248,32 +245,30 @@ void URenderer::Update()
 		ViewportClient.Apply(GetDeviceContext());
 
 		// 2. 카메라의 View/Projection 행렬로 상수 버퍼를 업데이트합니다.
-		UCamera* CurrentCamera = &ViewportClient.Camera;
+		UCamera* CurrentCamera = ViewportClient.Camera;
 		CurrentCamera->Update(ViewportClient.GetViewportInfo());
 		UpdateConstantBuffer(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true);
 
 		// 3. 씬(레벨, 에디터 요소 등)을 이 뷰포트와 카메라 기준으로 렌더링합니다.
 		{
 			TIME_PROFILE(RenderLevel)
-				RenderLevel(CurrentCamera);
+		    RenderLevel(CurrentCamera);
 		}
 
 		// 4. 에디터를 렌더링합니다.
 		{
 			TIME_PROFILE(RenderEditor)
-				ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
+            GEditor->RenderViewportOverlay(CurrentCamera);
 		}
-
 	}
 
-	// 최상위 에디터/GUI는 프레임에 1회만
 	{
 		TIME_PROFILE(UUIManager)
-			UUIManager::GetInstance().Render();
+		UUIManager::GetInstance().Render();
 	}
 	{
 		TIME_PROFILE(UStatOverlay)
-			UStatOverlay::GetInstance().Render();
+		UStatOverlay::GetInstance().Render();
 	}
 
 	RenderEnd(); // Present 1회
@@ -359,7 +354,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
-			const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+			const EViewModeIndex ViewMode = GEditor->GetViewMode();
 			if (ViewMode == EViewModeIndex::VMI_Wireframe)
 			{
 				RenderState.CullMode = ECullMode::None;
@@ -376,7 +371,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TIME_PROFILE(RenderBillboard)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UTextComponent* PickedBillboard = GEditorEngine->GetPickedBillboard())
 		{
 			RenderBillboard(PickedBillboard, InCurrentCamera);
 		}
@@ -485,17 +480,17 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	TIME_PROFILE(RenderStaticMeshes)
 	sort(MeshComponents.begin(), MeshComponents.end(),
 		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
-			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
-			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
+			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
 			return MeshA < MeshB;
 		});
 
 	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+	const EViewModeIndex ViewMode = GEditor->GetViewMode();
 
-	for (UStaticMeshComponent* MeshComp : MeshComponents) 
+	for (UStaticMeshComponent* MeshComp : MeshComponents)
 	{
 		if (!MeshComp->GetStaticMesh()) { continue; }
 		FStaticMesh* MeshAsset = MeshComp->GetStaticMesh()->GetStaticMeshAsset();
@@ -503,7 +498,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 
 		// RasterizerState 설정
 		FRenderState RenderState = MeshComp->GetRenderState();
-		if (ViewMode == EViewModeIndex::VMI_Wireframe) 
+		if (ViewMode == EViewModeIndex::VMI_Wireframe)
 		{
 			RenderState.CullMode = ECullMode::None;
 			RenderState.FillMode = EFillMode::WireFrame;
@@ -511,7 +506,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
 
 		// Pipeline 변경시에만 업데이트
-		if (CurrentRasterizer != RasterizerState) 
+		if (CurrentRasterizer != RasterizerState)
 		{
 			static FPipelineInfo PipelineInfo = {
 				TextureInputLayout,
@@ -538,13 +533,13 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 		UpdateConstantBuffer(ConstantBufferModels, MeshComp->GetWorldTransformMatrix(), 0, true);
 
 		// 머티리얼이 없으면 전체 메시 렌더링
-		if (MeshAsset->MaterialInfo.empty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0) 
+		if (MeshAsset->MaterialInfo.empty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0)
 		{
 			Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
 			continue;
 		}
 
-		if (MeshComp->IsScrollEnabled()) 
+		if (MeshComp->IsScrollEnabled())
 		{
 			UTimeManager& TimeManager = UTimeManager::GetInstance();
 			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + TimeManager.GetDeltaTime());

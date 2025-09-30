@@ -3,11 +3,12 @@
 #include "Editor/Public/SplitterWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 
-USplitterDebugWidget::~USplitterDebugWidget()
+IMPLEMENT_CLASS(USplitterDebugWidget, UWidget)
+USplitterDebugWidget::USplitterDebugWidget()
 {
-	RootSplitter = nullptr;
-	LeftSplitter = nullptr;
-	RightSplitter = nullptr;
+	RootSplitter = GEditor->GetRootSplitter();
+	LeftSplitter = GEditor->GetLeftSplitter();
+	RightSplitter = GEditor->GetRightSplitter();
 }
 
 void USplitterDebugWidget::RenderWidget()

@@ -7,6 +7,7 @@
 
 int UUIWindow::IssuedWindowID = 0;
 
+IMPLEMENT_ABSTRACT_CLASS(UUIWindow, UObject)
 UUIWindow::UUIWindow(const FUIWindowConfig& InConfig)
 	: Config(InConfig)
 	  , CurrentState(InConfig.InitialState)

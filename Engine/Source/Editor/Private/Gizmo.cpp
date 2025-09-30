@@ -7,6 +7,7 @@
 #include "Actor/Public/Actor.h"
 #include "Global/Quaternion.h"
 
+IMPLEMENT_CLASS(UGizmo, UObject)
 UGizmo::UGizmo()
 {
 	UAssetManager& ResourceManager = UAssetManager::GetInstance();
@@ -78,15 +79,15 @@ void UGizmo::UpdateScale(UCamera* InCamera)
 	RotateCollisionConfig.Scale = Scale;
 }
 
-void UGizmo::RenderGizmo(AActor* Actor, UCamera* InCamera)
+void UGizmo::RenderGizmo(AActor* InActor, ECameraType CameraType, const FVector& InCameraLocation)
 {
-	TargetActor = Actor;
-	if (!TargetActor || !InCamera) { return; }
+	TargetActor = InActor;
+	if (!TargetActor) { return; }
 
 	float RenderScale;
-	if (InCamera->GetCameraType() == ECameraType::ECT_Perspective)
+	if (CameraType == ECameraType::ECT_Perspective)
 	{
-		float DistanceToCamera = (InCamera->GetLocation() - TargetActor->GetActorLocation()).Length();
+		float DistanceToCamera = (InCameraLocation - TargetActor->GetActorLocation()).Length();
 		RenderScale = DistanceToCamera * ScaleFactor;
 		if (DistanceToCamera < MinScaleFactor)
 			RenderScale = MinScaleFactor * ScaleFactor;

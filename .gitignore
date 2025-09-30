@@ -418,3 +418,6 @@ FodyWeavers.xsd
 *.msm
 *.msp
 Engine/editor.ini
+
+# Rider
+/.idea

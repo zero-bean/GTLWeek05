@@ -16,8 +16,9 @@ enum class EStatType : uint8
 UCLASS()
 class UStatOverlay : public UObject
 {
-	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UStatOverlay, UObject)
+    GENERATED_BODY()
+    DECLARE_CLASS(UStatOverlay, UObject)
+    DECLARE_SINGLETON(UStatOverlay)
 
 public:
 	void Initialize();

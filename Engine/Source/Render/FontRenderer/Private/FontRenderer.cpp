@@ -3,18 +3,18 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Manager/Asset/Public/AssetManager.h"
 
-UFontRenderer::UFontRenderer()
+FFontRenderer::FFontRenderer()
 {
 }
 
-UFontRenderer::~UFontRenderer()
+FFontRenderer::~FFontRenderer()
 {
     Release();
 }
 
 /// @brief 폰트 렌더러 초기화
 /// 셰이더 컴파일, 텍스처 로드, 버퍼 생성 등을 수행
-bool UFontRenderer::Initialize()
+bool FFontRenderer::Initialize()
 {
     // 렌더러에서 Device와 DeviceContext 가져오기
     URenderer& Renderer = URenderer::GetInstance();
@@ -67,7 +67,7 @@ bool UFontRenderer::Initialize()
 }
 
 /// @brief 리소스 해제
-void UFontRenderer::Release()
+void FFontRenderer::Release()
 {
     // 버퍼 해제
     if (FontVertexBuffer)
@@ -125,7 +125,7 @@ void UFontRenderer::Release()
 //}
 
 /// @brief 임의의 텍스트 렌더링
-void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionCostants,
+void FFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionCostants,
 	float CenterY, float StartZ, float CharWidth, float CharHeight)
 {
     if (!Text || strlen(Text) == 0)
@@ -375,7 +375,7 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
 /// @param StartY 시작 Y 좌표
 /// @param CharWidth 문자 너비
 /// @param CharHeight 문자 높이
-bool UFontRenderer::CreateVertexBufferForText(const char* Text, float StartX, float StartY, float CharWidth, float CharHeight)
+bool FFontRenderer::CreateVertexBufferForText(const char* Text, float StartX, float StartY, float CharWidth, float CharHeight)
 {
     URenderer& Renderer = URenderer::GetInstance();
     ID3D11Device* Device = Renderer.GetDevice();
@@ -472,7 +472,7 @@ bool UFontRenderer::CreateVertexBufferForText(const char* Text, float StartX, fl
 }
 
 /// @brief 셰이더 생성 및 컴파일
-bool UFontRenderer::CreateShaders()
+bool FFontRenderer::CreateShaders()
 {
     URenderer& Renderer = URenderer::GetInstance();
 
@@ -512,7 +512,7 @@ bool UFontRenderer::CreateShaders()
 }
 
 /// @brief 폰트 텍스처 로드
-bool UFontRenderer::LoadFontTexture()
+bool FFontRenderer::LoadFontTexture()
 {
     UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
@@ -533,7 +533,7 @@ bool UFontRenderer::LoadFontTexture()
 }
 
 /// @brief 샘플러 스테이트 생성
-bool UFontRenderer::CreateSamplerState()
+bool FFontRenderer::CreateSamplerState()
 {
     URenderer& Renderer = URenderer::GetInstance();
     ID3D11Device* Device = Renderer.GetDevice();
@@ -560,7 +560,7 @@ bool UFontRenderer::CreateSamplerState()
 }
 
 /// @brief 상수 버퍼 생성
-bool UFontRenderer::CreateConstantBuffer()
+bool FFontRenderer::CreateConstantBuffer()
 {
     URenderer& Renderer = URenderer::GetInstance();
     ID3D11Device* Device = Renderer.GetDevice();

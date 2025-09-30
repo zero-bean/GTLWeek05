@@ -17,7 +17,8 @@ UCLASS()
 class UUIManager : public UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(UUIManager, UObject)
+	DECLARE_CLASS(UUIManager, UObject)
+	DECLARE_SINGLETON(UUIManager)
 
 public:
 	void Initialize();

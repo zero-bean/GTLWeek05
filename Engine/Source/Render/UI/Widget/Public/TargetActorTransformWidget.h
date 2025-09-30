@@ -1,9 +1,10 @@
 #pragma once
 #include "Widget.h"
 
-class UTargetActorTransformWidget
-	: public UWidget
+class UTargetActorTransformWidget : public UWidget
 {
+    GENERATED_BODY()
+    DECLARE_CLASS(UTargetActorTransformWidget, UWidget)
 public:
 	void Initialize() override;
 	void Update() override;

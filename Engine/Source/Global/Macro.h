@@ -2,6 +2,26 @@
 
 #define DT UTimeManager::GetInstance().GetDeltaTime()
 
+// 싱글톤 패턴 매크로화
+// Declare - Implement를 쌍으로 사용해야 한다
+#define DECLARE_SINGLETON(ClassName) \
+public: \
+static ClassName& GetInstance(); \
+private: \
+ClassName(); \
+virtual ~ClassName(); \
+ClassName(const ClassName&) = delete; \
+ClassName& operator=(const ClassName&) = delete; \
+ClassName(ClassName&&) = delete; \
+ClassName& operator=(ClassName&&) = delete;
+
+#define IMPLEMENT_SINGLETON(ClassName) \
+ClassName& ClassName::GetInstance() \
+{ \
+static ClassName Instance; \
+return Instance; \
+}
+
 // UE_LOG Macro 시스템
 // 기본 UE_LOG (Info 타입)
 #define UE_LOG(fmt, ...) \

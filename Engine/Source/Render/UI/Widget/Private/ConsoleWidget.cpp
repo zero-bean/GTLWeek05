@@ -3,7 +3,8 @@
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 #include "Utility/Public/UELogParser.h"
 
-IMPLEMENT_SINGLETON_CLASS(UConsoleWidget, UWidget)
+IMPLEMENT_CLASS(UConsoleWidget, UWidget)
+IMPLEMENT_SINGLETON(UConsoleWidget)
 
 UConsoleWidget::UConsoleWidget() = default;
 

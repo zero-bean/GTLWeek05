@@ -12,7 +12,7 @@ class UTextComponent;
 class AActor;
 class AGizmo;
 class UEditor;
-class UFontRenderer;
+class FFontRenderer;
 class FViewport;
 class UCamera;
 
@@ -42,11 +42,12 @@ class UCamera;
  * @param numVerticesSphere
  */
 UCLASS()
-class URenderer :
-	public UObject
+class URenderer : public UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(URenderer, UObject)
+    
+	DECLARE_CLASS(URenderer, UObject)
+    DECLARE_SINGLETON(URenderer)
 
 public:
 	void Init(HWND InWindowHandle);
@@ -116,7 +117,6 @@ public:
 	IDXGISwapChain* GetSwapChain() const { return DeviceResources->GetSwapChain(); }
 	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 	UDeviceResources* GetDeviceResources() const { return DeviceResources; }
-	FViewport* GetViewportClient() const { return ViewportClient; }
 	bool GetIsResizing() const { return bIsResizing; }
 
 	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
@@ -124,7 +124,7 @@ public:
 private:
 	UPipeline* Pipeline = nullptr;
 	UDeviceResources* DeviceResources = nullptr;
-	UFontRenderer* FontRenderer = nullptr;
+	FFontRenderer* FontRenderer = nullptr;
 	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
@@ -146,8 +146,6 @@ private:
 	ID3D11InputLayout* TextureInputLayout = nullptr;
 	
 	uint32 Stride = 0;
-
-	FViewport* ViewportClient = nullptr;
 
 	struct FRasterKey
 	{

@@ -9,8 +9,8 @@
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 
+IMPLEMENT_CLASS(UPrimitiveSpawnWidget, UWidget)
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
-	: UWidget("Primitive Spawn Widget")
 {
 }
 

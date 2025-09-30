@@ -1,6 +1,6 @@
 #pragma once
 
-//class UEditor;
+class UEditor;
 class FAppWindow;
 
 /**
@@ -29,5 +29,4 @@ private:
     HACCEL AcceleratorTable;
     MSG MainMessage;
     FAppWindow* Window;
-	//UEditor* Editor = nullptr;
 };

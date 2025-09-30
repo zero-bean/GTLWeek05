@@ -2,7 +2,7 @@
 
 /// @brief 폰트 아틀라스를 사용한 텍스트 렌더링 클래스
 /// DejaVu Sans Mono.png 512x512 아틀라스에서 16x16 픽셀 글자를 렌더링
-class UFontRenderer
+class FFontRenderer
 {
 public:
     /// @brief 폰트 정점 구조체 - 위치, UV, 문자 인덱스 포함
@@ -23,8 +23,8 @@ public:
     };
 
     // 생성자와 소멸자
-    UFontRenderer();
-    ~UFontRenderer();
+    FFontRenderer();
+    ~FFontRenderer();
 
     /// @brief 폰트 렌더러 초기화 - 셰이더, 텍스처, 버퍼 생성
     bool Initialize();

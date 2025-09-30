@@ -11,8 +11,8 @@
 #include "Editor/Public/Viewport.h"
 #include "Global/Quaternion.h"
 
+IMPLEMENT_CLASS(USceneHierarchyWidget, UWidget)
 USceneHierarchyWidget::USceneHierarchyWidget()
-	: UWidget("Scene Hierarchy Widget")
 {
 }
 
@@ -313,7 +313,7 @@ void USceneHierarchyWidget::FocusOnActor(TObjectPtr<AActor> InActor)
 {
 	if (!InActor) { return; }
 
-	FViewport* Viewport = URenderer::GetInstance().GetViewportClient();
+	FViewport* Viewport = GEditorEngine->GetViewportClient();
 	if (!Viewport) { return; }
 
 	TObjectPtr<UPrimitiveComponent> Prim = nullptr;
@@ -348,13 +348,13 @@ void USceneHierarchyWidget::FocusOnActor(TObjectPtr<AActor> InActor)
 
 	for (int32 i = 0; i < ViewportCount; ++i)
 	{
-		UCamera& Camera = Viewports[i].Camera;
-		CameraStartLocation[i] = Camera.GetLocation();
-		CameraStartRotation[i] = Camera.GetRotation();
+		UCamera* Camera = Viewports[i].Camera;
+		CameraStartLocation[i] = Camera->GetLocation();
+		CameraStartRotation[i] = Camera->GetRotation();
 
-		if (Camera.GetCameraType() == ECameraType::ECT_Perspective)
+		if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
 		{
-			const float FovY = Camera.GetFovY();
+			const float FovY = Camera->GetFovY();
 			const float HalfFovRadian = FVector::GetDegreeToRadian(FovY * 0.5f);
 			const float Distance = (BoundingRadius / sinf(HalfFovRadian)) * 1.2f;
 
@@ -385,7 +385,7 @@ void USceneHierarchyWidget::UpdateCameraAnimation()
 {
 	if (!bIsCameraAnimating) { return; }
 
-	FViewport* Viewport = URenderer::GetInstance().GetViewportClient();
+	FViewport* Viewport = GEditorEngine->GetViewportClient();
 	if (!Viewport)
 	{
 		bIsCameraAnimating = false;
@@ -415,16 +415,16 @@ void USceneHierarchyWidget::UpdateCameraAnimation()
 	auto& Viewports = Viewport->GetViewports();
 	for (int Index = 0; Index < Viewports.size(); ++Index)
 	{
-		UCamera& Camera = Viewports[Index].Camera;
+		UCamera* Camera = Viewports[Index].Camera;
 
 		FVector CurrentLocation = CameraStartLocation[Index] + (CameraTargetLocation[Index] - CameraStartLocation[Index]) * SmoothProgress;
-		Camera.SetLocation(CurrentLocation);
+		Camera->SetLocation(CurrentLocation);
 		Viewport->SetFocusPoint(CurrentLocation);
 
-		if (Camera.GetCameraType() == ECameraType::ECT_Perspective)
+		if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
 		{
 			FVector CurrentRotation = CameraStartRotation[Index] + (CameraTargetRotation[Index] - CameraStartRotation[Index]) * SmoothProgress;
-			Camera.SetRotation(CurrentRotation);
+			Camera->SetRotation(CurrentRotation);
 		}
 	}
 
@@ -564,7 +564,7 @@ void USceneHierarchyWidget::FinishRenaming(bool bInConfirm)
 		if (!NewName.empty() && NewName != RenamingActor->GetName().ToString())
 		{
 			// Detail 패널과 동일한 방식 사용
-			RenamingActor->SetDisplayName(NewName);
+			RenamingActor->SetName(NewName);
 			UE_LOG_SUCCESS("SceneHierarchy: Actor의 이름을 '%s' (으)로 변경하였습니다", NewName.c_str());
 
 			// 검색 필터를 업데이트해야 할 수도 있음

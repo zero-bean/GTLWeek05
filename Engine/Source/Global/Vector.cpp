@@ -29,6 +29,11 @@ FVector::FVector(const FVector& InOther)
 {
 }
 
+FVector::FVector(const FVector4& InOther)
+	: X(InOther.X), Y(InOther.Y), Z(InOther.Z)
+{
+}
+
 void FVector::operator=(const FVector4& InOther)
 {
 	*this = FVector(InOther.X, InOther.Y, InOther.Z);

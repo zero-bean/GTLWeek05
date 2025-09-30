@@ -2,7 +2,7 @@
 #include "Editor/Public/Viewport.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Manager/Config/Public/ConfigManager.h"
-#include "Optimization/Public/ViewVolumeCuller.h"
+#include "Editor/Public/Camera.h"
 
 FViewport::~FViewport()
 {
@@ -38,17 +38,18 @@ void FViewport::UpdateCameraSettingsToConfig()
 
 
 	for (int32 Index = 0; Index < ViewportClients.size(); ++Index)
-	{		FViewportCameraData Data;
+	{
+		FViewportCameraData Data;
 		FViewportClient& Viewport = ViewportClients[Index];
-		UCamera& Camera = Viewport.Camera;
+		UCamera* Camera = Viewport.Camera;
 
 		// 현재 뷰포트와 카메라의 상태를 FViewportCameraData 구조체에 담습니다.
 		Data.ViewportCameraType = Viewport.GetCameraType();
-		Data.Location = Camera.GetLocation();
-		Data.Rotation = Camera.GetRotation();
-		Data.FovY = Camera.GetFovY();
-		Data.NearClip = Camera.GetNearZ();
-		Data.FarClip = Camera.GetFarZ();
+		Data.Location = Camera->GetLocation();
+		Data.Rotation = Camera->GetRotation();
+		Data.FovY = Camera->GetFovY();
+		Data.NearClip = Camera->GetNearZ();
+		Data.FarClip = Camera->GetFarZ();
 
 		// 완성된 데이터를 ConfigManager에 전달합니다.
 		ConfigManager.SetViewportCameraData(Index, Data);
@@ -112,7 +113,7 @@ void FViewport::ApplyAllCameraDataToViewportClients()
 	for (int32 Index = 0; Index < ViewportClients.size(); ++Index)
 	{
 		FViewportClient& TargetViewport = ViewportClients[Index];
-		UCamera& TargetCamera = TargetViewport.Camera;
+		UCamera* TargetCamera = TargetViewport.Camera;
 
 		// ConfigManager로부터 저장된 뷰포트 데이터를 가져옵니다.
 		const FViewportCameraData& CamData = ConfigManager.GetViewportCameraData();
@@ -122,18 +123,18 @@ void FViewport::ApplyAllCameraDataToViewportClients()
 
 		if (CamData.ViewportCameraType == EViewportCameraType::Perspective)
 		{
-			TargetCamera.SetLocation(CamData.Location);
-			TargetCamera.SetRotation(CamData.Rotation);
-			TargetCamera.SetFarZ(CamData.FarClip);
-			TargetCamera.SetNearZ(CamData.NearClip);
-			TargetCamera.SetFovY(CamData.FovY);
+			TargetCamera->SetLocation(CamData.Location);
+			TargetCamera->SetRotation(CamData.Rotation);
+			TargetCamera->SetFarZ(CamData.FarClip);
+			TargetCamera->SetNearZ(CamData.NearClip);
+			TargetCamera->SetFovY(CamData.FovY);
 		}
 		else // Orthographic
 		{
-			TargetCamera.SetLocation(CamData.Location);
-			TargetCamera.SetRotation(CamData.Rotation);
-			TargetCamera.SetFarZ(CamData.FarClip);
-			TargetCamera.SetNearZ(CamData.NearClip);
+			TargetCamera->SetLocation(CamData.Location);
+			TargetCamera->SetRotation(CamData.Rotation);
+			TargetCamera->SetFarZ(CamData.FarClip);
+			TargetCamera->SetNearZ(CamData.NearClip);
 		}
 	}
 }

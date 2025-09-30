@@ -3,6 +3,7 @@
 #include "Core/Public/Object.h"
 #include "Actor/Public/Actor.h"
 
+enum class ECameraType;
 class UCamera;
 
 enum class EGizmoMode
@@ -44,11 +45,12 @@ struct FGizmoRotateCollisionConfig
 
 class UGizmo : public UObject
 {
+    DECLARE_CLASS(UGizmo, UObject)
 public:
 	UGizmo();
 	~UGizmo() override;
 	void UpdateScale(UCamera* InCamera);
-	void RenderGizmo(AActor* Actor, UCamera* InCamera);
+	void RenderGizmo(AActor* InActor, ECameraType CameraType, const FVector& InCameraLocation = FVector::Zero());
 	void ChangeGizmoMode();
 
 	/* *

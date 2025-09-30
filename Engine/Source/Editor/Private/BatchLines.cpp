@@ -3,16 +3,20 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Manager/Asset/Public/AssetManager.h"
+#include "Editor/Public/Grid.h"
+#include "Editor/Public/BoundingBoxLines.h"
 
 UBatchLines::UBatchLines()
 	: Grid()
 	, BoundingBoxLines()
 {
-	Vertices.reserve(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices());
-	Vertices.resize(Grid.GetNumVertices() + BoundingBoxLines.GetNumVertices());
+	Grid = NewObject<UGrid>();
+	BoundingBoxLines = NewObject<UBoundingBoxLines>();
+	Vertices.reserve(Grid->GetNumVertices() + BoundingBoxLines->GetNumVertices());
+	Vertices.resize(Grid->GetNumVertices() + BoundingBoxLines->GetNumVertices());
 
-	Grid.MergeVerticesAt(Vertices, 0);
-	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
+	Grid->MergeVerticesAt(Vertices, 0);
+	BoundingBoxLines->MergeVerticesAt(Vertices, Grid->GetNumVertices());
 
 	SetIndices();
 
@@ -35,7 +39,7 @@ UBatchLines::UBatchLines()
 	Primitive.Rotation = FVector(0, 0, 0);
 	Primitive.Scale = FVector(1, 1, 1);*/
 	Primitive.VertexShader = UAssetManager::GetInstance().GetVertexShader(EShaderType::BatchLine);
-	Primitive.InputLayout = UAssetManager::GetInstance().GetIputLayout(EShaderType::BatchLine);
+	Primitive.InputLayout = UAssetManager::GetInstance().GetInputLayout(EShaderType::BatchLine);
 	Primitive.PixelShader = UAssetManager::GetInstance().GetPixelShader(EShaderType::BatchLine);
 }
 
@@ -50,25 +54,25 @@ UBatchLines::~UBatchLines()
 
 void UBatchLines::UpdateUGridVertices(const float newCellSize)
 {
-	if (newCellSize == Grid.GetCellSize())
+	if (newCellSize == Grid->GetCellSize())
 	{
 		return;
 	}
-	Grid.UpdateVerticesBy(newCellSize);
-	Grid.MergeVerticesAt(Vertices, 0);
+	Grid->UpdateVerticesBy(newCellSize);
+	Grid->MergeVerticesAt(Vertices, 0);
 	bChangedVertices = true;
 }
 
 void UBatchLines::UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo)
 {
-	FAABB curBoudingBoxInfo = BoundingBoxLines.GetRenderedBoxInfo();
+	FAABB curBoudingBoxInfo = BoundingBoxLines->GetRenderedBoxInfo();
 	if (newBoundingBoxInfo.Min == curBoudingBoxInfo.Min && newBoundingBoxInfo.Max == curBoudingBoxInfo.Max)
 	{
 		return;
 	}
 
-	BoundingBoxLines.UpdateVertices(newBoundingBoxInfo);
-	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
+	BoundingBoxLines->UpdateVertices(newBoundingBoxInfo);
+	BoundingBoxLines->MergeVerticesAt(Vertices, Grid->GetNumVertices());
 	bChangedVertices = true;
 }
 
@@ -81,11 +85,18 @@ void UBatchLines::UpdateBatchLineVertices(const float newCellSize, const FAABB& 
 
 void UBatchLines::UpdateVertexBuffer()
 {
-	if (bChangedVertices)
-	{
 		URenderer::GetInstance().UpdateVertexBuffer(Primitive.Vertexbuffer, Vertices);
-	}
 	bChangedVertices = false;
+}
+
+float UBatchLines::GetCellSize() const
+{
+	return Grid->GetCellSize();
+}
+
+void UBatchLines::DisableRenderBoundingBox()
+{
+	UpdateBoundingBoxVertices({ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} });
 }
 
 void UBatchLines::Render()
@@ -98,7 +109,7 @@ void UBatchLines::Render()
 
 void UBatchLines::SetIndices()
 {
-	const uint32 numGridVertices = Grid.GetNumVertices();
+	const uint32 numGridVertices = Grid->GetNumVertices();
 
 	// 기존 그리드 라인 인덱스
 	for (uint32 index = 0; index < numGridVertices; ++index)

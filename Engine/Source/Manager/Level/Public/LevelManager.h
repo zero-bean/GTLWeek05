@@ -5,11 +5,11 @@ class UEditor;
 class ULevel;
 
 UCLASS()
-class ULevelManager :
-	public UObject
+class ULevelManager : public UObject
 {
 	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(ULevelManager, UObject)
+    DECLARE_CLASS(ULevelManager, UObject)
+    DECLARE_SINGLETON(ULevelManager)
 
 public:
 	void Update() const;
@@ -25,12 +25,9 @@ public:
 	static path GetLevelDirectory();
 	static path GenerateLevelFilePath(const FString& InLevelName);
 
-	TObjectPtr<UEditor> GetEditor() const { return Editor; }
-
 private:
 	void SwitchToLevel(ULevel* InNewLevel);
 
 private:
 	TObjectPtr<ULevel> CurrentLevel;
-	TObjectPtr<UEditor> Editor;
 };

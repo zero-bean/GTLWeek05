@@ -1,9 +1,11 @@
 #pragma once
 #include "Widget.h"
 
-class USceneIOWidget :
-	public UWidget
+class USceneIOWidget : public UWidget
 {
+    GENERATED_BODY()
+    DECLARE_CLASS(USceneIOWidget, UWidget)
+    
 public:
 	void Initialize() override;
 	void Update() override;

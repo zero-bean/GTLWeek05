@@ -2,7 +2,26 @@
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "Render/UI/Widget/Public/ConsoleWidget.h"
 
-IMPLEMENT_SINGLETON_CLASS(UConsoleWindow, UUIWindow)
+IMPLEMENT_CLASS(UConsoleWindow, UUIWindow)
+IMPLEMENT_SINGLETON(UConsoleWindow)
+
+UConsoleWindow::UConsoleWindow() : ConsoleWidget(nullptr)
+{
+    // 콘솔 윈도우 기본 설정
+    FUIWindowConfig Config;
+    Config.WindowTitle = "GTL Console";
+    Config.DefaultSize = ImVec2(1000, 260);
+    Config.DefaultPosition = ImVec2(10, 770);
+    Config.MinSize = ImVec2(1000, 260);
+    Config.bResizable = true;
+    Config.bMovable = true;
+    Config.bCollapsible = true;
+    Config.DockDirection = EUIDockDirection::Bottom; // 바텀업 도킹 설정
+    SetConfig(Config);
+
+    ConsoleWidget = &UConsoleWidget::GetInstance();
+    AddWidget(ConsoleWidget);
+}
 
 UConsoleWindow::~UConsoleWindow()
 {
@@ -13,24 +32,6 @@ UConsoleWindow::~UConsoleWindow()
 	}
 }
 
-UConsoleWindow::UConsoleWindow()
-	: ConsoleWidget(nullptr)
-{
-	// 콘솔 윈도우 기본 설정
-	FUIWindowConfig Config;
-	Config.WindowTitle = "GTL Console";
-	Config.DefaultSize = ImVec2(1000, 260);
-	Config.DefaultPosition = ImVec2(10, 770);
-	Config.MinSize = ImVec2(1000, 260);
-	Config.bResizable = true;
-	Config.bMovable = true;
-	Config.bCollapsible = true;
-	Config.DockDirection = EUIDockDirection::Bottom; // 바텀업 도킹 설정
-	SetConfig(Config);
-
-	ConsoleWidget = &UConsoleWidget::GetInstance();
-	AddWidget(ConsoleWidget);
-}
 
 void UConsoleWindow::Initialize()
 {

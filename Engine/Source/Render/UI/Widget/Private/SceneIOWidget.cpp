@@ -5,8 +5,8 @@
 
 #include <shobjidl.h>
 
+IMPLEMENT_CLASS(USceneIOWidget, UWidget)
 USceneIOWidget::USceneIOWidget()
-	: UWidget("Scene IO Widget")
 {
 }
 
