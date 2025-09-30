@@ -19,6 +19,64 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
+// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
+namespace
+{
+	// 최상위 복제 관리 함수
+	UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter)
+	{
+		if (!InObjectToDuplicate) return nullptr;
+
+		TMap<UObject*, UObject*> DuplicationMap;
+
+		// Pass 1: 객체 생성 및 복사
+		UObject* DuplicatedRootObject = InObjectToDuplicate->Duplicate(InNewOuter, DuplicationMap);
+
+		// Pass 2: 참조 재연결
+		for (auto const& [Original, Duplicated] : DuplicationMap)
+		{
+			if (Duplicated)
+			{
+				Duplicated->PostDuplicate(DuplicationMap);
+			}
+		}
+
+		return DuplicatedRootObject;
+	}
+}
+
+// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
+AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
+{
+	if (!InActorToDuplicate)
+	{
+		return nullptr;
+	}
+
+	// 1. 범용 복제 함수를 호출하여 액터와 그 컴포넌트들을 메모리에 복제합니다.
+	// Outer는 레벨 자신(this)으로 설정할 수 있습니다.
+	AActor* NewActor = Cast<AActor>(DuplicateObjectGraph(InActorToDuplicate, this));
+
+	if (NewActor)
+	{
+		// 2. 복제된 액터를 레벨의 관리 목록에 추가합니다.
+		LevelActors.push_back(TObjectPtr(NewActor));
+
+		// 3. BeginPlay()를 호출하여 액터를 활성화합니다.
+		NewActor->BeginPlay();
+
+		// 4. 액터의 Primitive 컴포넌트들을 옥트리에 등록합니다.
+		AddLevelPrimitiveComponent(NewActor);
+
+		// (선택) 복제된 액터를 즉시 선택 상태로 만들 수 있습니다.
+		SetSelectedActor(NewActor);
+
+		return NewActor;
+	}
+
+	return nullptr;
+}
+
 ULevel::ULevel(const FName& InName)
 	: UObject(InName)
 {

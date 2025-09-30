@@ -39,6 +39,10 @@ class ULevel :
 	public UObject
 {
 public:
+	// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
+	AActor* DuplicateActor(AActor* InActorToDuplicate);
+
+public:
 	ULevel();
 	ULevel(const FName& InName);
 	~ULevel() override;
