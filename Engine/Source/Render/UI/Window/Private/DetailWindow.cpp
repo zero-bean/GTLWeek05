@@ -57,7 +57,7 @@ void UDetailWindow::OnSelectedActorChanged(AActor* InActor)
 			TObjectPtr<UClass> WidgetClass = Component->GetSpecificWidgetClass();
 			if (WidgetClass)
 			{
-				UWidget* NewWidget = NewObject<UWidget>(nullptr, WidgetClass);
+				UWidget* NewWidget = Cast<UWidget>(NewObject(WidgetClass));
 				if (NewWidget)
 				{
 					AddWidget(NewWidget);

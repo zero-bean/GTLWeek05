@@ -35,6 +35,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 
 	// Primitive 타입 선택 DropDown
 	const char* PrimitiveTypes[] = {
+		"Actor",
 		"Sphere",
 		"Cube",
 		"Triangle",
@@ -45,11 +46,12 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	};
 
 	// None을 고려한 Enum 변환 처리
-	int TypeNumber = static_cast<int>(SelectedPrimitiveType) - 1;
+	int TypeNumber = static_cast<int>(SelectedPrimitiveType);
 
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
+
 	ImGui::Combo(
 		"##PrimitiveType",
 		&TypeNumber,
@@ -60,7 +62,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	// ImGui가 받은 값을 반영
 
 
-	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
+	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber);
 
 	// Spawn 버튼과 개수 입력
 	ImGui::Text("Number of Spawn:");
@@ -106,7 +108,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		// 'Duplicate' 버튼을 누르면 레벨의 DuplicateActor 함수를 호출합니다.
 		if (ImGui::Button("Duplicate!"))
 		{
-			CurrentLevel->DuplicateActor(SelectedActor);
+			//CurrentLevel->DuplicateActor(SelectedActor);
 		}
 	}
 	else
@@ -140,7 +142,11 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		AActor* NewActor = nullptr;
 
 		// 타입에 따라 액터 생성
-		if (SelectedPrimitiveType == EPrimitiveType::Cube)
+		if (SelectedPrimitiveType == EPrimitiveType::None)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(AActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Cube)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(ACubeActor::StaticClass());
 		}

@@ -9,7 +9,7 @@
 IMPLEMENT_CLASS(UTextComponent, UPrimitiveComponent)
 
 /**
- * @brief Level¿¡¼­ °¢ Actor¸¶´Ù °¡Áö°í ÀÖ´Â UUID¸¦ Ãâ·ÂÇØÁÖ±â À§ÇÑ ºôº¸µå Å¬·¡½º
+ * @brief Levelï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Actorï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ UUIDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½
  * Actor has a UBillBoardComponent
  */
 UTextComponent::UTextComponent()
@@ -74,4 +74,16 @@ void UTextComponent::RegulatePickingAreaByTextLength()
 			FVector(0.0f, 0.5f * NewStrLen, 0.5f)
 		);
 	BoundingBox = &PickingAreaBoundingBox;
+}
+
+UObject* UTextComponent::Duplicate()
+{
+	UTextComponent* TextComponent = Cast<UTextComponent>(Super::Duplicate());
+	TextComponent->Text = Text;
+	return TextComponent;
+}
+
+void UTextComponent::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	UPrimitiveComponent::DuplicateSubObjects(DuplicatedObject);
 }

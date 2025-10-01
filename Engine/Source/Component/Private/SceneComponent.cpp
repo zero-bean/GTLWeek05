@@ -48,57 +48,60 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
 {
-	if (NewParent == this)
+	if (NewParent == this || NewParent == ParentAttachment)
 	{
 		return;
 	}
 
-	if (NewParent == ParentAttachment)
+	for (USceneComponent* Ancester = NewParent; Ancester != nullptr; Ancester = Ancester->ParentAttachment)
 	{
-		return;
+		// 만약 거슬러 올라가다 나 자신을 만나면 순환 구조이므로 함수를 종료합니다.
+		if (Ancester == this)
+		{
+			return; 
+		}
 	}
 
-	//부모의 조상중에 내 자식이 있으면 순환참조 -> 스택오버플로우 일어남.
-	for (USceneComponent* Ancester = NewParent; NewParent; Ancester = NewParent->ParentAttachment)
-	{
-		if (NewParent == this) //조상중에 내 자식이 있다면 조상중에 내가 있을 것임.
-			return;
-	}
-
-	//부모가 될 자격이 있음, 이제 부모를 바꿈.
-
-	if (ParentAttachment) //부모 있었으면 이제 그 부모의 자식이 아님
+	// 기존 부모가 있었다면, 그 부모의 자식 목록에서 나를 제거합니다.
+	if (ParentAttachment)
 	{
 		ParentAttachment->RemoveChild(this);
 	}
 
+	// 새로운 부모를 설정합니다.
 	ParentAttachment = NewParent;
 
+	// 새로운 부모가 있다면, 그 부모의 자식 목록에 나를 추가합니다.
+	if (ParentAttachment)
+	{
+		ParentAttachment->Children.push_back(this);
+	}
+
 	MarkAsDirty();
-
 }
-
 void USceneComponent::RemoveChild(USceneComponent* ChildDeleted)
 {
-	Children.erase(std::remove(Children.begin(), Children.end(), this), Children.end());
+	Children.erase(std::remove(Children.begin(), Children.end(), ChildDeleted), Children.end());
 }
 
-void USceneComponent::CopyPropertiesFrom(const UObject* InObject)
+UObject* USceneComponent::Duplicate()
 {
-	// 1. 부모(UActorComponent)의 작업을 먼저 호출합니다.
-	Super::CopyPropertiesFrom(InObject);
+	USceneComponent* SceneComponent = Cast<USceneComponent>(Super::Duplicate());
+	SceneComponent->RelativeLocation = RelativeLocation;
+	SceneComponent->RelativeRotation = RelativeRotation;
+	SceneComponent->RelativeScale3D = RelativeScale3D;
+	SceneComponent->MarkAsDirty();
+	return SceneComponent;
+}
 
-	// 2. 원본을 USceneComponent로 캐스팅합니다.
-	if (const USceneComponent* SourceComponent = Cast<const USceneComponent>(InObject))
+void USceneComponent::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	Super::DuplicateSubObjects(DuplicatedObject);
+	USceneComponent* SceneComponent = Cast<USceneComponent>(DuplicatedObject);
+	for (USceneComponent* Child : Children)
 	{
-		// 3. USceneComponent의 고유한 '값' 타입 멤버들을 복사합니다.
-		// (트랜스폼 정보)
-		this->RelativeLocation = SourceComponent->RelativeLocation;
-		this->RelativeRotation = SourceComponent->RelativeRotation;
-		this->RelativeScale3D = SourceComponent->RelativeScale3D;
-		this->bIsUniformScale = SourceComponent->bIsUniformScale;
-
-		// 중요: ParentAttachment, Children 같은 포인터/컨테이너는 여기서 복사하지 않습니다.
+		USceneComponent* ReplicatedChild = Cast<USceneComponent>(Child->Duplicate());
+		ReplicatedChild->SetParentAttachment(SceneComponent);
 	}
 }
 
@@ -143,30 +146,5 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
 		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
-	}
-}
-
-void USceneComponent::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
-{
-	// 1. 부모(UActorComponent)의 작업을 먼저 호출하여 Owner 포인터를 설정합니다.
-	Super::PostDuplicate(InDuplicationMap);
-
-	// 2. 원본 컴포넌트를 가져옵니다.
-	const USceneComponent* OriginalComponent = Cast<const USceneComponent>(SourceObject);
-	if (!OriginalComponent) return;
-
-	// 3. 원본의 부모(AttachParent)를 가져옵니다.
-	USceneComponent* OriginalParent = OriginalComponent->ParentAttachment;
-	if (OriginalParent)
-	{
-		// 4. DuplicationMap에서 원본 부모에 해당하는 '새로운 부모'를 찾습니다.
-		auto It = InDuplicationMap.find(OriginalParent);
-		if (It != InDuplicationMap.end())
-		{
-			// 5. 찾은 새로운 부모 컴포넌트를 나의 부모로 설정합니다.
-			// (내부적으로 Children 목록에도 추가됩니다)
-			USceneComponent* NewParent = Cast<USceneComponent>(It->second);
-			this->SetParentAttachment(NewParent);
-		}
 	}
 }

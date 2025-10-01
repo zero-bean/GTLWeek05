@@ -34,7 +34,7 @@ void USceneHierarchyWidget::Update()
 
 void USceneHierarchyWidget::RenderWidget()
 {
-	ULevel* CurrentLevel = GWorld->GetLevel();;
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -130,7 +130,7 @@ void USceneHierarchyWidget::RenderWidget()
  * @param InActor 렌더링할 Actor
  * @param InIndex Actor의 인덱스
  */
-void USceneHierarchyWidget::RenderActorInfo(TObjectPtr<AActor> InActor, int32 InIndex)
+void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 {
 	// TODO(KHJ): 컴포넌트 정보 탐색을 위한 트리 노드를 작업 후 남겨두었음, 필요하다면 사용할 것
 
@@ -142,7 +142,7 @@ void USceneHierarchyWidget::RenderActorInfo(TObjectPtr<AActor> InActor, int32 In
 	ImGui::PushID(InIndex);
 
 	// 현재 선택된 Actor인지 확인
-	ULevel* CurrentLevel = GWorld->GetLevel();;
+	ULevel* CurrentLevel = GWorld->GetLevel();
 	bool bIsSelected = (CurrentLevel && CurrentLevel->GetSelectedActor() == InActor);
 
 	// 선택된 Actor는 하이라이트
@@ -564,7 +564,7 @@ void USceneHierarchyWidget::FinishRenaming(bool bInConfirm)
 		if (!NewName.empty() && NewName != RenamingActor->GetName().ToString())
 		{
 			// Detail 패널과 동일한 방식 사용
-			RenamingActor->SetDisplayName(NewName);
+			RenamingActor->SetName(NewName);
 			UE_LOG_SUCCESS("SceneHierarchy: Actor의 이름을 '%s' (으)로 변경하였습니다", NewName.c_str());
 
 			// 검색 필터를 업데이트해야 할 수도 있음

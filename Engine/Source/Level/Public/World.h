@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
 
@@ -63,7 +64,6 @@ public:
 
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
-	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
 
 private:
 	EWorldType WorldType;
@@ -74,4 +74,11 @@ private:
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 
 	void SwitchToLevel(ULevel* InNewLevel);
+	
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
+
 };

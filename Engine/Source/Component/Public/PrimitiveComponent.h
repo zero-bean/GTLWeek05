@@ -47,8 +47,6 @@ public:
 	mutable uint32 CachedFrame = 0;
 
 protected:
-	virtual void CopyPropertiesFrom(const UObject* InObject) override;
-
 	const TArray<FNormalVertex>* Vertices = nullptr;
 	const TArray<uint32>* Indices = nullptr;
 
@@ -71,4 +69,10 @@ protected:
 	mutable FVector CachedWorldMin;
 	mutable FVector CachedWorldMax;
 	mutable bool bIsAABBCacheDirty = true;
+
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

@@ -166,9 +166,13 @@ void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 {
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;
-	DragStartActorLocation = Primitives[(int)GizmoMode].Location;
-	DragStartActorRotation = TargetActor->GetActorRotation();
-	DragStartActorScale = TargetActor->GetActorScale3D();
+
+	if (TargetActor)
+	{
+		DragStartActorLocation = TargetActor->GetActorLocation();
+		DragStartActorRotation = TargetActor->GetActorRotation();
+		DragStartActorScale = TargetActor->GetActorScale3D();
+	}
 }
 
 // 하이라이트 색상은 렌더 시점에만 계산 (상태 오염 방지)
