@@ -8,6 +8,7 @@
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/StaticMeshActor.h"
+#include "Actor/Public/BillBoardActor.h"
 
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
 	: UWidget("Primitive Spawn Widget")
@@ -37,7 +38,8 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Cube",
 		"Triangle",
 		"Square",
-		"StaticMesh"
+		"StaticMesh",
+		"BillBoard"
 	};
 
 	// None을 고려한 Enum 변환 처리
@@ -46,9 +48,16 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 5);
+	ImGui::Combo(
+		"##PrimitiveType",
+		&TypeNumber,
+		PrimitiveTypes,
+		sizeof(PrimitiveTypes) / sizeof(PrimitiveTypes[0])
+	);
 
 	// ImGui가 받은 값을 반영
+
+
 	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
 
 	// Spawn 버튼과 개수 입력
@@ -119,6 +128,10 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		else if (SelectedPrimitiveType == EPrimitiveType::StaticMesh)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(AStaticMeshActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Sprite)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(ABillBoardActor::StaticClass());
 		}
 
 		if (NewActor)

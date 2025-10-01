@@ -4,6 +4,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
+#include "Component/Public/BillBoardComponent.h"
 
 class UDeviceResources;
 class UPrimitiveComponent;
@@ -71,7 +72,8 @@ public:
 	void RenderLevel(UCamera* InCurrentCamera);
 	void RenderEnd() const;
 	void RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents);
-	void RenderBillboard(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
+	void RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBillBoardComponent>>& InBillBoardComp);
+	void RenderUUID(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
 	void RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState,
