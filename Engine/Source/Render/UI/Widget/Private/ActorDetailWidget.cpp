@@ -14,6 +14,7 @@
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/MeshComponent.h"
 #include "Global/Quaternion.h"
+#include "Global/Vector.h"
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -158,28 +159,153 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 {
 	if (!InComponent) return;
 
-	USceneComponent* SceneComponent = Cast<USceneComponent>(InComponent);
+	USceneComponent* SceneComp = Cast<USceneComponent>(InComponent);
 	FString ComponentName = InComponent->GetName().ToString();
 
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-	if (!SceneComponent || SceneComponent->GetChildren().empty())
+	if (!SceneComp || SceneComp->GetChildren().empty())
 		NodeFlags |= ImGuiTreeNodeFlags_Leaf;
 	if (SelectedComponent == InComponent)
 		NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-	// Use the component's pointer as a unique ID for the tree node.
-	bool bNodeOpen = ImGui::TreeNodeEx((void*)InComponent, NodeFlags, "%s", ComponentName.data());
+	bool bNodeOpen = ImGui::TreeNodeEx((void*)InComponent, NodeFlags, "%s", ComponentName.c_str());
 
+	// -----------------------------
+	// Drag Source
+	// -----------------------------
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		{
+			ImGui::SetDragDropPayload("COMPONENT_PTR", &InComponent, sizeof(UActorComponent*));
+			ImGui::Text("Dragging %s", ComponentName.c_str());
+			ImGui::EndDragDropSource();
+		}
+	}
+
+	// -----------------------------
+	// Drag Target
+	// -----------------------------
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("COMPONENT_PTR"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(UActorComponent*));
+			UActorComponent* DraggedComp = *(UActorComponent**)payload->Data;
+
+			if (!DraggedComp || DraggedComp == InComponent)
+			{
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
+			USceneComponent* DraggedScene = Cast<USceneComponent>(DraggedComp);
+			USceneComponent* TargetScene = Cast<USceneComponent>(InComponent);
+			TObjectPtr<AActor> Owner = DraggedScene ? DraggedScene->GetOwner() : nullptr;
+			if (!Owner) { ImGui::EndDragDropTarget(); return; }
+
+			// -----------------------------
+			// 자기 자신이나 자식에게 Drop 방지
+			// -----------------------------
+			bool bInvalidDrop = false;
+			if (DraggedScene && TargetScene)
+			{
+				USceneComponent* Iter = TargetScene;
+				while (Iter)
+				{
+					if (Iter == DraggedScene)
+					{
+						bInvalidDrop = true;
+						break;
+					}
+					Iter = Iter->GetParentAttachment();
+				}
+			}
+			if (bInvalidDrop)
+			{
+				UE_LOG_WARNING("Cannot drop onto self or own child.");
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
+			// -----------------------------
+			// 기존 부모에서 detach
+			// -----------------------------
+			if (DraggedScene)
+			{
+				if (USceneComponent* OldParent = DraggedScene->GetParentAttachment())
+				{
+					OldParent->RemoveChild(DraggedScene);
+				}
+			}
+
+			// -----------------------------
+			// Target의 자식으로 attach (월드 트랜스폼 유지)
+			// -----------------------------
+			if (DraggedScene && TargetScene)
+			{
+				// 1. 드래그된 컴포넌트의 현재 월드 트랜스폼을 저장합니다.
+				const FMatrix OldWorldMatrix = DraggedScene->GetWorldTransformMatrix();
+
+				// 2. 부모를 변경합니다.
+				DraggedScene->SetParentAttachment(TargetScene);
+
+				// 3. 새 부모의 월드 트랜스폼의 역행렬을 구합니다.
+				const FMatrix NewParentWorldMatrixInverse = TargetScene->GetWorldTransformMatrixInverse();
+
+				// 4. 드래그된 컴포넌트의 새 로컬 트랜스폼을 계산합니다.
+				// NewLocal = OldWorld * NewParentInverse
+				const FMatrix NewLocalMatrix = OldWorldMatrix * NewParentWorldMatrixInverse;
+
+				// 5. 계산된 로컬 트랜스폼을 컴포넌트에 적용합니다.
+				FVector NewLocation, NewRotation, NewScale;
+				DecomposeMatrix(NewLocalMatrix, NewLocation, NewRotation, NewScale);
+
+				DraggedScene->SetRelativeLocation(NewLocation);
+				DraggedScene->SetRelativeRotation(NewRotation);
+				DraggedScene->SetRelativeScale3D(NewScale);
+			}
+			else
+			{
+				// SceneComponent가 아닌 경우 → 최상위에 push (월드 트랜스폼 유지)
+				auto& Components = Owner->GetOwnedComponents();
+				auto it = std::find(Components.begin(), Components.end(), DraggedComp);
+				if (it != Components.end()) Components.erase(it);
+				Components.push_back(DraggedComp);
+			}
+
+			// -----------------------------
+			// Components 배열 순서 갱신
+			// -----------------------------
+			auto& Components = Owner->GetOwnedComponents();
+			auto it = std::find(Components.begin(), Components.end(), DraggedComp);
+			if (it != Components.end())
+			{
+				Components.erase(it);
+				Components.push_back(DraggedComp);
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+
+
+	// -----------------------------
+	// 클릭 선택 처리
+	// -----------------------------
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = InComponent;
 	}
 
+	// -----------------------------
+	// 자식 재귀 렌더링
+	// -----------------------------
 	if (bNodeOpen)
 	{
-		if (SceneComponent)
+		if (SceneComp)
 		{
-			for (auto& Child : SceneComponent->GetChildren())
+			for (auto& Child : SceneComp->GetChildren())
 			{
 				RenderComponentNodeRecursive(Child);
 			}
@@ -404,4 +530,74 @@ void UActorDetailWidget::RenderTransformEdit()
 	}
 
 	ImGui::PopID();
+}
+
+void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
+{
+	if (!A || !B) return;
+
+	TObjectPtr<AActor> Owner = A->GetOwner();
+	if (!Owner) return;
+
+	auto& Components = Owner->GetOwnedComponents(); // std::vector<TObjectPtr<UActorComponent>>
+
+	auto ItA = std::find(Components.begin(), Components.end(), A);
+	auto ItB = std::find(Components.begin(), Components.end(), B);
+
+	if (ItA != Components.end() && ItB != Components.end())
+	{
+		// 포인터 임시 저장
+		TObjectPtr<UActorComponent> TempA = *ItA;
+		TObjectPtr<UActorComponent> TempB = *ItB;
+
+		// erase 후 push_back
+		Components.erase(ItA); // 먼저 A 제거
+		// B 제거 (A 제거 후 iterator invalid 되므로 다시 찾기)
+		ItB = std::find(Components.begin(), Components.end(), B);
+		Components.erase(ItB);
+
+		// 서로 위치를 바꿔 push_back
+		Components.push_back(TempA);
+		Components.push_back(TempB);
+
+		// SceneComponent라면 부모/자식 관계 교체
+		if (USceneComponent* SceneA = Cast<USceneComponent>(A))
+			if (USceneComponent* SceneB = Cast<USceneComponent>(B))
+			{
+				USceneComponent* ParentA = SceneA->GetParentAttachment();
+				USceneComponent* ParentB = SceneB->GetParentAttachment();
+
+				SceneA->SetParentAttachment(ParentB);
+				SceneB->SetParentAttachment(ParentA);
+			}
+	}
+}
+
+void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale)
+{
+    // 스케일 추출
+    OutScale.X = FVector(InMatrix.Data[0][0], InMatrix.Data[0][1], InMatrix.Data[0][2]).Length();
+    OutScale.Y = FVector(InMatrix.Data[1][0], InMatrix.Data[1][1], InMatrix.Data[1][2]).Length();
+    OutScale.Z = FVector(InMatrix.Data[2][0], InMatrix.Data[2][1], InMatrix.Data[2][2]).Length();
+
+    // 위치 추출
+    OutLocation.X = InMatrix.Data[3][0];
+    OutLocation.Y = InMatrix.Data[3][1];
+    OutLocation.Z = InMatrix.Data[3][2];
+
+    // 회전 행렬 추출 (스케일 제거)
+    FMatrix RotationMatrix;
+	for (int i = 0; i < 3; ++i)
+	{
+		RotationMatrix.Data[i][0] = InMatrix.Data[i][0] / OutScale.X;
+		RotationMatrix.Data[i][1] = InMatrix.Data[i][1] / OutScale.Y;
+		RotationMatrix.Data[i][2] = InMatrix.Data[i][2] / OutScale.Z;
+	}
+
+    // 오일러 각으로 변환 (Pitch, Yaw, Roll)
+    OutRotation.X = atan2(RotationMatrix.Data[2][1], RotationMatrix.Data[2][2]);
+    OutRotation.Y = atan2(-RotationMatrix.Data[2][0], sqrt(RotationMatrix.Data[2][1] * RotationMatrix.Data[2][1] + RotationMatrix.Data[2][2] * RotationMatrix.Data[2][2]));
+    OutRotation.Z = atan2(RotationMatrix.Data[1][0], RotationMatrix.Data[0][0]);
+
+	OutRotation = FVector::GetRadianToDegree(OutRotation);
 }

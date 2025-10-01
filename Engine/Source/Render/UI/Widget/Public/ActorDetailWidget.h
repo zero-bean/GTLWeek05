@@ -36,8 +36,10 @@ private:
 	void RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor);
 	bool CenteredSelectable(const char* label);
 	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
-
 	void RenderTransformEdit();
+	void SwapComponents(UActorComponent* A, UActorComponent* B);
+
+	void DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale);
 
 	// 이름 변경 함수
 	void StartRenamingActor(TObjectPtr<AActor> InActor);

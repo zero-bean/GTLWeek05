@@ -39,7 +39,7 @@ public:
 
 	// Getter & Setter
 	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
-	const TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents() const { return OwnedComponents; }
+	TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents()  { return OwnedComponents; }
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
