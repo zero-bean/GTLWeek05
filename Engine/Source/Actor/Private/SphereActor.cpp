@@ -20,8 +20,7 @@ void ASphereActor::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMa
 	if (const ASphereActor* OriginalActor = Cast<const ASphereActor>(SourceObject))
 	{
 		// 3. DuplicationMap을 사용해 원본 컴포넌트에 해당하는 '새로운' 컴포넌트를 찾습니다.
-		auto It = InDuplicationMap.find(OriginalActor->SphereComponent);
-		if (It != InDuplicationMap.end())
+		if (auto It = InDuplicationMap.find(OriginalActor->SphereComponent); It != InDuplicationMap.end())
 		{
 			// 4. 찾은 새로운 컴포넌트로 나의 SphereComponent 포인터를 설정합니다.
 			this->SphereComponent = Cast<USphereComponent>(It->second);

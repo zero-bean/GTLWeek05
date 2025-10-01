@@ -141,14 +141,16 @@ void AActor::CopyPropertiesFrom(const UObject* InObject)
 	if (const AActor* SourceActor = Cast<const AActor>(InObject))
 	{
 		// 3. AActor만의 값 타입 멤버들을 복사합니다.
-		this->bCanEverTick = SourceActor->bCanEverTick;
+		bCanEverTick = SourceActor->bCanEverTick;
 	}
 }
 
 void AActor::DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap)
 {
 	// 1. 부모 클래스의 DuplicatesSubObjects를 먼저 호출합니다.
-	Super::DuplicatesSubObjects(InNewOuter, InOutDuplicationMap);
+	/*Super::DuplicatesSubObjects(InNewOuter, InOutDuplicationMap);*/
+	// AActor는 OwnedComponents를 통해 컴포넌트 소유권을 직접 관리하므로,
+	// UObject의 기본 SubObjects 복제 로직을 따르지 않습니다.
 
 	// 2. 원본 객체를 AActor 타입으로 캐스팅합니다.
 	const AActor* OriginalActor = Cast<const AActor>(SourceObject);

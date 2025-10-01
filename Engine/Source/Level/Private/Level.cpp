@@ -59,9 +59,6 @@ AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 		// 2. 복제된 액터를 레벨의 관리 목록에 추가합니다.
 		LevelActors.push_back(TObjectPtr(NewActor));
 
-		// 3. BeginPlay()를 호출하여 액터를 활성화합니다.
-		NewActor->BeginPlay();
-
 		// 4. 액터의 Primitive 컴포넌트들을 옥트리에 등록합니다.
 		AddLevelPrimitiveComponent(NewActor);
 

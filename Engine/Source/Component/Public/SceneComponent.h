@@ -21,6 +21,8 @@ public:
 	void SetParentAttachment(USceneComponent* SceneComponent);
 	void RemoveChild(USceneComponent* ChildDeleted);
 
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
+
 	virtual void MarkAsDirty();
 
 	void SetRelativeLocation(const FVector& Location);
@@ -36,6 +38,9 @@ public:
 
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
+
+protected:
+	virtual void CopyPropertiesFrom(const UObject* InObject) override;
 
 private:
 	mutable bool bIsTransformDirty = true;
