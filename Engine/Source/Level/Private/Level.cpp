@@ -276,7 +276,7 @@ void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* Primitive)
 		// 3. Static에 없으면 그냥 Dynamic에 넣어줌 (중복 방지 체크 필요)
 		if (std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), Primitive) == DynamicPrimitives.end())
 		{
-			//DynamicPrimitives.push_back(Primitive);
+			DynamicPrimitives.push_back(Primitive);
 		}
 	}
 }
