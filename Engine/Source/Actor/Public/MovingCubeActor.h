@@ -11,5 +11,5 @@ public:
 private:
     float MovingTime = 3.0f;
     float MovingTimer = 0.0f;
-    FVector Direction = FVector(0.0f, 0.0f, 1.0f);
+    FVector Direction = FVector(0.0f, 0.0f, 3.0f);
 };
