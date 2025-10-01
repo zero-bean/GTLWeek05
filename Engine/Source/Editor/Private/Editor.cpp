@@ -110,6 +110,7 @@ void UEditor::Update()
 
 void UEditor::RenderEditor(UCamera* InCamera)
 {
+	if (GEditor->IsPIESessionActive()) { return; }
 	// Grid, Axis 등 에디터 요소를 렌더링합니다.
 	BatchLines.Render();
 	Axis.Render();
