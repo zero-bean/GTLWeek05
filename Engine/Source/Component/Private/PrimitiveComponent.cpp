@@ -76,7 +76,7 @@ const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
 
 		if (ParentAttachment)
 		{
-			WorldTransformMatrix *= ParentAttachment->GetWorldTransformMatrixInverse();
+			WorldTransformMatrixInverse *= ParentAttachment->GetWorldTransformMatrixInverse();
 		}
 
 		WorldTransformMatrixInverse *= FMatrix::GetModelMatrixInverse(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
