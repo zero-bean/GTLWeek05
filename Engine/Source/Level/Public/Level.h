@@ -8,9 +8,7 @@
 namespace json { class JSON; }
 using JSON = json::JSON;
 
-class AAxis;
-class AGizmo;
-class AGrid;
+class UWorld;
 class AActor;
 class UPrimitiveComponent;
 class FOctree;
@@ -47,18 +45,12 @@ public:
 	~ULevel() override;
 
 	virtual void Init();
-	virtual void Render();
-	virtual void Cleanup();
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
-	void RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive);
-
 	void AddLevelPrimitiveComponent(AActor* Actor);
-
-	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 
 	bool DestroyActor(AActor* InActor);
 
@@ -73,6 +65,7 @@ public:
 	FOctree* GetStaticOctree() { return StaticOctree; }
 	TArray<UPrimitiveComponent*>& GetDynamicPrimitives() { return DynamicPrimitives; }
 
+	friend class UWorld;
 public:
 	virtual UObject* Duplicate() override;
 
@@ -80,6 +73,8 @@ protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
 private:
+	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
+
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;
 	TArray<UPrimitiveComponent*> DynamicPrimitives;
@@ -92,10 +87,4 @@ private:
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
 		static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
 		static_cast<uint64>(EEngineShowFlags::SF_Bounds);
-
-	/**
-	 * @brief Level에서 Actor를 실질적으로 제거하는 함수
-	 * 이전 Tick에서 마킹된 Actor를 제거한다
-	 */
-	void ProcessPendingDeletions();
 };

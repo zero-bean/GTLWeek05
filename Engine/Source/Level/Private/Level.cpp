@@ -29,8 +29,18 @@ ULevel::ULevel(const FName& InName)
 
 ULevel::~ULevel()
 {
-	// 소멸자는 Cleanup 함수를 호출하여 모든 리소스를 정리하도록 합니다.
-	Cleanup();
+	SetSelectedActor(nullptr);
+
+	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
+	for (const auto& Actor : LevelActors)
+	{
+		DestroyActor(Actor);
+	}
+	LevelActors.clear();
+
+	// 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
+	SafeDelete(StaticOctree);
+	DynamicPrimitives.clear();
 }
 
 void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
@@ -106,30 +116,6 @@ void ULevel::Init()
 	// TEST CODE
 }
 
-void ULevel::Render()
-{
-}
-
-void ULevel::Cleanup()
-{
-	SetSelectedActor(nullptr);
-
-	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
-	for (const auto& Actor : LevelActors)
-	{
-		delete Actor;
-	}
-	LevelActors.clear();
-
-	// 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
-	SafeDelete(StaticOctree);
-	DynamicPrimitives.clear();
-	ActorsToDelete.clear();
-
-	// 선택된 액터 참조를 안전하게 해제합니다.
-	SelectedActor = nullptr;
-}
-
 AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSON* ActorJsonData)
 {
 	if (!InActorClass)
@@ -156,10 +142,6 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 	}
 
 	return nullptr;
-}
-
-void ULevel::RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive)
-{
 }
 
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
@@ -219,7 +201,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 
 		if (StaticOctree)
 		{
-			if (StaticOctree->Remove(PrimitiveComponent) == false)
+			if (!StaticOctree->Remove(PrimitiveComponent))
 			{
 				if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), PrimitiveComponent); It != DynamicPrimitives.end())
 				{
@@ -236,7 +218,6 @@ bool ULevel::DestroyActor(AActor* InActor)
 		*It = std::move(LevelActors.back());
 		LevelActors.pop_back();
 	}
-
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)
@@ -269,30 +250,6 @@ void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* Primitive)
 			DynamicPrimitives.push_back(Primitive);
 		}
 	}
-}
-
-void ULevel::ProcessPendingDeletions()
-{
-	if (ActorsToDelete.empty())
-	{
-		return;
-	}
-
-	UE_LOG("Level: %zu개의 객체 지연 삭제 프로세스 처리 시작", ActorsToDelete.size());
-
-	// 원본 배열을 복사하여 사용 (DestroyActor가 원본을 수정할 가능성에 대비)
-	TArray<AActor*> ActorsToProcess = ActorsToDelete;
-	ActorsToDelete.clear();
-
-	for (AActor* ActorToDelete : ActorsToProcess)
-	{
-		if (ActorToDelete)
-		{
-			DestroyActor(ActorToDelete);
-		}
-	}
-
-	UE_LOG("Level: 모든 지연 삭제 프로세스 완료");
 }
 
 UObject* ULevel::Duplicate()

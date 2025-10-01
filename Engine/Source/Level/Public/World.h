@@ -20,8 +20,6 @@ enum EWorldType
 	Game,          // The game world (Built and played by user)
 };
 
-// 목표: 현재 Level 및 LevelManager가 담당하는 기능들 일부를 언리얼 구조에 맞게 World로 이전시켜 World 클래스 구현
-
 /*
 * <World>의 책임
 * 1. 게임 전체의 Life Cycle 관리 (BeginPlay, EndPlay, Tick)
