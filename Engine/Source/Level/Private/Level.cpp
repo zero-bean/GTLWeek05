@@ -53,11 +53,8 @@ AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 		return nullptr;
 	}
 
-	// 1. 범용 복제 함수를 호출하여 액터와 그 컴포넌트들을 메모리에 복제합니다.
-	// Outer는 레벨 자신(this)으로 설정할 수 있습니다.
-	AActor* NewActor = Cast<AActor>(DuplicateObjectGraph(InActorToDuplicate, this));
-
-	if (NewActor)
+	// 1. 자신과 일치하는 레플리카를 생성합니다.
+	if (AActor* NewActor = Cast<AActor>(DuplicateObjectGraph(InActorToDuplicate, this)))
 	{
 		// 2. 복제된 액터를 레벨의 관리 목록에 추가합니다.
 		LevelActors.push_back(TObjectPtr(NewActor));

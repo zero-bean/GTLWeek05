@@ -55,7 +55,7 @@ UObject* UObject::Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOut
 	// 0. 이미  복제된 객체가 있다는 뜻이므로, 반환 및 종료
 	if (auto It = InOutDuplicationMap.find(this); It != InOutDuplicationMap.end()) { return It->second; }
 
-	// 1. 얕은 복사를 통해 텅 빈 객체를 생성
+	// 1. 깊은 복사를 통해 텅 빈 객체를 생성
 	UObject* NewObject = GetClass()->CreateDefaultObject();
 	InOutDuplicationMap[this] = NewObject;
 	NewObject->SourceObject = this;
@@ -116,12 +116,6 @@ void UObject::DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>
 
 void UObject::CopyPropertiesFrom(const UObject* InObject)
 {
-	// 그 어떠한 경우라도 UUID는 고유성을 가져야만 함
-	UUID = UEngineStatics::GenUUID();
-
-	// 편의성을 위해 CopyOf_ 추가, but displayname() 함수도 고려해야 하지 않을까 함
-	this->Name = FName("CopyOf_" + InObject->GetName().ToString());
-
 	// 'Objects' 맵은 포인터만 그대로 복사 (얕은 복사)
 	this->Objects = InObject->Objects;
 }
