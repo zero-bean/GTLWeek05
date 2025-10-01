@@ -12,6 +12,8 @@ class AStaticMeshActor : public AActor
 
 public:
 	AStaticMeshActor();
+	
+	virtual UClass* GetDefaultRootComponent() override;
 
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;

@@ -14,6 +14,7 @@ public:
 	ASquareActor();
 	virtual ~ASquareActor() override {}
 
+	virtual UClass* GetDefaultRootComponent() override;
 private:
 	USquareComponent* SquareComponent = nullptr;
 };

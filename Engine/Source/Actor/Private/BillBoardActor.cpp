@@ -6,6 +6,9 @@ IMPLEMENT_CLASS(ABillBoardActor, AActor)
 
 ABillBoardActor::ABillBoardActor()
 {
-	BillBoardComponent = CreateDefaultSubobject<UBillBoardComponent>("UBillBoardComponent");
-	SetRootComponent(BillBoardComponent);
+}
+
+UClass* ABillBoardActor::GetDefaultRootComponent()
+{
+    return UBillBoardComponent::StaticClass();
 }

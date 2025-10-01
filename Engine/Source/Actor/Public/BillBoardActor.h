@@ -12,6 +12,7 @@ class ABillBoardActor : public AActor
 public:
 	ABillBoardActor();
 
+	virtual UClass* GetDefaultRootComponent() override;
 private:
 	UBillBoardComponent* BillBoardComponent = nullptr;
 };

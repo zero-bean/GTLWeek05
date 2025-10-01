@@ -7,12 +7,6 @@ IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
-	USceneComponent* SceneComp = CreateDefaultSubobject<USceneComponent>("SceneComponent");
-	SetRootComponent(SceneComp);
-
-	// to do: primitive factory로 빌보드 생성
-	UUIDTextComponent = CreateDefaultSubobject<UUUIDTextComponent>();
-	UUIDTextComponent->SetOffset(5.0f);
 }
 
 AActor::AActor(UObject* InOuter)
@@ -70,6 +64,21 @@ void AActor::SetUniformScale(bool IsUniform)
 	{
 		RootComponent->SetUniformScale(IsUniform);
 	}
+}
+
+UClass* AActor::GetDefaultRootComponent()
+{
+	return USceneComponent::StaticClass();
+}
+
+void AActor::InitializeComponents()
+{
+	USceneComponent* SceneComp = Cast<USceneComponent>(CreateDefaultSubobject(GetDefaultRootComponent()));
+	SetRootComponent(SceneComp);
+
+	UUIDTextComponent = CreateDefaultSubobject<UUUIDTextComponent>();
+	UUIDTextComponent->SetParentAttachment(GetRootComponent());
+	UUIDTextComponent->SetOffset(5.0f);
 }
 
 bool AActor::IsUniformScale() const

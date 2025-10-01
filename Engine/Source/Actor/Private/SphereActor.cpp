@@ -6,6 +6,9 @@ IMPLEMENT_CLASS(ASphereActor, AActor)
 
 ASphereActor::ASphereActor()
 {
-	SphereComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
-	SphereComponent->SetParentAttachment(GetRootComponent());
+}
+
+UClass* ASphereActor::GetDefaultRootComponent()
+{
+	return USphereComponent::StaticClass();
 }

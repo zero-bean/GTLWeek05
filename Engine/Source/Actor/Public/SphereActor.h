@@ -13,6 +13,7 @@ class ASphereActor : public AActor
 public:
 	ASphereActor();
 
+	virtual UClass* GetDefaultRootComponent() override;
 private:
 	USphereComponent* SphereComponent = nullptr;
 };

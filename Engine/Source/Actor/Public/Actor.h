@@ -28,6 +28,8 @@ public:
 	void SetActorRotation(const FVector& InRotation) const;
 	void SetActorScale3D(const FVector& InScale) const;
 	void SetUniformScale(bool IsUniform);
+	virtual UClass* GetDefaultRootComponent();
+	virtual void InitializeComponents();
 
 	bool IsUniformScale() const;
 
@@ -64,6 +66,18 @@ public:
 		}
 
 		// 4. 정확한 타입(T*)으로 캐스팅 없이 바로 반환합니다.
+		return NewComponent;
+	}
+	
+	UActorComponent* CreateDefaultSubobject(UClass* Class)
+	{
+		UActorComponent* NewComponent = Cast<UActorComponent>(NewObject(Class, TObjectPtr<UObject>(this)));
+		if (NewComponent)
+		{
+			NewComponent->SetOwner(this);
+			OwnedComponents.push_back(NewComponent);
+		}
+		
 		return NewComponent;
 	}
 

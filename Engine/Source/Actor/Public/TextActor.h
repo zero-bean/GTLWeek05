@@ -11,7 +11,8 @@ class ATextActor : public AActor
 
 public:
 	ATextActor();
-
+	
+	virtual UClass* GetDefaultRootComponent() override;
 private:
 	UTextComponent* TextComponent = nullptr;
 };

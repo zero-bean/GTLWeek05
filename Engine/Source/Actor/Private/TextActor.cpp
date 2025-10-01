@@ -6,6 +6,9 @@ IMPLEMENT_CLASS(ATextActor, AActor)
 
 ATextActor::ATextActor()
 {
-	TextComponent = CreateDefaultSubobject<UTextComponent>("UTextComponent");
-	SetRootComponent(TextComponent);
+}
+
+UClass* ATextActor::GetDefaultRootComponent()
+{
+    return UTextComponent::StaticClass();
 }

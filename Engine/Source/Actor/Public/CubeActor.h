@@ -11,7 +11,8 @@ class ACubeActor : public AActor
 
 public:
 	ACubeActor();
-
+	
+	virtual UClass* GetDefaultRootComponent() override;
 private:
 	UCubeComponent* CubeComponent = nullptr;
 };

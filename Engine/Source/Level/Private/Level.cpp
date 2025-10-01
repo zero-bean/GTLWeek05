@@ -200,6 +200,7 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 			NewActor->Serialize(true, *ActorJsonData);
 		}
 		LevelActors.push_back(TObjectPtr(NewActor));
+		NewActor->InitializeComponents();
 		NewActor->BeginPlay();
 		AddLevelPrimitiveComponent(NewActor);
 		return NewActor;
