@@ -63,7 +63,7 @@ public:
 
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
-	// virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
 
 private:
 	EWorldType WorldType;
