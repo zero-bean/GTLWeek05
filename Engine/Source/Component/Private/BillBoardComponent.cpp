@@ -65,28 +65,28 @@ void UBillBoardComponent::FaceCamera(
     Front.Normalize();
 
     // Right 계산
-    FVector Right = Front.Cross(CameraUp);
+    FVector Right = CameraUp.Cross(Front);
     if (Right.Length() <= 0.0001f)
     {
         // CameraUp과 Front가 평행하면 FallbackUp 사용
-        Right = Front.Cross(FallbackUp);
+        Right = FallbackUp.Cross(Front);
     }
     Right.Normalize();
 
     // Up 계산
-    FVector Up = Right.Cross(Front);
+    FVector Up = Front.Cross(Right);
     Up.Normalize();
 
-    float Pitch = asin(-Up.Y);
-    float Yaw = -atan2(Up.X, Up.Z);
-    float Roll = atan2(Front.Y, Right.Y);
+    float XAngle = atan2(Up.Y, Up.Z);
+    float YAngle = -asin(Up.X);
+    float ZAngle = -atan2(-Right.X, Front.X);
 
     // 적용
     SetRelativeRotation(
         FVector(
-            FVector::GetRadianToDegree(Pitch),
-            FVector::GetRadianToDegree(Yaw),
-            FVector::GetRadianToDegree(Roll)
+            FVector::GetRadianToDegree(XAngle),
+            FVector::GetRadianToDegree(YAngle),
+            FVector::GetRadianToDegree(ZAngle)
         )
     );
 }
