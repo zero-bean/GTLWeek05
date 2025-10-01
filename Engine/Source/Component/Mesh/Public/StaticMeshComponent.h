@@ -44,4 +44,10 @@ private:
 	// Scroll
 	bool bIsScrollEnabled;
 	float ElapsedTime;
+	
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

@@ -140,7 +140,7 @@ void UActorDetailWidget::RenderComponentNode(TObjectPtr<UActorComponent> InCompo
 	}
 
 	// 컴포넌트 타입에 따른 아이콘
-	FName ComponentTypeName = InComponent.Get()->GetClass()->GetClassTypeName();
+	FName ComponentTypeName = InComponent.Get()->GetClass()->GetName();
 	FString ComponentIcon = "[C]"; // 기본 컴포넌트 아이콘
 
 	if (Cast<UPrimitiveComponent>(InComponent))
@@ -202,7 +202,7 @@ void UActorDetailWidget::FinishRenamingActor(TObjectPtr<AActor> InActor)
 	if (!NewName.empty() && NewName != InActor->GetName().ToString())
 	{
 		// Actor 이름 변경
-		InActor->SetDisplayName(NewName);
+		InActor->SetName(NewName);
 		UE_LOG_SUCCESS("ActorDetailWidget: Actor의 이름을 '%s' (으)로 변경하였습니다", NewName.data());
 	}
 

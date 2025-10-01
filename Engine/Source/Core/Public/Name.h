@@ -5,51 +5,76 @@
  * 대소문자 관계 없는 비교 처리와 사용자가 직접 작성한 Display Name을 동시에 사용할 수 있음
  * @param DisplayIndex 표시용 이름 배열에 접근하기 위한 인덱스
  * @param ComparisonIndex 이름 비교를 위한 인덱스
- */
-struct FName
+*/
+class FName
 {
 public:
-	int32 DisplayIndex;
-	int32 ComparisonIndex;
-
-	// 'None' 값에 접근하기 위한 정적 함수
-	static const FName& GetNone();
-
 	FName();
-	FName(const char* InStringPtr);
-	FName(const FString& InString);
+	FName(const FString& Str);
+	FName(const char* Str);
+	FName(int32 InDisplayIndex, int32 InComparisonIndex, int32 InNumber);
 
-	int32 Compare(const FName& InOther) const;
-	bool operator==(const FName& InOther) const;
-	bool operator!=(const FName& InOther) const;
+	bool operator==(const FName& Other) const;
+	int32 Compare(const FName& Other) const;
 
-	const FString& ToString() const;
+	FString ToString() const;
+	FString ToBaseNameString() const;
 
-	// 해시 함수를 위한 GetHash() 메서드
-	size_t GetHash() const
-	{
-		return std::hash<int32>{}(ComparisonIndex);
-	}
-
-	// Display 이름 변경 함수
-	void SetDisplayName(const FString& InDisplayName) const;
+	int32 GetComparisonIndex() const { return ComparisonIndex; }
+	int32 GetDisplayIndex() const { return DisplayIndex; }
+	int32 GetUniqueNumber() const { return Number; }
+	bool IsNone() const { return ComparisonIndex == 0; }
 
 private:
-	// 정적 멤버 변수 선언을 제거하고 구현 파일에서 관리하도록 변경합니다.
+	int32 ComparisonIndex;
+	int32 DisplayIndex;
+	int32 Number;
 
-	// 특정 인덱스로 FName을 생성하는 private 생성자
-	FName(int32 InComparisonIndex);
+public:
+	static FName GetNone();
+	static const FName None;
 };
 
-// std::hash에 대한 FName 특수화
-namespace std
-{
+namespace std {
+	// std::hash 구조체에 대한 템플릿 특수화
 	template <>
 	struct hash<FName>
 	{
-		size_t operator()(const FName& InName) const noexcept
+		// 해시 값을 계산하는 operator() 구현
+		size_t operator()(const FName& Name) const noexcept
 		{
-			return InName.GetHash();
+			// ComparisonIndex와 Number를 기반으로 해시 값을 계산
+			size_t HashValue = std::hash<int32>{}(Name.GetComparisonIndex());
+			size_t NumberHash = std::hash<int32>{}(Name.GetUniqueNumber());
+            
+			HashValue ^= (NumberHash + 0x9e3779b9 + (HashValue << 6) + (HashValue >> 2));
+            
+			return HashValue;
 		}
 	};
 }
+
+
+class FNameTable
+{
+public:
+	static FNameTable& GetInstance();
+
+public:
+	FNameTable();
+	~FNameTable();
+	TPair<int32, int32> FindOrAddName(const FString& Str);
+	FName GetUniqueName(const FString& BaseStr);
+
+	FString GetDisplayString(int32 Idx) const;
+
+private:
+	FString ToLower(const FString& Str) const;
+
+	TArray<FString> ComparisonStringPool;
+	TArray<FString> DisplayStringPool;
+
+	TMap<FString, int32> ComparisonMap;
+	TMap<FString, int32> DisplayMap;
+	TMap<FString, int32> NextNumberMap;
+};
