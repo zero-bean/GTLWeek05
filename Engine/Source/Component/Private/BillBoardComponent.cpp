@@ -10,9 +10,8 @@ IMPLEMENT_CLASS(UBillBoardComponent, UPrimitiveComponent)
 
 UBillBoardComponent::UBillBoardComponent()
 {
+	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 	Type = EPrimitiveType::Sprite;
-	
-    UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
 	Vertices = ResourceManager.GetVertexData(Type);
 	VertexBuffer = ResourceManager.GetVertexbuffer(Type);
@@ -65,28 +64,28 @@ void UBillBoardComponent::FaceCamera(
     Front.Normalize();
 
     // Right 계산
-    FVector Right = CameraUp.Cross(Front);
+    FVector Right = Front.Cross(CameraUp);
     if (Right.Length() <= 0.0001f)
     {
         // CameraUp과 Front가 평행하면 FallbackUp 사용
-        Right = FallbackUp.Cross(Front);
+        Right = Front.Cross(FallbackUp);
     }
     Right.Normalize();
 
     // Up 계산
-    FVector Up = Front.Cross(Right);
+    FVector Up = Right.Cross(Front);
     Up.Normalize();
 
-    float XAngle = atan2(Up.Y, Up.Z);
-    float YAngle = -asin(Up.X);
-    float ZAngle = -atan2(-Right.X, Front.X);
+    float Pitch = asin(-Up.Y);
+    float Yaw = -atan2(Up.X, Up.Z);
+    float Roll = atan2(Front.Y, Right.Y);
 
     // 적용
     SetRelativeRotation(
         FVector(
-            FVector::GetRadianToDegree(XAngle),
-            FVector::GetRadianToDegree(YAngle),
-            FVector::GetRadianToDegree(ZAngle)
+            FVector::GetRadianToDegree(Pitch),
+            FVector::GetRadianToDegree(Yaw),
+            FVector::GetRadianToDegree(Roll)
         )
     );
 }

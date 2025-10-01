@@ -31,7 +31,7 @@ UPrimitiveComponent* UObjectPicker::PickPrimitive(UCamera* InActiveCamera, const
 
 	for (UPrimitiveComponent* Primitive : Candidate)
 	{
-		if (Primitive->GetPrimitiveType() == EPrimitiveType::UUID) { continue; }
+		if (Primitive->GetPrimitiveType() == EPrimitiveType::Text) { continue; }
 
 		FMatrix ModelMat = Primitive->GetWorldTransformMatrix();
 		if (IsRayPrimitiveCollided(InActiveCamera, WorldRay, Primitive, ModelMat, &PrimitiveDistance))

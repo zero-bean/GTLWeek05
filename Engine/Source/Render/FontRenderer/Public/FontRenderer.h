@@ -46,7 +46,7 @@ public:
     /// @param CharWidth 문자 너비
     /// @param CharHeight 문자 높이
     void RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionCostants,
-                    float CenterY = 0.0f, float StartZ = -2.5f, float CharWidth = 1.0f, float CharHeight = 2.0f, bool DepthTest = false);
+                    float CenterY = 0.0f, float StartZ = -2.5f, float CharWidth = 1.0f, float CharHeight = 2.0f);
 
 private:
     /// @brief 텍스트를 위한 정점 버퍼 생성

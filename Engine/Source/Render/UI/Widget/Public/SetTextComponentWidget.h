@@ -21,8 +21,6 @@ public:
 	void UpdateTextFromActor();
 
 private:
-	AActor* SelectedActor = nullptr;
+	AActor* SelectedActor;
 	UTextComponent* SelectedTextComponent = nullptr;
-
-	inline static uint32 WidgetNum = 0;
 };
