@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/ActorDetailWidget.h"
 
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/ActorComponent.h"

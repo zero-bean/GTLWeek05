@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Optimization/Public/OcclusionCuller.h"
 #include "Component/Public/PrimitiveComponent.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Global/Octree.h"
 

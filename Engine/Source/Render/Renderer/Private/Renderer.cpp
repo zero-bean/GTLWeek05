@@ -9,7 +9,7 @@
 #include "Editor/Public/ViewportClient.h"
 #include "Editor/Public/Camera.h"
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 #include "Texture/Public/Material.h"

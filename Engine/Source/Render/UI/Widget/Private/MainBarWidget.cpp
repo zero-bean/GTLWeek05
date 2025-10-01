@@ -6,10 +6,9 @@
 #include <shobjidl.h>
 
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
 
 
-class ULevelManager;
+
 IMPLEMENT_CLASS(UMainBarWidget, UWidget)
 
 UMainBarWidget::UMainBarWidget()
@@ -202,7 +201,7 @@ void UMainBarWidget::RenderViewMenu()
 {
 	if (ImGui::BeginMenu("보기"))
 	{
-		// LevelManager에서 Editor 가져오기
+		// GEditor에서 EditorModule 가져오기
 		UEditor* EditorInstance = GEditor->GetEditorModule();
 		if (!EditorInstance)
 		{

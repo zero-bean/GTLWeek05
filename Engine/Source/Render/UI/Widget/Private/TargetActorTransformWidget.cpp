@@ -2,7 +2,7 @@
 #include "Render/UI/Widget/Public/TargetActorTransformWidget.h"
 
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 
 UTargetActorTransformWidget::UTargetActorTransformWidget()
 	: UWidget("Target Actor Tranform Widget")

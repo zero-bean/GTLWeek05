@@ -2,7 +2,6 @@
 #include "UIWindow.h"
 
 class UCamera;
-class ULevelManager;
 class AActor;
 
 /**

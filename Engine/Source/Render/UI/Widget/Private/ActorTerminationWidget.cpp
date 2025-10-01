@@ -3,7 +3,7 @@
 
 #include "Level/Public/Level.h"
 #include "Manager/Input/Public/InputManager.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 
 
 UActorTerminationWidget::UActorTerminationWidget()

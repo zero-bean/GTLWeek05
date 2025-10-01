@@ -407,7 +407,6 @@
     <ClInclude Include="Source\Manager\Asset\Public\AssetManager.h" />
     <ClInclude Include="Source\Manager\Config\Public\ConfigManager.h" />
     <ClInclude Include="Source\Manager\Input\Public\InputManager.h" />
-    <ClInclude Include="Source\Manager\Level\Public\LevelManager.h" />
     <ClInclude Include="Source\Manager\Path\Public\PathManager.h" />
     <ClInclude Include="Source\Manager\Time\Public\TimeManager.h" />
     <ClInclude Include="Source\Manager\UI\Public\UIManager.h" />
@@ -621,7 +620,6 @@
     <ClCompile Include="Source\Level\Private\Level.cpp" />
     <ClCompile Include="Source\Manager\Config\Private\ConfigManager.cpp" />
     <ClCompile Include="Source\Manager\Input\Private\InputManager.cpp" />
-    <ClCompile Include="Source\Manager\Level\Private\LevelManager.cpp" />
     <ClCompile Include="Source\Manager\Path\Private\PathManager.cpp" />
     <ClCompile Include="Source\Manager\Time\Private\TimeManager.cpp" />
     <ClCompile Include="Source\Manager\UI\Private\UIManager.cpp" />

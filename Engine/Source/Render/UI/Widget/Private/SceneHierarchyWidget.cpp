@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/SceneHierarchyWidget.h"
 
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Editor/Public/Camera.h"
