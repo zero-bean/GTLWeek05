@@ -81,24 +81,6 @@ public:
 		return NewComponent;
 	}
 
-	template<class T>
-	T* AddComponent(const FName& InName)
-	{
-		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
-
-		// 1. NewObject는 여전히 로우 포인터(T*)를 반환합니다.
-		T* NewComponent = NewObject<T>(this, T::StaticClass(), InName);
-
-		if (NewComponent)
-		{
-			// 2. 로우 포인터를 RegisterComponent에 전달합니다.
-			//    T* -> TObjectPtr<UActorComponent> 로의 안전한 암시적 변환이 일어납니다.
-			RegisterComponent(NewComponent);
-		}
-
-		return NewComponent;
-	}
-
 	/**
 	 * @brief 런타임에 이 액터에 새로운 컴포넌트를 생성하고 등록합니다.
 	 * @tparam T UActorComponent를 상속받는 컴포넌트 타입
@@ -110,13 +92,17 @@ public:
 	{
 		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
 
-		// 1. NewObject는 여전히 로우 포인터(T*)를 반환합니다.
-		T* NewComponent = NewObject<T>(this, T::StaticClass(), InName);
+		// 1. 정의하신 NewObject<T>() 함수를 호출합니다.
+		//    이 함수는 TObjectPtr을 반환하므로 .Get()으로 원시 포인터를 가져옵니다.
+		T* NewComponent = NewObject<T>(this).Get();
 
 		if (NewComponent)
 		{
-			// 2. 로우 포인터를 RegisterComponent에 전달합니다.
-			//    T* -> TObjectPtr<UActorComponent> 로의 안전한 암시적 변환이 일어납니다.
+			// 2. 정의하신 NewObject는 고유 이름을 자동 설정하므로,
+			//    여기서 원하는 이름(InName)으로 다시 설정(SetName)해줍니다.
+			NewComponent->SetName(InName);
+
+			// 3. 컴포넌트를 액터에 등록합니다.
 			RegisterComponent(NewComponent);
 		}
 
@@ -143,7 +129,4 @@ private:
 	
 public:
 	virtual UObject* Duplicate() override;
-
-protected:
-	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

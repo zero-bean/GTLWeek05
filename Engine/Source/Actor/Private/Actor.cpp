@@ -2,6 +2,7 @@
 #include "Actor/Public/Actor.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/UUIDTextComponent.h"
+#include "Level/Public/Level.h"
 
 IMPLEMENT_CLASS(AActor, UObject)
 
@@ -108,23 +109,6 @@ const FVector& AActor::GetActorScale3D() const
 	return RootComponent->GetRelativeScale3D();
 }
 
-void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
-{
-	if (!InNewComponent || InNewComponent->GetOwner() != this)
-	{
-		InNewComponent->SetOwner(this);
-	}
-
-	// 1. 액터의 소유 컴포넌트 목록에 추가합니다.
-	OwnedComponents.push_back(InNewComponent);
-
-	// 2. 만약 액터가 이미 월드에 생성되어 BeginPlay가 호출된 상태라면,
-	if (bBegunPlay)
-	{
-		InNewComponent->BeginPlay();
-	}
-}
-
 UObject* AActor::Duplicate()
 {
 	AActor* Actor = Cast<AActor>(Super::Duplicate());
@@ -139,32 +123,19 @@ void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
 		InNewComponent->SetOwner(this);
 	}
 
-	// 1. 액터의 소유 컴포넌트 목록에 추가합니다.
 	OwnedComponents.push_back(InNewComponent);
 
-	// 2. 만약 액터가 이미 월드에 생성되어 BeginPlay가 호출된 상태라면,
+	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InNewComponent.Get()))
+	{
+		if (ULevel* OwnerLevel = Cast<ULevel>(GetOuter()))
+		{
+			OwnerLevel->RegisterPrimitiveComponent(PrimitiveComponent);
+		}
+	}
+
 	if (bBegunPlay)
 	{
 		InNewComponent->BeginPlay();
-	}
-}
-
-void AActor::CopyPropertiesFrom(const UObject* InObject)
-{
-	Super::DuplicateSubObjects(DuplicatedObject);
-	AActor* DuplicatedActor = Cast<AActor>(DuplicatedObject);
-	USceneComponent* DuplicatedRoot = Cast<USceneComponent>(GetRootComponent()->Duplicate());
-	DuplicatedActor->SetRootComponent(DuplicatedRoot);
-	DuplicatedActor->OwnedComponents.push_back(DuplicatedRoot);
-	
-	for (UActorComponent* Component : OwnedComponents)
-	{
-		if (!Cast<USceneComponent>(Component))
-		{
-			UActorComponent* DuplicatedActorComponent = Cast<UActorComponent>(Component->Duplicate());
-			DuplicatedActor->OwnedComponents.push_back(DuplicatedActorComponent);
-			DuplicatedActorComponent->SetOwner(DuplicatedActor);
-		}
 	}
 }
 

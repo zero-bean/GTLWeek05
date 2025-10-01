@@ -209,8 +209,31 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 	return nullptr;
 }
 
-void ULevel::RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive)
+void ULevel::RegisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 {
+	if (!InComponent)
+	{
+		return;
+	}
+
+	// 텍스트 타입은 Octree에 넣지 않음 (기존 로직과 동일)
+	if (InComponent->GetPrimitiveType() == EPrimitiveType::Text)
+	{
+		return;
+	}
+
+	// StaticOctree에 먼저 삽입 시도
+	if (StaticOctree->Insert(InComponent) == false)
+	{
+		// 실패하면 DynamicPrimitives 목록에 추가
+		// 중복 추가를 방지하기 위해 이미 있는지 확인
+		if (std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), InComponent) == DynamicPrimitives.end())
+		{
+			DynamicPrimitives.push_back(InComponent);
+		}
+	}
+
+	UE_LOG("Level: '%s' 컴포넌트를 씬에 등록했습니다.", InComponent->GetName().ToString().data());
 }
 
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
