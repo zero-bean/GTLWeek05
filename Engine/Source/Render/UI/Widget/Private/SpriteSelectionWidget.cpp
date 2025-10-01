@@ -5,6 +5,8 @@
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Component/Public/BillBoardComponent.h"
 
+#include <climits>
+
 IMPLEMENT_CLASS(USpriteSelectionWidget, UWidget)
 
 USpriteSelectionWidget::USpriteSelectionWidget()
@@ -32,11 +34,14 @@ void USpriteSelectionWidget::Update()
 		if (SelectedActor != NewSelectedActor)
 		{
 			SelectedActor = NewSelectedActor;
-		}
 
-		// Get Current Selected Actor Information
-		if (SelectedActor)
-			UpdateSpriteFromActor();
+			for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
+			{
+				TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
+				if (UUIDTextComponent)
+					SelectedBillBoard = UUIDTextComponent.Get();
+			}
+		}
 	}
 }
 
@@ -66,7 +71,7 @@ void USpriteSelectionWidget::RenderWidget()
 	int i = 0;
 	for (auto Itr = TextureCache.begin(); Itr != TextureCache.end(); Itr++, i++)
 	{
-		if (Itr->first == SelectedSpriteName)
+		if (Itr->first == SelectedBillBoard->GetSprite().first)
 			current_item = i;
 
 		items.push_back(Itr->first.ToString().c_str());
@@ -80,7 +85,7 @@ void USpriteSelectionWidget::RenderWidget()
 			if (ImGui::Selectable(items[n], is_selected))
 			{
 				current_item = n;
-				SelectedSpriteName = items[current_item];
+				SetSpriteOfActor(items[current_item]);
 			}
 
 			if (is_selected)
@@ -90,41 +95,19 @@ void USpriteSelectionWidget::RenderWidget()
 	}
 
 	ImGui::Separator();
+
+	WidgetNum = (WidgetNum + 1) % std::numeric_limits<uint32>::max();
 }
 
-/**
- * @brief Render에서 체크된 내용으로 인해 이후 변경되어야 할 내용이 있다면 Change 처리
- */
-void USpriteSelectionWidget::PostProcess()
-{
-	SetSpriteOfActor();
-}
-
-void USpriteSelectionWidget::UpdateSpriteFromActor()
-{
-	for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
-	{
-		TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
-		if (UUIDTextComponent)
-			SelectedSpriteName = UUIDTextComponent->GetSprite().first;
-	}
-}
-
-void USpriteSelectionWidget::SetSpriteOfActor()
+void USpriteSelectionWidget::SetSpriteOfActor(FString NewSprite)
 {
 	if (!SelectedActor)
+		return;
+	if (!SelectedBillBoard)
 		return;
 
 	const TMap<FName, ID3D11ShaderResourceView*>& TextureCache = \
 		UAssetManager::GetInstance().GetTextureCache();
 
-	for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
-	{
-		TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
-		if (UUIDTextComponent)
-		{
-			UUIDTextComponent->SetSprite(*TextureCache.find(SelectedSpriteName));
-			break;
-		}
-	}
+	SelectedBillBoard->SetSprite(*TextureCache.find(NewSprite));
 }
