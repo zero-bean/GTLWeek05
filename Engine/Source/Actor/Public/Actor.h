@@ -71,13 +71,31 @@ public:
 	
 	UActorComponent* CreateDefaultSubobject(UClass* Class)
 	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(NewObject(Class, TObjectPtr<UObject>(this)));
+		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, TObjectPtr<UObject>(this)));
 		if (NewComponent)
 		{
 			NewComponent->SetOwner(this);
 			OwnedComponents.push_back(NewComponent);
 		}
 		
+		return NewComponent;
+	}
+
+	template<class T>
+	T* AddComponent(const FName& InName)
+	{
+		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
+
+		// 1. NewObject는 여전히 로우 포인터(T*)를 반환합니다.
+		T* NewComponent = NewObject<T>(this, T::StaticClass(), InName);
+
+		if (NewComponent)
+		{
+			// 2. 로우 포인터를 RegisterComponent에 전달합니다.
+			//    T* -> TObjectPtr<UActorComponent> 로의 안전한 암시적 변환이 일어납니다.
+			RegisterComponent(NewComponent);
+		}
+
 		return NewComponent;
 	}
 

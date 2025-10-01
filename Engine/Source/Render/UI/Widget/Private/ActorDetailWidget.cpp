@@ -1,12 +1,18 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/ActorDetailWidget.h"
-
-
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/SceneComponent.h"
+#include "Component/Public/TextComponent.h"
+#include "Component/Public/BillBoardComponent.h"
+#include "Component/Mesh/Public/SphereComponent.h"
+#include "Component/Mesh/Public/SquareComponent.h"
+#include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Mesh/Public/TriangleComponent.h"
+#include "Component/Mesh/Public/CubeComponent.h"
+#include "Component/Mesh/Public/MeshComponent.h"
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -40,7 +46,16 @@ void UActorDetailWidget::RenderWidget()
 	{
 		ImGui::TextUnformatted("No Object Selected");
 		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "Detail 확인을 위해 Object를 선택해주세요");
+		SelectedComponent = nullptr; 
+		CachedSelectedActor = nullptr;
 		return;
+	}
+
+	// 선택된 액터가 변경되면, 컴포넌트 선택 상태를 초기화
+	if (CachedSelectedActor != SelectedActor)
+	{
+		SelectedComponent = nullptr;
+		CachedSelectedActor = SelectedActor;
 	}
 
 	// Actor 헤더 렌더링 (이름 + rename 기능)
@@ -110,6 +125,9 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	const TArray<TObjectPtr<UActorComponent>>& Components = InSelectedActor->GetOwnedComponents();
 
 	ImGui::Text("Components (%d)", static_cast<int>(Components.size()));
+
+	RenderAddComponentButton(InSelectedActor);
+
 	ImGui::Separator();
 
 	if (Components.empty())
@@ -154,9 +172,21 @@ void UActorDetailWidget::RenderComponentNode(TObjectPtr<UActorComponent> InCompo
 
 	// 트리 노드 생성
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	// 현재 컴포넌트가 선택된 컴포넌트라면 Selected 플래그를 추가
+	if (SelectedComponent == InComponent)
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	}
 
 	FString NodeLabel = ComponentIcon + " " + InComponent->GetName().ToString();
 	ImGui::TreeNodeEx(NodeLabel.data(), NodeFlags);
+
+	// 노드를 클릭하면 SelectedComponent를 업데이트
+	if (ImGui::IsItemClicked())
+	{
+		SelectedComponent = InComponent;
+		UE_LOG("ActorDetailWidget: Selected component changed to '%s'", InComponent->GetName().ToString().data());
+	}
 
 	// 컴포넌트 세부 정보를 추가로 표시할 수 있음
 	if (ImGui::IsItemHovered())
@@ -175,6 +205,149 @@ void UActorDetailWidget::RenderComponentNode(TObjectPtr<UActorComponent> InCompo
 		);
 	}
 }
+
+void UActorDetailWidget::RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor)
+{
+	ImGui::SameLine();
+
+	const char* buttonText = "[+]";
+	float buttonWidth = ImGui::CalcTextSize(buttonText).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - buttonWidth);
+
+	if (ImGui::Button(buttonText))
+	{
+		ImGui::OpenPopup("AddComponentPopup");
+	}
+
+	if (ImGui::BeginPopup("AddComponentPopup"))
+	{
+		ImGui::Text("Add Component");
+		ImGui::Separator();
+
+		const char* componentNames[] = {
+			"Triangle", "Sphere", "Square", "Cube",
+			"Mesh", "Static Mesh", "BillBoard", "Text"
+		};
+
+		// 반복문 안에서 헬퍼 함수를 호출하여 원하는 UI를 그립니다.
+		for (const char* name : componentNames)
+		{
+			if (CenteredSelectable(name))
+			{
+				AddComponentByName(InSelectedActor, FString(name));
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+bool UActorDetailWidget::CenteredSelectable(const char* label)
+{
+	// 1. 라벨이 보이지 않는 Selectable을 전체 너비로 만들어 호버링/클릭 영역을 잡습니다.
+	bool clicked = ImGui::Selectable(std::string("##").append(label).c_str());
+
+	// 2. 방금 만든 Selectable의 사각형 영역 정보를 가져옵니다.
+	ImVec2 minRect = ImGui::GetItemRectMin();
+	ImVec2 maxRect = ImGui::GetItemRectMax();
+
+	// 3. 텍스트 크기를 계산합니다.
+	ImVec2 textSize = ImGui::CalcTextSize(label);
+
+	// 4. 텍스트를 그릴 중앙 위치를 계산합니다.
+	ImVec2 textPos = ImVec2(
+		minRect.x + (maxRect.x - minRect.x - textSize.x) * 0.5f,
+		minRect.y + (maxRect.y - minRect.y - textSize.y) * 0.5f
+	);
+
+	// 5. 계산된 위치에 텍스트를 직접 그립니다.
+	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), label);
+
+	return clicked;
+}
+
+void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName)
+{
+	if (!InSelectedActor)
+	{
+		UE_LOG_WARNING("ActorDetailWidget: 컴포넌트를 추가할 액터가 선택되지 않았습니다.");
+		return;
+	}
+
+	FName NewComponentName(InComponentName);
+	UActorComponent* NewComponent = nullptr; 
+
+	if (InComponentName == "Triangle")
+	{
+		NewComponent = InSelectedActor->AddComponent<UTriangleComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Sphere")
+	{
+		NewComponent = InSelectedActor->AddComponent<USphereComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Square")
+	{
+		NewComponent = InSelectedActor->AddComponent<USquareComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Cube")
+	{
+		NewComponent = InSelectedActor->AddComponent<UCubeComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Mesh")
+	{
+		NewComponent = InSelectedActor->AddComponent<UMeshComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Static Mesh")
+	{
+		NewComponent = InSelectedActor->AddComponent<UStaticMeshComponent>(NewComponentName);
+	}
+	else if (InComponentName == "BillBoard")
+	{
+		NewComponent = InSelectedActor->AddComponent<UBillBoardComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Text")
+	{
+		NewComponent = InSelectedActor->AddComponent<UTextComponent>(NewComponentName);
+	}
+	else
+	{
+		UE_LOG_ERROR("ActorDetailWidget: 알 수 없는 컴포넌트 타입 '%s'을(를) 추가할 수 없습니다.", InComponentName.data());
+		return;
+	}
+
+	if (!NewComponent)
+	{
+		UE_LOG_ERROR("ActorDetailWidget: '%s' 컴포넌트 생성에 실패했습니다.", InComponentName.data());
+		return;
+	}
+
+	// 1. 새로 만든 컴포넌트가 SceneComponent인지 확인
+	if (USceneComponent* NewSceneComponent = Cast<USceneComponent>(NewComponent))
+	{
+		// 2. 현재 선택된 컴포넌트가 있고, 그것이 SceneComponent인지 확인
+		USceneComponent* ParentSceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+
+		if (ParentSceneComponent)
+		{
+			// 3. 선택된 컴포넌트(부모)에 새로 만든 컴포넌트(자식)를 붙임
+			//    (SetupAttachment는 UCLASS 내에서 호출하는 것을 가정)
+			NewSceneComponent->SetParentAttachment(ParentSceneComponent);
+			UE_LOG_SUCCESS("'%s'를 '%s'의 자식으로 추가했습니다.", NewComponentName.ToString().data(), ParentSceneComponent->GetName().ToString().data());
+		}
+		else
+		{
+			// 4. 선택된 컴포넌트가 없으면 액터의 루트 컴포넌트에 붙임
+			NewSceneComponent->SetParentAttachment(InSelectedActor->GetRootComponent());
+			UE_LOG_SUCCESS("'%s'를 액터의 루트에 추가했습니다.", NewComponentName.ToString().data());
+		}
+	}
+	else
+	{
+		UE_LOG_SUCCESS("Non-Scene Component '%s'를 액터에 추가했습니다.", NewComponentName.ToString().data());
+	}
+}
+
 
 void UActorDetailWidget::StartRenamingActor(TObjectPtr<AActor> InActor)
 {

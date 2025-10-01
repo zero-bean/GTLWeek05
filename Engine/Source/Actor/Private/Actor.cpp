@@ -132,7 +132,24 @@ UObject* AActor::Duplicate()
 	return Actor;
 }
 
-void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
+void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
+{
+	if (!InNewComponent || InNewComponent->GetOwner() != this)
+	{
+		InNewComponent->SetOwner(this);
+	}
+
+	// 1. 액터의 소유 컴포넌트 목록에 추가합니다.
+	OwnedComponents.push_back(InNewComponent);
+
+	// 2. 만약 액터가 이미 월드에 생성되어 BeginPlay가 호출된 상태라면,
+	if (bBegunPlay)
+	{
+		InNewComponent->BeginPlay();
+	}
+}
+
+void AActor::CopyPropertiesFrom(const UObject* InObject)
 {
 	Super::DuplicateSubObjects(DuplicatedObject);
 	AActor* DuplicatedActor = Cast<AActor>(DuplicatedObject);
