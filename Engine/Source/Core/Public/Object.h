@@ -39,9 +39,9 @@ public:
 	uint32 GetAllocatedCount() const { return AllocatedCounts; }
 	uint32 GetUUID() const { return UUID; }
 
+	FName GetName() { return Name; }
 	void SetName(const FName& InName) { Name = InName; }
 	void SetOuter(UObject* InObject);
-	void SetDisplayName(const FString& InName) const { Name.SetDisplayName(InName); }
 
 protected:
 	/* *

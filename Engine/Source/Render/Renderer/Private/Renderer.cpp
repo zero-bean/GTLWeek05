@@ -492,8 +492,8 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	TIME_PROFILE(RenderStaticMeshes)
 	sort(MeshComponents.begin(), MeshComponents.end(),
 		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
-			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
-			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
+			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
 			return MeshA < MeshB;
 		});
 

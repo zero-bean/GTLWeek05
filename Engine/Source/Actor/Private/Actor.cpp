@@ -11,8 +11,8 @@ AActor::AActor()
 	SetRootComponent(SceneComp);
 
 	// to do: primitive factory로 빌보드 생성
-	UUIDTextComponent = new UUUIDTextComponent(this, 5.0f);
-	OwnedComponents.push_back(TObjectPtr<UUUIDTextComponent>(UUIDTextComponent));
+	UUIDTextComponent = CreateDefaultSubobject<UUUIDTextComponent>();
+	UUIDTextComponent->SetOffset(5.0f);
 }
 
 AActor::AActor(UObject* InOuter)

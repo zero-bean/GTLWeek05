@@ -10,19 +10,10 @@ IMPLEMENT_CLASS(UUUIDTextComponent, UTextComponent)
  * Actor has a UBillBoardComponent
  */
 
-UUUIDTextComponent::UUUIDTextComponent() : POwnerActor(nullptr), ZOffset(0.0f) {};
-
-UUUIDTextComponent::UUUIDTextComponent(AActor* InOwnerActor, float InYOffset)
-	: POwnerActor(InOwnerActor)
-	, ZOffset(InYOffset)
-{
-	Type = EPrimitiveType::Text;
-	SetVisibility(false); // 현재는 시작하자마자 Visibility False, Select 시 True되는 시스템
-}
+UUUIDTextComponent::UUUIDTextComponent() : ZOffset(0.0f) {};
 
 UUUIDTextComponent::~UUUIDTextComponent()
 {
-	POwnerActor = nullptr;
 }
 
 void UUUIDTextComponent::OnSelected()
@@ -37,7 +28,7 @@ void UUUIDTextComponent::OnDeselected()
 
 void UUUIDTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
 {
-	const FVector& OwnerActorLocation = POwnerActor->GetActorLocation();
+	const FVector& OwnerActorLocation = GetOwner()->GetActorLocation();
 
 	FVector ToCamera = InCameraLocation - OwnerActorLocation;
 	ToCamera.Normalize();

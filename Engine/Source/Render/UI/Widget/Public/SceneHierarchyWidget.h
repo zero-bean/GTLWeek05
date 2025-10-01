@@ -51,7 +51,7 @@ private:
 	static constexpr float FOCUS_DISTANCE = 10.0f;
 
 	// Camera movement
-	void RenderActorInfo(TObjectPtr<AActor> InActor, int32 InIndex);
+	void RenderActorInfo(AActor* InActor, int32 InIndex);
 	void SelectActor(TObjectPtr<AActor> InActor, bool bInFocusCamera = false);
 	void FocusOnActor(TObjectPtr<AActor> InActor);
 	void UpdateCameraAnimation();

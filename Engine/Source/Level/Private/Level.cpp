@@ -213,10 +213,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		return nullptr;
 	}
 
-	AActor* NewActor = NewObject<AActor>(nullptr, TObjectPtr(InActorClass), InName);
+	AActor* NewActor = Cast<AActor>(NewObject(InActorClass));
 	if (NewActor)
 	{
-		if (InName != FName::GetNone())
+		if (!InName.IsNone())
 		{
 			NewActor->SetName(InName);
 		}

@@ -19,8 +19,7 @@ UObject::UObject()
 	: Name(FName::GetNone()), Outer(nullptr)
 {
 	UUID = UEngineStatics::GenUUID();
-	Name = FName("Object_" + to_string(UUID));
-
+	
 	GetUObjectArray().emplace_back(this);
 	InternalIndex = static_cast<uint32>(GetUObjectArray().size()) - 1;
 }
@@ -56,19 +55,19 @@ UObject* UObject::Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOut
 	if (auto It = InOutDuplicationMap.find(this); It != InOutDuplicationMap.end()) { return It->second; }
 
 	// 1. 깊은 복사를 통해 텅 빈 객체를 생성
-	UObject* NewObject = GetClass()->CreateDefaultObject();
-	InOutDuplicationMap[this] = NewObject;
-	NewObject->SourceObject = this;
+	UObject* Object = NewObject(GetClass());
+	InOutDuplicationMap[this] = Object;
+	Object->SourceObject = this;
 
-	NewObject->SetOuter(InNewOuter);
+	Object->SetOuter(InNewOuter);
 
 	// 2. 소유하지 않는 참조 관계 얕은 복사
-	NewObject->CopyPropertiesFrom(this);
+	Object->CopyPropertiesFrom(this);
 
 	// 3. 소유하는 SubObject 깊은 복사
-	NewObject->DuplicatesSubObjects(NewObject, InOutDuplicationMap);
+	Object->DuplicatesSubObjects(Object, InOutDuplicationMap);
 
-	return NewObject;
+	return Object;
 }
 
 void UObject::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
