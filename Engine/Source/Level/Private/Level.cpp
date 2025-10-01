@@ -382,7 +382,6 @@ UObject* ULevel::Duplicate()
 {
 	ULevel* Level = Cast<ULevel>(Super::Duplicate());
 	Level->ShowFlags = ShowFlags;
-	Level->StaticOctree->SetBoundingBox(StaticOctree->GetBoundingBox());
 	return Level;
 }
 

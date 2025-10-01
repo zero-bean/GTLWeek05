@@ -137,6 +137,7 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 	Super::DuplicateSubObjects(DuplicatedObject);
 	AActor* DuplicatedActor = Cast<AActor>(DuplicatedObject);
 	USceneComponent* DuplicatedRoot = Cast<USceneComponent>(GetRootComponent()->Duplicate());
+	DuplicatedRoot->SetOwner(DuplicatedActor);
 	DuplicatedActor->SetRootComponent(DuplicatedRoot);
 	DuplicatedActor->OwnedComponents.push_back(DuplicatedRoot);
 	

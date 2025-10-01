@@ -419,6 +419,7 @@ void URenderer::RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRend
 	// Update constant buffers
 	UpdateConstantBuffer(ConstantBufferModels,
 		FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
+
 	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
 	UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, true);
 
@@ -732,6 +733,7 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 	//UpdateConstantBuffer(ConstantBufferModels,
 	//	FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
 	//	0, true);
+	
 	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
 
 	// Transform 업데이트 (메시별로)

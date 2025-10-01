@@ -205,5 +205,4 @@ UObject* UPrimitiveComponent::Duplicate()
 void UPrimitiveComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 {
 	Super::DuplicateSubObjects(DuplicatedObject);
-	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(DuplicatedObject);
 }
