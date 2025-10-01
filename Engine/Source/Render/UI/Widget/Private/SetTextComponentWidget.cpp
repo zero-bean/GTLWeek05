@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "Render/UI/Widget/Public/SetTextComponentWidget.h"
 
 #include "Level/Public/Level.h"
@@ -27,13 +27,13 @@ void USetTextComponentWidget::Initialize()
 
 void USetTextComponentWidget::Update()
 {
-	// ¸Å ÇÁ·¹ÀÓ LevelÀÇ ¼±ÅÃµÈ Actor¸¦ È®ÀÎÇØ¼­ Á¤º¸ ¹Ý¿µ
-	// TODO(KHJ): ÀûÀýÇÑ À§Ä¡¸¦ Ã£À» °Í
+	// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Levelï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ Actorï¿½ï¿½ È®ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¿ï¿½
+	// TODO(KHJ): ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½
 	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{
-		AActor* NewSelectedActor = CurrentLevel->GetSelectedActor();
+		AActor* NewSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 		// Update Current Selected Actor
 		if (SelectedActor != NewSelectedActor)
@@ -58,7 +58,7 @@ void USetTextComponentWidget::RenderWidget()
 
 	ImGui::Spacing();
 
-	// ¹öÆÛ¸¦ Á÷Á¢ °ü¸®ÇØ¾ß ÇÔ
+	// ï¿½ï¿½ï¿½Û¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½ï¿½
 	
 	static char buf[256] = "";
 	const FString& TextOfComponent = SelectedTextComponent->GetText();

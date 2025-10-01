@@ -26,7 +26,7 @@ void UActorTerminationWidget::Update()
 
 	if (CurrentLevel)
 	{
-		AActor* CurrentSelectedActor = CurrentLevel->GetSelectedActor();
+		AActor* CurrentSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 		// Update Current Selected Actor
 		if (SelectedActor != CurrentSelectedActor)

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
 #include "Component/Public/PrimitiveComponent.h"
-
+#include "Editor/Public/Editor.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
 #include "Factory/Public/NewObject.h"
@@ -29,8 +29,6 @@ ULevel::ULevel(const FName& InName)
 
 ULevel::~ULevel()
 {
-	SetSelectedActor(nullptr);
-
 	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
 	for (const auto& Actor : LevelActors)
 	{
@@ -162,32 +160,6 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 	}
 }
 
-void ULevel::SetSelectedActor(AActor* InActor)
-{
-	// Set Selected Actor
-	if (SelectedActor)
-	{
-		for (auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			Component->OnDeselected();
-		}
-	}
-
-	if (InActor != SelectedActor)
-	{
-		UUIManager::GetInstance().OnSelectedActorChanged(InActor);
-	}
-	SelectedActor = InActor;
-
-	if (SelectedActor)
-	{
-		for (auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			Component->OnSelected();
-		}
-	}
-}
-
 // Level에서 Actor 제거하는 함수
 bool ULevel::DestroyActor(AActor* InActor)
 {
@@ -220,9 +192,10 @@ bool ULevel::DestroyActor(AActor* InActor)
 	}
 
 	// Remove Actor Selection
-	if (SelectedActor == InActor)
+	UEditor* Editor = GEditor->GetEditorModule();
+	if (Editor->GetSelectedActor().Get() == InActor)
 	{
-		SetSelectedActor(nullptr);
+		Editor->SelectActor(nullptr);
 	}
 
 	// Remove

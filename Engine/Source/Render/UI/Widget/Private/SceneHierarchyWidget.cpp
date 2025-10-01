@@ -143,7 +143,7 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 
 	// 현재 선택된 Actor인지 확인
 	ULevel* CurrentLevel = GWorld->GetLevel();
-	bool bIsSelected = (CurrentLevel && CurrentLevel->GetSelectedActor() == InActor);
+	bool bIsSelected = (CurrentLevel && GEditor->GetEditorModule()->GetSelectedActor() == InActor);
 
 	// 선택된 Actor는 하이라이트
 	if (bIsSelected)
@@ -290,18 +290,15 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
  */
 void USceneHierarchyWidget::SelectActor(TObjectPtr<AActor> InActor, bool bInFocusCamera)
 {
-	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();;
-	if (CurrentLevel)
-	{
-		CurrentLevel->SetSelectedActor(InActor);
-		UE_LOG("SceneHierarchy: %s를 선택했습니다", InActor->GetName().ToString().data());
+	UEditor* Editor = GEditor->GetEditorModule();
+	Editor->SelectActor(InActor);
+	UE_LOG("SceneHierarchy: %s를 선택했습니다", InActor->GetName().ToString().data());
 
-		// 카메라 포커싱은 더블 클릭에서만 수행
-		if (InActor && bInFocusCamera)
-		{
-			FocusOnActor(InActor);
-			UE_LOG_SUCCESS("SceneHierarchy: %s에 카메라 포커싱 완료", InActor->GetName().ToString().data());
-		}
+	// 카메라 포커싱은 더블 클릭에서만 수행
+	if (InActor && bInFocusCamera)
+	{
+		FocusOnActor(InActor);
+		UE_LOG_SUCCESS("SceneHierarchy: %s에 카메라 포커싱 완료", InActor->GetName().ToString().data());
 	}
 }
 

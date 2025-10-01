@@ -454,7 +454,6 @@
     <ClInclude Include="Source\Utility\Public\ActorTypeMapper.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
-    <ClInclude Include="Source\Utility\Public\FileDialog.h" />
     <ClInclude Include="Source\Utility\Public\JsonSerializer.h" />
     <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h" />
     <ClInclude Include="Source\Utility\Public\UELogParser.h" />
@@ -602,7 +601,6 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
-    <ClCompile Include="Source\Utility\Private\FileDialog.cpp" />
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
     <ClCompile Include="Source\Utility\Private\UELogParser.cpp" />
   </ItemGroup>

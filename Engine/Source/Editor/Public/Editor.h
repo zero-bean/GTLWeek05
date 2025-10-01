@@ -44,13 +44,15 @@ public:
 	void SetSingleViewportLayout(int InActiveIndex);
 	void RestoreMultiViewportLayout();
 
+	void SelectActor(AActor* InActor);
+	TObjectPtr<AActor> GetSelectedActor() const { return SelectedActor; }
 	UUUIDTextComponent* GetPickedBillboard() const;
 
 private:
 	void InitializeLayout();
 	void UpdateLayout();
 
-	void ProcessMouseInput(ULevel* InLevel);
+	void ProcessMouseInput();
 	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
 
 	// 모든 기즈모 드래그 함수가 ActiveCamera를 받도록 통일
@@ -64,6 +66,7 @@ private:
 	}
 
 	UObjectPicker ObjectPicker;
+	TObjectPtr<AActor> SelectedActor = nullptr; // 선택된 액터
 
 	UUUIDTextComponent* PickedBillboard; // 선택된 액터의 빌보드
 

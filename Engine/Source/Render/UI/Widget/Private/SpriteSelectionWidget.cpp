@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "Render/UI/Widget/Public/SpriteSelectionWidget.h"
 
 #include "Level/Public/Level.h"
@@ -21,12 +21,12 @@ void USpriteSelectionWidget::Initialize()
 
 void USpriteSelectionWidget::Update()
 {
-	// ¸Å ÇÁ·¹ÀÓ LevelÀÇ ¼±ÅÃµÈ Actor¸¦ È®ÀÎÇØ¼­ Á¤º¸ ¹Ý¿µ
+	// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Levelï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ Actorï¿½ï¿½ È®ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¿ï¿½
 	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{
-		AActor* NewSelectedActor = CurrentLevel->GetSelectedActor();
+		AActor* NewSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 		// Update Current Selected Actor
 		if (SelectedActor != NewSelectedActor)
@@ -43,7 +43,7 @@ void USpriteSelectionWidget::Update()
 void USpriteSelectionWidget::RenderWidget()
 {
 	// Memory Information
-	// ImGui::Text("·¹º§ ¸Þ¸ð¸® Á¤º¸");
+	// ImGui::Text("ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¸ï¿½ ï¿½ï¿½ï¿½ï¿½");
 	// ImGui::Text("Level Object Count: %u", LevelObjectCount);
 	// ImGui::Text("Level Memory: %.3f KB", static_cast<float>(LevelMemoryByte) / KILO);
 	// ImGui::Separator();
@@ -56,9 +56,9 @@ void USpriteSelectionWidget::RenderWidget()
 
 	ImGui::Spacing();
 		
-	static int current_item = 0; // ÇöÀç ¼±ÅÃµÈ ÀÎµ¦½º
+	static int current_item = 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½Îµï¿½ï¿½ï¿½
 
-	// ¿¹Á¦ ¹®ÀÚ¿­ ¸ñ·Ï
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½ ï¿½ï¿½ï¿½
 	TArray<const char*> items;
 	const TMap<FName, ID3D11ShaderResourceView*>& TextureCache = \
 		UAssetManager::GetInstance().GetTextureCache();
@@ -72,7 +72,7 @@ void USpriteSelectionWidget::RenderWidget()
 		items.push_back(Itr->first.ToString().c_str());
 	}
 
-	if (ImGui::BeginCombo("Sprite", items[current_item])) // Label°ú ÇöÀç °ª Ç¥½Ã
+	if (ImGui::BeginCombo("Sprite", items[current_item])) // Labelï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ç¥ï¿½ï¿½
 	{
 		for (int n = 0; n < items.size(); n++)
 		{
@@ -84,7 +84,7 @@ void USpriteSelectionWidget::RenderWidget()
 			}
 
 			if (is_selected)
-				ImGui::SetItemDefaultFocus(); // ±âº» Æ÷Ä¿½º
+				ImGui::SetItemDefaultFocus(); // ï¿½âº» ï¿½ï¿½Ä¿ï¿½ï¿½
 		}
 		ImGui::EndCombo();
 	}
@@ -93,7 +93,7 @@ void USpriteSelectionWidget::RenderWidget()
 }
 
 /**
- * @brief Render¿¡¼­ Ã¼Å©µÈ ³»¿ëÀ¸·Î ÀÎÇØ ÀÌÈÄ º¯°æµÇ¾î¾ß ÇÒ ³»¿ëÀÌ ÀÖ´Ù¸é Change Ã³¸®
+ * @brief Renderï¿½ï¿½ï¿½ï¿½ Ã¼Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´Ù¸ï¿½ Change Ã³ï¿½ï¿½
  */
 void USpriteSelectionWidget::PostProcess()
 {

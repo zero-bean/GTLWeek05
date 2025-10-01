@@ -54,9 +54,6 @@ public:
 
 	bool DestroyActor(AActor* InActor);
 
-	void SetSelectedActor(AActor* InActor);
-	TObjectPtr<AActor> GetSelectedActor() const { return SelectedActor; }
-
 	uint64 GetShowFlags() const { return ShowFlags; }
 	void SetShowFlags(uint64 InShowFlags) { ShowFlags = InShowFlags; }
 
@@ -81,8 +78,6 @@ private:
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;
-
-	TObjectPtr<AActor> SelectedActor = nullptr;
 
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
 		static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |

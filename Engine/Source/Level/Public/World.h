@@ -53,7 +53,7 @@ public:
 	bool LoadLevel(std::filesystem::path InLevelFilePath);
 	bool SaveCurrentLevel(std::filesystem::path InLevelFilePath) const;
 
-	// Actor Spawn & Destroy -> Level에서 기능 이전해오기
+	// Actor Spawn & Destroy
 	AActor* SpawnActor(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 

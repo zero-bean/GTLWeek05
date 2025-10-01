@@ -99,7 +99,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ULevel* CurrentLevel = GWorld->GetLevel();
 	if (!CurrentLevel) return; // 레벨이 없으면 아무것도 하지 않습니다.
 
-	AActor* SelectedActor = CurrentLevel->GetSelectedActor();
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 	// 2. 선택된 액터가 있을 경우에만 버튼을 표시합니다.
 	if (SelectedActor)
