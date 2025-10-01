@@ -1,12 +1,20 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/ActorDetailWidget.h"
-
-
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/SceneComponent.h"
+#include "Component/Public/TextComponent.h"
+#include "Component/Public/BillBoardComponent.h"
+#include "Component/Mesh/Public/SphereComponent.h"
+#include "Component/Mesh/Public/SquareComponent.h"
+#include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Mesh/Public/TriangleComponent.h"
+#include "Component/Mesh/Public/CubeComponent.h"
+#include "Component/Mesh/Public/MeshComponent.h"
+#include "Global/Quaternion.h"
+#include "Global/Vector.h"
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -40,7 +48,16 @@ void UActorDetailWidget::RenderWidget()
 	{
 		ImGui::TextUnformatted("No Object Selected");
 		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "Detail 확인을 위해 Object를 선택해주세요");
+		SelectedComponent = nullptr; 
+		CachedSelectedActor = nullptr;
 		return;
+	}
+
+	// 선택된 액터가 변경되면, 컴포넌트 선택 상태를 초기화
+	if (CachedSelectedActor != SelectedActor)
+	{
+		SelectedComponent = nullptr;
+		CachedSelectedActor = SelectedActor;
 	}
 
 	// Actor 헤더 렌더링 (이름 + rename 기능)
@@ -50,6 +67,11 @@ void UActorDetailWidget::RenderWidget()
 
 	// 컴포넌트 트리 렌더링
 	RenderComponentTree(SelectedActor);
+
+	ImGui::Separator();
+
+	// 선택된 컴포넌트의 트랜스폼 정보 렌더링
+	RenderTransformEdit();
 }
 
 void UActorDetailWidget::RenderActorHeader(TObjectPtr<AActor> InSelectedActor)
@@ -107,9 +129,10 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 {
 	if (!InSelectedActor) return;
 
-	const TArray<TObjectPtr<UActorComponent>>& Components = InSelectedActor->GetOwnedComponents();
+	const auto& Components = InSelectedActor->GetOwnedComponents();
 
 	ImGui::Text("Components (%d)", static_cast<int>(Components.size()));
+	RenderAddComponentButton(InSelectedActor);
 	ImGui::Separator();
 
 	if (Components.empty())
@@ -118,61 +141,318 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		return;
 	}
 
-	for (int32 i = 0; i < static_cast<int32>(Components.size()); ++i)
+	// 모든 컴포넌트 중 부모가 없는 최상위 컴포넌트만 찾아 재귀 렌더링을 시작합니다.
+	for (const auto& Component : Components)
 	{
-		if (Components[i])
+		if (!Component) continue;
+
+		USceneComponent* SceneComp = Cast<USceneComponent>(Component.Get());
+		// SceneComponent가 아니거나, 부모가 없는 SceneComponent가 최상위입니다.
+		if (!SceneComp || !SceneComp->GetParentAttachment())
 		{
-			RenderComponentNode(Components[i]);
+			RenderComponentNodeRecursive(Component.Get());
 		}
 	}
 }
 
-/**
- * @brief 컴포넌트에 대한 정보를 표시하는 함수
- * 내부적으로 RTTI를 활용한 GetName 처리가 되어 있음
- * @param InComponent
- */
-void UActorDetailWidget::RenderComponentNode(TObjectPtr<UActorComponent> InComponent)
+void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InComponent)
 {
-	if (!InComponent)
+	if (!InComponent) return;
+
+	USceneComponent* SceneComp = Cast<USceneComponent>(InComponent);
+	FString ComponentName = InComponent->GetName().ToString();
+
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (!SceneComp || SceneComp->GetChildren().empty())
+		NodeFlags |= ImGuiTreeNodeFlags_Leaf;
+	if (SelectedComponent == InComponent)
+		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+	bool bNodeOpen = ImGui::TreeNodeEx((void*)InComponent, NodeFlags, "%s", ComponentName.c_str());
+
+	// -----------------------------
+	// Drag Source
+	// -----------------------------
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
 	{
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+		{
+			ImGui::SetDragDropPayload("COMPONENT_PTR", &InComponent, sizeof(UActorComponent*));
+			ImGui::Text("Dragging %s", ComponentName.c_str());
+			ImGui::EndDragDropSource();
+		}
+	}
+
+	// -----------------------------
+	// Drag Target
+	// -----------------------------
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("COMPONENT_PTR"))
+		{
+			IM_ASSERT(payload->DataSize == sizeof(UActorComponent*));
+			UActorComponent* DraggedComp = *(UActorComponent**)payload->Data;
+
+			if (!DraggedComp || DraggedComp == InComponent)
+			{
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
+			USceneComponent* DraggedScene = Cast<USceneComponent>(DraggedComp);
+			USceneComponent* TargetScene = Cast<USceneComponent>(InComponent);
+			TObjectPtr<AActor> Owner = DraggedScene ? DraggedScene->GetOwner() : nullptr;
+			if (!Owner) { ImGui::EndDragDropTarget(); return; }
+
+			// -----------------------------
+			// 자기 자신이나 자식에게 Drop 방지
+			// -----------------------------
+			bool bInvalidDrop = false;
+			if (DraggedScene && TargetScene)
+			{
+				USceneComponent* Iter = TargetScene;
+				while (Iter)
+				{
+					if (Iter == DraggedScene)
+					{
+						bInvalidDrop = true;
+						break;
+					}
+					Iter = Iter->GetParentAttachment();
+				}
+			}
+			if (bInvalidDrop)
+			{
+				UE_LOG_WARNING("Cannot drop onto self or own child.");
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
+			// -----------------------------
+			// 기존 부모에서 detach
+			// -----------------------------
+			if (DraggedScene)
+			{
+				if (USceneComponent* OldParent = DraggedScene->GetParentAttachment())
+				{
+					OldParent->RemoveChild(DraggedScene);
+				}
+			}
+
+			// -----------------------------
+			// Target의 자식으로 attach (월드 트랜스폼 유지)
+			// -----------------------------
+			if (DraggedScene && TargetScene)
+			{
+				// 1. 드래그된 컴포넌트의 현재 월드 트랜스폼을 저장합니다.
+				const FMatrix OldWorldMatrix = DraggedScene->GetWorldTransformMatrix();
+
+				// 2. 부모를 변경합니다.
+				DraggedScene->SetParentAttachment(TargetScene);
+
+				// 3. 새 부모의 월드 트랜스폼의 역행렬을 구합니다.
+				const FMatrix NewParentWorldMatrixInverse = TargetScene->GetWorldTransformMatrixInverse();
+
+				// 4. 드래그된 컴포넌트의 새 로컬 트랜스폼을 계산합니다.
+				// NewLocal = OldWorld * NewParentInverse
+				const FMatrix NewLocalMatrix = OldWorldMatrix * NewParentWorldMatrixInverse;
+
+				// 5. 계산된 로컬 트랜스폼을 컴포넌트에 적용합니다.
+				FVector NewLocation, NewRotation, NewScale;
+				DecomposeMatrix(NewLocalMatrix, NewLocation, NewRotation, NewScale);
+
+				DraggedScene->SetRelativeLocation(NewLocation);
+				DraggedScene->SetRelativeRotation(NewRotation);
+				DraggedScene->SetRelativeScale3D(NewScale);
+			}
+			else
+			{
+				// SceneComponent가 아닌 경우 → 최상위에 push (월드 트랜스폼 유지)
+				auto& Components = Owner->GetOwnedComponents();
+				auto it = std::find(Components.begin(), Components.end(), DraggedComp);
+				if (it != Components.end()) Components.erase(it);
+				Components.push_back(DraggedComp);
+			}
+
+			// -----------------------------
+			// Components 배열 순서 갱신
+			// -----------------------------
+			auto& Components = Owner->GetOwnedComponents();
+			auto it = std::find(Components.begin(), Components.end(), DraggedComp);
+			if (it != Components.end())
+			{
+				Components.erase(it);
+				Components.push_back(DraggedComp);
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+
+
+	// -----------------------------
+	// 클릭 선택 처리
+	// -----------------------------
+	if (ImGui::IsItemClicked())
+	{
+		SelectedComponent = InComponent;
+	}
+
+	// -----------------------------
+	// 자식 재귀 렌더링
+	// -----------------------------
+	if (bNodeOpen)
+	{
+		if (SceneComp)
+		{
+			for (auto& Child : SceneComp->GetChildren())
+			{
+				RenderComponentNodeRecursive(Child);
+			}
+		}
+		ImGui::TreePop();
+	}
+}
+
+void UActorDetailWidget::RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor)
+{
+	ImGui::SameLine();
+
+	const char* buttonText = "[+]";
+	float buttonWidth = ImGui::CalcTextSize(buttonText).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - buttonWidth);
+
+	if (ImGui::Button(buttonText))
+	{
+		ImGui::OpenPopup("AddComponentPopup");
+	}
+
+	if (ImGui::BeginPopup("AddComponentPopup"))
+	{
+		ImGui::Text("Add Component");
+		ImGui::Separator();
+
+		const char* componentNames[] = {
+			"Triangle", "Sphere", "Square", "Cube",
+			"Mesh", "Static Mesh", "BillBoard", "Text"
+		};
+
+		// 반복문 안에서 헬퍼 함수를 호출하여 원하는 UI를 그립니다.
+		for (const char* name : componentNames)
+		{
+			if (CenteredSelectable(name))
+			{
+				AddComponentByName(InSelectedActor, FString(name));
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+bool UActorDetailWidget::CenteredSelectable(const char* label)
+{
+	// 1. 라벨이 보이지 않는 Selectable을 전체 너비로 만들어 호버링/클릭 영역을 잡습니다.
+	bool clicked = ImGui::Selectable(std::string("##").append(label).c_str());
+
+	// 2. 방금 만든 Selectable의 사각형 영역 정보를 가져옵니다.
+	ImVec2 minRect = ImGui::GetItemRectMin();
+	ImVec2 maxRect = ImGui::GetItemRectMax();
+
+	// 3. 텍스트 크기를 계산합니다.
+	ImVec2 textSize = ImGui::CalcTextSize(label);
+
+	// 4. 텍스트를 그릴 중앙 위치를 계산합니다.
+	ImVec2 textPos = ImVec2(
+		minRect.x + (maxRect.x - minRect.x - textSize.x) * 0.5f,
+		minRect.y + (maxRect.y - minRect.y - textSize.y) * 0.5f
+	);
+
+	// 5. 계산된 위치에 텍스트를 직접 그립니다.
+	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), label);
+
+	return clicked;
+}
+
+void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName)
+{
+	if (!InSelectedActor)
+	{
+		UE_LOG_WARNING("ActorDetailWidget: 컴포넌트를 추가할 액터가 선택되지 않았습니다.");
 		return;
 	}
 
-	// 컴포넌트 타입에 따른 아이콘
-	FName ComponentTypeName = InComponent.Get()->GetClass()->GetName();
-	FString ComponentIcon = "[C]"; // 기본 컴포넌트 아이콘
+	FName NewComponentName(InComponentName);
+	UActorComponent* NewComponent = nullptr; 
 
-	if (Cast<UPrimitiveComponent>(InComponent))
+	if (InComponentName == "Triangle")
 	{
-		ComponentIcon = "[P]"; // PrimitiveComponent 아이콘
+		NewComponent = InSelectedActor->AddComponent<UTriangleComponent>(NewComponentName);
 	}
-	else if (Cast<USceneComponent>(InComponent))
+	else if (InComponentName == "Sphere")
 	{
-		ComponentIcon = "[S]"; // SceneComponent 아이콘
+		NewComponent = InSelectedActor->AddComponent<USphereComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Square")
+	{
+		NewComponent = InSelectedActor->AddComponent<USquareComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Cube")
+	{
+		NewComponent = InSelectedActor->AddComponent<UCubeComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Mesh")
+	{
+		NewComponent = InSelectedActor->AddComponent<UMeshComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Static Mesh")
+	{
+		NewComponent = InSelectedActor->AddComponent<UStaticMeshComponent>(NewComponentName);
+	}
+	else if (InComponentName == "BillBoard")
+	{
+		NewComponent = InSelectedActor->AddComponent<UBillBoardComponent>(NewComponentName);
+	}
+	else if (InComponentName == "Text")
+	{
+		NewComponent = InSelectedActor->AddComponent<UTextComponent>(NewComponentName);
+	}
+	else
+	{
+		UE_LOG_ERROR("ActorDetailWidget: 알 수 없는 컴포넌트 타입 '%s'을(를) 추가할 수 없습니다.", InComponentName.data());
+		return;
 	}
 
-	// 트리 노드 생성
-	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-	FString NodeLabel = ComponentIcon + " " + InComponent->GetName().ToString();
-	ImGui::TreeNodeEx(NodeLabel.data(), NodeFlags);
-
-	// 컴포넌트 세부 정보를 추가로 표시할 수 있음
-	if (ImGui::IsItemHovered())
+	if (!NewComponent)
 	{
-		// 컴포넌트 타입 정보를 툴팁으로 표시
-		ImGui::SetTooltip("Component Type: %s", ComponentTypeName.ToString().data());
+		UE_LOG_ERROR("ActorDetailWidget: '%s' 컴포넌트 생성에 실패했습니다.", InComponentName.data());
+		return;
 	}
 
-	// PrimitiveComponent인 경우 추가 정보
-	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InComponent))
+	// 1. 새로 만든 컴포넌트가 SceneComponent인지 확인
+	if (USceneComponent* NewSceneComponent = Cast<USceneComponent>(NewComponent))
 	{
-		ImGui::SameLine();
-		ImGui::TextColored(
-			PrimitiveComponent->IsVisible() ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-			PrimitiveComponent->IsVisible() ? "[Visible]" : "[Hidden]"
-		);
+		// 2. 현재 선택된 컴포넌트가 있고, 그것이 SceneComponent인지 확인
+		USceneComponent* ParentSceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+
+		if (ParentSceneComponent)
+		{
+			// 3. 선택된 컴포넌트(부모)에 새로 만든 컴포넌트(자식)를 붙임
+			//    (SetupAttachment는 UCLASS 내에서 호출하는 것을 가정)
+			NewSceneComponent->SetParentAttachment(ParentSceneComponent);
+			UE_LOG_SUCCESS("'%s'를 '%s'의 자식으로 추가했습니다.", NewComponentName.ToString().data(), ParentSceneComponent->GetName().ToString().data());
+		}
+		else
+		{
+			// 4. 선택된 컴포넌트가 없으면 액터의 루트 컴포넌트에 붙임
+			NewSceneComponent->SetParentAttachment(InSelectedActor->GetRootComponent());
+			UE_LOG_SUCCESS("'%s'를 액터의 루트에 추가했습니다.", NewComponentName.ToString().data());
+		}
+	}
+	else
+	{
+		UE_LOG_SUCCESS("Non-Scene Component '%s'를 액터에 추가했습니다.", NewComponentName.ToString().data());
 	}
 }
 
@@ -215,4 +495,109 @@ void UActorDetailWidget::CancelRenamingActor()
 	bIsRenamingActor = false;
 	ActorNameBuffer[0] = '\0';
 	UE_LOG_WARNING("ActorDetailWidget: 이름 변경 취소");
+}
+
+void UActorDetailWidget::RenderTransformEdit()
+{
+	if (!SelectedComponent)
+		return;
+
+	USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+	if (!SceneComponent)
+		return;
+
+	ImGui::Text("Transform");
+
+	// 컴포넌트 포인터를 PushID로 사용해서 내부 ID 고유화
+	ImGui::PushID(SceneComponent);
+
+	FVector ComponentPosition = SceneComponent->GetRelativeLocation();
+	if (ImGui::DragFloat3("Position", &ComponentPosition.X, 0.1f))
+	{
+		SceneComponent->SetRelativeLocation(ComponentPosition);
+	}
+
+	FVector ComponentRotation = SceneComponent->GetRelativeRotation();
+	if (ImGui::DragFloat3("Rotation", &ComponentRotation.X, 1.0f))
+	{
+		SceneComponent->SetRelativeRotation(ComponentRotation);
+	}
+
+	FVector ComponentScale = SceneComponent->GetRelativeScale3D();
+	if (ImGui::DragFloat3("Scale", &ComponentScale.X, 0.1f))
+	{
+		SceneComponent->SetRelativeScale3D(ComponentScale);
+	}
+
+	ImGui::PopID();
+}
+
+void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
+{
+	if (!A || !B) return;
+
+	TObjectPtr<AActor> Owner = A->GetOwner();
+	if (!Owner) return;
+
+	auto& Components = Owner->GetOwnedComponents(); // std::vector<TObjectPtr<UActorComponent>>
+
+	auto ItA = std::find(Components.begin(), Components.end(), A);
+	auto ItB = std::find(Components.begin(), Components.end(), B);
+
+	if (ItA != Components.end() && ItB != Components.end())
+	{
+		// 포인터 임시 저장
+		TObjectPtr<UActorComponent> TempA = *ItA;
+		TObjectPtr<UActorComponent> TempB = *ItB;
+
+		// erase 후 push_back
+		Components.erase(ItA); // 먼저 A 제거
+		// B 제거 (A 제거 후 iterator invalid 되므로 다시 찾기)
+		ItB = std::find(Components.begin(), Components.end(), B);
+		Components.erase(ItB);
+
+		// 서로 위치를 바꿔 push_back
+		Components.push_back(TempA);
+		Components.push_back(TempB);
+
+		// SceneComponent라면 부모/자식 관계 교체
+		if (USceneComponent* SceneA = Cast<USceneComponent>(A))
+			if (USceneComponent* SceneB = Cast<USceneComponent>(B))
+			{
+				USceneComponent* ParentA = SceneA->GetParentAttachment();
+				USceneComponent* ParentB = SceneB->GetParentAttachment();
+
+				SceneA->SetParentAttachment(ParentB);
+				SceneB->SetParentAttachment(ParentA);
+			}
+	}
+}
+
+void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale)
+{
+    // 스케일 추출
+    OutScale.X = FVector(InMatrix.Data[0][0], InMatrix.Data[0][1], InMatrix.Data[0][2]).Length();
+    OutScale.Y = FVector(InMatrix.Data[1][0], InMatrix.Data[1][1], InMatrix.Data[1][2]).Length();
+    OutScale.Z = FVector(InMatrix.Data[2][0], InMatrix.Data[2][1], InMatrix.Data[2][2]).Length();
+
+    // 위치 추출
+    OutLocation.X = InMatrix.Data[3][0];
+    OutLocation.Y = InMatrix.Data[3][1];
+    OutLocation.Z = InMatrix.Data[3][2];
+
+    // 회전 행렬 추출 (스케일 제거)
+    FMatrix RotationMatrix;
+	for (int i = 0; i < 3; ++i)
+	{
+		RotationMatrix.Data[i][0] = InMatrix.Data[i][0] / OutScale.X;
+		RotationMatrix.Data[i][1] = InMatrix.Data[i][1] / OutScale.Y;
+		RotationMatrix.Data[i][2] = InMatrix.Data[i][2] / OutScale.Z;
+	}
+
+    // 오일러 각으로 변환 (Pitch, Yaw, Roll)
+    OutRotation.X = atan2(RotationMatrix.Data[2][1], RotationMatrix.Data[2][2]);
+    OutRotation.Y = atan2(-RotationMatrix.Data[2][0], sqrt(RotationMatrix.Data[2][1] * RotationMatrix.Data[2][1] + RotationMatrix.Data[2][2] * RotationMatrix.Data[2][2]));
+    OutRotation.Z = atan2(RotationMatrix.Data[1][0], RotationMatrix.Data[0][0]);
+
+	OutRotation = FVector::GetRadianToDegree(OutRotation);
 }

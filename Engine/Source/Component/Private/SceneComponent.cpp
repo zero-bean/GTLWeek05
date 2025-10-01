@@ -52,7 +52,6 @@ void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
 	{
 		return;
 	}
-
 	for (USceneComponent* Ancester = NewParent; Ancester != nullptr; Ancester = Ancester->ParentAttachment)
 	{
 		// 만약 거슬러 올라가다 나 자신을 만나면 순환 구조이므로 함수를 종료합니다.

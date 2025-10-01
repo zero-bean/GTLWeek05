@@ -3,6 +3,8 @@
 
 class AActor;
 class UActorComponent;
+class USceneComponent;
+class UActorComponent;
 
 /**
  * @brief 선택된 Actor의 이름과 컴포넌트 트리를 표시하는 Widget
@@ -24,10 +26,20 @@ private:
 	bool bIsRenamingActor = false;
 	char ActorNameBuffer[256] = {};
 
+	TObjectPtr<UActorComponent> SelectedComponent = nullptr;
+	TObjectPtr<AActor> CachedSelectedActor = nullptr;
+
 	// Helper functions
 	void RenderActorHeader(TObjectPtr<AActor> InSelectedActor);
-	static void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
-	static void RenderComponentNode(TObjectPtr<UActorComponent> InComponent);
+	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
+	void RenderComponentNodeRecursive(UActorComponent* InComponent);
+	void RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor);
+	bool CenteredSelectable(const char* label);
+	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
+	void RenderTransformEdit();
+	void SwapComponents(UActorComponent* A, UActorComponent* B);
+
+	void DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale);
 
 	// 이름 변경 함수
 	void StartRenamingActor(TObjectPtr<AActor> InActor);

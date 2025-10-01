@@ -39,7 +39,7 @@ public:
 
 	// Getter & Setter
 	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
-	const TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents() const { return OwnedComponents; }
+	TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents()  { return OwnedComponents; }
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
@@ -71,7 +71,7 @@ public:
 	
 	UActorComponent* CreateDefaultSubobject(UClass* Class)
 	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(NewObject(Class, TObjectPtr<UObject>(this)));
+		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, TObjectPtr<UObject>(this)));
 		if (NewComponent)
 		{
 			NewComponent->SetOwner(this);
@@ -92,13 +92,13 @@ public:
 	{
 		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
 
-		// 1. NewObject는 여전히 로우 포인터(T*)를 반환합니다.
-		T* NewComponent = NewObject<T>(this, T::StaticClass(), InName);
+		// 1. 정의하신 NewObject<T>() 함수를 호출합니다.
+		//    이 함수는 TObjectPtr을 반환하므로 .Get()으로 원시 포인터를 가져옵니다.
+		T* NewComponent = NewObject<T>(this).Get();
 
 		if (NewComponent)
 		{
-			// 2. 로우 포인터를 RegisterComponent에 전달합니다.
-			//    T* -> TObjectPtr<UActorComponent> 로의 안전한 암시적 변환이 일어납니다.
+			// 3. 컴포넌트를 액터에 등록합니다.
 			RegisterComponent(NewComponent);
 		}
 
@@ -125,7 +125,4 @@ private:
 	
 public:
 	virtual UObject* Duplicate() override;
-
-protected:
-	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

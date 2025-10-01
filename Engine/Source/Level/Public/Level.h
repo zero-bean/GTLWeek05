@@ -54,11 +54,10 @@ public:
 
 	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
 
-	void RequestToUpdateLeveInfo(UPrimitiveComponent* InPrimitive);
-
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
+	void RegisterPrimitiveComponent(UPrimitiveComponent* InComponent);
 
 	bool DestroyActor(AActor* InActor);
 
