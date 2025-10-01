@@ -22,8 +22,7 @@ void UActorTerminationWidget::Initialize()
 void UActorTerminationWidget::Update()
 {
 	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	TObjectPtr<ULevel> CurrentLevel = LevelManager.GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{
@@ -77,8 +76,7 @@ void UActorTerminationWidget::DeleteSelectedActor()
 		return;
 	}
 
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	TObjectPtr<ULevel> CurrentLevel = LevelManager.GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

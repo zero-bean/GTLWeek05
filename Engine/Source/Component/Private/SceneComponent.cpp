@@ -120,7 +120,7 @@ void USceneComponent::SetRelativeLocation(const FVector& Location)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 
@@ -131,7 +131,7 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 
@@ -142,7 +142,7 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 

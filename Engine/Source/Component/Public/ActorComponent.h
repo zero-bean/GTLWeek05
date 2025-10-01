@@ -26,7 +26,7 @@ public:
 	virtual void OnDeselected();
 
 	/**
-	 * @brief Æ¯Á¤ ÄÄÆ÷³ÍÆ® Àü¿ë WidgetÀÌ ÇÊ¿äÇÒ °æ¿ì ÀçÁ¤ÀÇ ÇÊ¿ä
+	 * @brief íŠ¹ì • ì»´í¬ë„ŒíŠ¸ ì „ìš© Widgetì´ í•„ìš”í•  ê²½ìš° ì¬ì •ì˜ í•„ìš”
 	 */
 	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const { return nullptr; }
 

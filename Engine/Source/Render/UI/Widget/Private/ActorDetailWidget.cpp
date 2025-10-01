@@ -27,7 +27,7 @@ void UActorDetailWidget::Update()
 
 void UActorDetailWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

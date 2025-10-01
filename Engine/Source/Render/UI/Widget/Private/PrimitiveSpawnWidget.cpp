@@ -81,7 +81,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::Text("Duplicate Selected Actor");
 
 	// 1. 현재 레벨과 선택된 액터 정보를 가져옵니다.
-	ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 	if (!CurrentLevel) return; // 레벨이 없으면 아무것도 하지 않습니다.
 
 	AActor* SelectedActor = CurrentLevel->GetSelectedActor();
@@ -112,8 +112,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
  */
 void UPrimitiveSpawnWidget::SpawnActors() const
 {
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();;
 
 	if (!CurrentLevel)
 	{

@@ -100,17 +100,8 @@ int FClientApp::InitializeSystem() const
 
 	UAssetManager::GetInstance().Initialize();
 
-	// Create Default Level
-	FString LastSavedLevelPath = UConfigManager::GetInstance().GetLastSavedLevelPath();
-	if (ULevelManager::GetInstance().LoadLevel(LastSavedLevelPath))
-	{
-		// 마지막을 저장한 레벨을 성공적으로 로드
-	}
-	else
-	{
-		ULevelManager::GetInstance().CreateNewLevel();
-	}
-
+	GEditor = NewObject<UEditorEngine>();
+	
 	return S_OK;
 }
 
@@ -123,10 +114,9 @@ void FClientApp::UpdateSystem() const
 	auto& InputManager = UInputManager::GetInstance();
 	auto& UIManager = UUIManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
-	auto& LevelManager = ULevelManager::GetInstance();
 	{
-		TIME_PROFILE(LevelManager)
-		LevelManager.Update();
+		TIME_PROFILE(GEditor)
+		GEditor->Tick(DT);
 	}
 	{
 		TIME_PROFILE(TimeManager)
@@ -202,12 +192,12 @@ void FClientApp::ShutdownSystem() const
 	UStatOverlay::GetInstance().Release();
 	URenderer::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
-	ULevelManager::GetInstance().Shutdown();
 	UAssetManager::GetInstance().Release();
 
 	// Release되지 않은 UObject의 메모리 할당 해제
 	// 추후 GC가 처리할 것
 	UClass::Shutdown();
 
+	delete GEditor;
 	delete Window;
 }

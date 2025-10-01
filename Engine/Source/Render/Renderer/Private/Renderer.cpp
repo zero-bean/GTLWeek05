@@ -261,7 +261,7 @@ void URenderer::Update()
 		// 4. 에디터를 렌더링합니다.
 		{
 			TIME_PROFILE(RenderEditor)
-				ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
+			GEditor->GetEditorModule()->RenderEditor(CurrentCamera);
 		}
 
 	}
@@ -302,13 +302,12 @@ void URenderer::RenderBegin() const
 
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
+	const TObjectPtr<ULevel>& CurrentLevel = GWorld->GetLevel();
 
 	// Level 없으면 Early Return
 	if (!CurrentLevel) { return; }
 
-	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
+	uint64 ShowFlags =  GWorld->GetLevel()->GetShowFlags();
 
 	TArray<TObjectPtr<UPrimitiveComponent>> OcclusionCandidates;
 	TArray<TObjectPtr<UTextComponent>> BillboardComponents;
@@ -359,7 +358,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
-			const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+			const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 			if (ViewMode == EViewModeIndex::VMI_Wireframe)
 			{
 				RenderState.CullMode = ECullMode::None;
@@ -376,7 +375,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TIME_PROFILE(RenderBillboard)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UTextComponent* PickedBillboard = GEditor->GetEditorModule()->GetPickedBillboard())
 		{
 			RenderBillboard(PickedBillboard, InCurrentCamera);
 		}
@@ -493,7 +492,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+	const EViewModeIndex ViewMode =  GEditor->GetEditorModule()->GetViewMode();
 
 	for (UStaticMeshComponent* MeshComp : MeshComponents) 
 	{

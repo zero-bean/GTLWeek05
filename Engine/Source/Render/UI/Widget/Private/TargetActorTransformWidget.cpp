@@ -20,8 +20,7 @@ void UTargetActorTransformWidget::Update()
 {
 	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
 	// TODO(KHJ): 적절한 위치를 찾을 것
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	LevelMemoryByte = CurrentLevel->GetAllocatedBytes();
 	LevelObjectCount = CurrentLevel->GetAllocatedCount();

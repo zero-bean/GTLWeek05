@@ -203,8 +203,7 @@ void UMainBarWidget::RenderViewMenu()
 	if (ImGui::BeginMenu("보기"))
 	{
 		// LevelManager에서 Editor 가져오기
-		ULevelManager& LevelMgr = ULevelManager::GetInstance();
-		UEditor* EditorInstance = LevelMgr.GetEditor();
+		UEditor* EditorInstance = GEditor->GetEditorModule();
 		if (!EditorInstance)
 		{
 			ImGui::Text("에디터를 사용할 수 없습니다");
@@ -249,9 +248,8 @@ void UMainBarWidget::RenderShowFlagsMenu()
 {
 	if (ImGui::BeginMenu("표시 옵션"))
 	{
-		// LevelManager에서 현재 레벨 가져오기
-		ULevelManager& LevelMgr = ULevelManager::GetInstance();
-		ULevel* CurrentLevel = LevelMgr.GetCurrentLevel();
+		// 현재 레벨 가져오기
+		ULevel* CurrentLevel = GWorld->GetLevel();
 		if (!CurrentLevel)
 		{
 			ImGui::Text("현재 레벨을 찾을 수 없습니다");
@@ -342,11 +340,9 @@ void UMainBarWidget::SaveCurrentLevel()
 	path FilePath = OpenSaveFileDialog();
 	if (!FilePath.empty())
 	{
-		ULevelManager& LevelManager = ULevelManager::GetInstance();
-
 		try
 		{
-			bool bSuccess = LevelManager.SaveCurrentLevel(FilePath.string());
+			bool bSuccess = GEditor->SaveCurrentLevel(FilePath.string());
 
 			if (bSuccess)
 			{
@@ -376,8 +372,7 @@ void UMainBarWidget::LoadLevel()
 	{
 		try
 		{
-			ULevelManager& LevelManager = ULevelManager::GetInstance();
-			bool bSuccess = LevelManager.LoadLevel(FilePath.string());
+			bool bSuccess = GEditor->LoadLevel(FilePath.string());
 
 			if (bSuccess)
 			{
@@ -401,8 +396,7 @@ void UMainBarWidget::LoadLevel()
  */
 void UMainBarWidget::CreateNewLevel()
 {
-	ULevelManager& LevelMgr = ULevelManager::GetInstance();
-	if (ULevelManager::GetInstance().CreateNewLevel())
+	if (GEditor->CreateNewLevel())
 	{
 		UE_LOG("MainBarWidget: 새로운 레벨이 성공적으로 생성되었습니다");
 	}

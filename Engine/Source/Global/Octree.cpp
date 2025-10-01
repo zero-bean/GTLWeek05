@@ -148,7 +148,7 @@ void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitives) cons
 
 TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitives(const FVector& FindPos, uint32 MaxPrimitiveCount)
 {
-	TArray<UPrimitiveComponent*> Candidates = ULevelManager::GetInstance().GetCurrentLevel()->GetDynamicPrimitives();
+	TArray<UPrimitiveComponent*> Candidates = GWorld->GetLevel()->GetDynamicPrimitives();
 	Candidates.reserve(MaxPrimitiveCount);
 	FNodeQueue NodeQueue;
 

@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(UStaticMeshComponentWidget, UWidget)
 
 void UStaticMeshComponentWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
