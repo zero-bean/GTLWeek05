@@ -630,10 +630,13 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// Update pipeline buffers
-	UpdateConstantBuffer(ConstantBufferModels,
-		FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
-		0, true);
+	//UpdateConstantBuffer(ConstantBufferModels,
+	//	FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
+	//	0, true);
 	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+
+	// Transform 업데이트 (메시별로)
+	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true);
 	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true);
 
 	// Bind vertex buffer
