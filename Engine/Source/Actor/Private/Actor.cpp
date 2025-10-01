@@ -152,7 +152,7 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 	}
 }
 
-void AActor::Tick()
+void AActor::Tick(float DeltaTimes)
 {
 	for (auto& Component : OwnedComponents)
 	{

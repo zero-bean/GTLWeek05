@@ -9,6 +9,7 @@
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Actor/Public/BillBoardActor.h"
+#include "Actor/Public/MovingCubeActor.h"
 #include "Actor/Public/TextActor.h"
 
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
@@ -38,6 +39,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Actor",
 		"Sphere",
 		"Cube",
+		"MovingCube",
 		"Triangle",
 		"Square",
 		"StaticMesh",
@@ -149,6 +151,10 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		else if (SelectedPrimitiveType == EPrimitiveType::Cube)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(ACubeActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::MovingCube)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(AMovingCubeActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Sphere)
 		{

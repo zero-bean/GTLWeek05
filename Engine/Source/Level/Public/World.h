@@ -47,7 +47,7 @@ public:
 	// Lifecycle & Tick
 	void BeginPlay();
 	bool EndPlay();
-	void Tick(float DeltaTime);
+	void Tick(float DeltaTimes);
 
 	// Level Management Triggers
 	TObjectPtr<ULevel> GetLevel() const;

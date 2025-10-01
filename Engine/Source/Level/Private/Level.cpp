@@ -4,12 +4,7 @@
 
 #include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
-#include "Actor/Public/CubeActor.h"
-#include "Actor/Public/SphereActor.h"
-#include "Actor/Public/TriangleActor.h"
-#include "Actor/Public/SquareActor.h"
 #include "Factory/Public/NewObject.h"
-#include "Factory/Public/FactorySystem.h"
 #include "Core/Public/Object.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
@@ -120,7 +115,7 @@ void ULevel::Update()
 	{
 		if (Actor)
 		{
-			if (Actor->CanTick()) { Actor->Tick(); }
+			if (Actor->CanTick()) { Actor->Tick(DT); }
 		}
 	}
 

@@ -61,7 +61,7 @@ bool UWorld::EndPlay()
 	return true;
 }
 
-void UWorld::Tick(float DeltaTime)
+void UWorld::Tick(float DeltaTimes)
 {
 	if (!Level || !bBegunPlay)
 	{
@@ -78,7 +78,7 @@ void UWorld::Tick(float DeltaTime)
 		{
 			if(Actor->CanTickInEditor() && Actor->CanTick())
 			{
-				Actor->Tick();
+				Actor->Tick(DeltaTimes);
 			}
 		}
 	}
@@ -89,7 +89,7 @@ void UWorld::Tick(float DeltaTime)
 		{
 			if(Actor->CanTick())
 			{
-				Actor->Tick();
+				Actor->Tick(DeltaTimes);
 			}
 		}
 	}
