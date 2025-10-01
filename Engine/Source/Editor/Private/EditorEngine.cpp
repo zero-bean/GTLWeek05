@@ -94,7 +94,7 @@ void UEditorEngine::StartPIE()
     UWorld* EditorWorld = GetEditorWorldContext().World();
     if (!EditorWorld) { return; }
 
-    UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate());
+    UWorld* PIEWorld = Cast<UWorld>(DuplicateObjectGraph(EditorWorld, this));
     
     if (PIEWorld)
     {

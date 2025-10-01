@@ -194,6 +194,10 @@ void FClientApp::ShutdownSystem() const
 	UUIManager::GetInstance().Shutdown();
 	UAssetManager::GetInstance().Release();
 
+	// Release되지 않은 UObject의 메모리 할당 해제
+	// 추후 GC가 처리할 것
+	UClass::Shutdown();
+
 	delete GEditor;
 	delete Window;
 }

@@ -492,8 +492,8 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	TIME_PROFILE(RenderStaticMeshes)
 	sort(MeshComponents.begin(), MeshComponents.end(),
 		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
-			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
-			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
+			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
+			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().ComparisonIndex : 0;
 			return MeshA < MeshB;
 		});
 
@@ -729,13 +729,10 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 	Pipeline->UpdatePipeline(PipelineInfo);
 
 	// Update pipeline buffers
-	//UpdateConstantBuffer(ConstantBufferModels,
-	//	FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
-	//	0, true);
+	UpdateConstantBuffer(ConstantBufferModels,
+		FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
+		0, true);
 	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
-
-	// Transform 업데이트 (메시별로)
-	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true);
 	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true);
 
 	// Bind vertex buffer

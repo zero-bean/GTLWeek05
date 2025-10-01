@@ -19,11 +19,29 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
-IMPLEMENT_CLASS(ULevel, UObject)
-
-ULevel::ULevel()
+AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 {
-	StaticOctree = new FOctree(FVector(0, 0, -5), 75, 0);
+	if (!InActorToDuplicate)
+	{
+		return nullptr;
+	}
+
+	// 1. 자신과 일치하는 레플리카를 생성합니다.
+	if (AActor* NewActor = Cast<AActor>(DuplicateObjectGraph(InActorToDuplicate, this)))
+	{
+		// 2. 복제된 액터를 레벨의 관리 목록에 추가합니다.
+		LevelActors.push_back(TObjectPtr(NewActor));
+
+		// 4. 액터의 Primitive 컴포넌트들을 옥트리에 등록합니다.
+		AddLevelPrimitiveComponent(NewActor);
+
+		// (선택) 복제된 액터를 즉시 선택 상태로 만들 수 있습니다.
+		SetSelectedActor(NewActor);
+
+		return NewActor;
+	}
+
+	return nullptr;
 }
 
 ULevel::ULevel(const FName& InName)
@@ -188,10 +206,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		return nullptr;
 	}
 
-	AActor* NewActor = Cast<AActor>(NewObject(InActorClass));
+	AActor* NewActor = NewObject<AActor>(nullptr, TObjectPtr(InActorClass), InName);
 	if (NewActor)
 	{
-		if (!InName.IsNone())
+		if (InName != FName::GetNone())
 		{
 			NewActor->SetName(InName);
 		}
@@ -378,23 +396,26 @@ void ULevel::ProcessPendingDeletions()
 	UE_LOG("Level: 모든 지연 삭제 프로세스 완료");
 }
 
-UObject* ULevel::Duplicate()
-{
-	ULevel* Level = Cast<ULevel>(Super::Duplicate());
-	Level->ShowFlags = ShowFlags;
-	Level->StaticOctree->SetBoundingBox(StaticOctree->GetBoundingBox());
-	return Level;
-}
 
-void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
+void ULevel::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
 {
-	Super::DuplicateSubObjects(DuplicatedObject);
-	ULevel* DuplicatedLevel = Cast<ULevel>(DuplicatedObject);
-
-	for (AActor* Actor : LevelActors)
+	Super::PostDuplicate(InDuplicationMap);
+	const ULevel* OriginalLevel = Cast<const ULevel>(SourceObject);
+	if (OriginalLevel)
 	{
-		AActor* DuplicatedActor = Cast<AActor>(Actor->Duplicate());
-		DuplicatedLevel->LevelActors.push_back(DuplicatedActor);
-		DuplicatedLevel->AddLevelPrimitiveComponent(DuplicatedActor);
+		LevelActors = OriginalLevel->LevelActors;
+		StaticOctree = new FOctree();
+		const FAABB AABB = OriginalLevel->StaticOctree->GetBoundingBox();
+		StaticOctree->SetBoundingBox(AABB);
+		DynamicPrimitives = OriginalLevel->DynamicPrimitives;
+		ShowFlags = OriginalLevel->ShowFlags;
+	}
+	for (auto& Actor : LevelActors)
+	{
+		if (Actor)
+		{
+			AddLevelPrimitiveComponent(Actor);
+			Actor->PostDuplicate(InDuplicationMap);
+		}
 	}
 }

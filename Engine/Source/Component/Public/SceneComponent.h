@@ -20,7 +20,9 @@ public:
 
 	void SetParentAttachment(USceneComponent* SceneComponent);
 	void RemoveChild(USceneComponent* ChildDeleted);
-	
+
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
+
 	virtual void MarkAsDirty();
 
 	void SetRelativeLocation(const FVector& Location);
@@ -30,14 +32,15 @@ public:
 
 	bool IsUniformScale() const;
 
-	TArray<USceneComponent*> GetChildren() { return Children; }
-
 	const FVector& GetRelativeLocation() const;
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;
 
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
+
+protected:
+	virtual void CopyPropertiesFrom(const UObject* InObject) override;
 
 private:
 	mutable bool bIsTransformDirty = true;
@@ -56,10 +59,4 @@ private:
 public:
 	float InactivityTimer = 0.0f;
 	float InactivityThreshold = 5.0f;
-
-public:
-	virtual UObject* Duplicate() override;
-
-protected:
-	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

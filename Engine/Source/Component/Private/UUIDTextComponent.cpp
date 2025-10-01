@@ -14,6 +14,7 @@ UUUIDTextComponent::UUUIDTextComponent() : ZOffset(0.0f) {};
 
 UUUIDTextComponent::~UUUIDTextComponent()
 {
+	POwnerActor = nullptr;
 }
 
 void UUUIDTextComponent::OnSelected()
@@ -28,7 +29,7 @@ void UUUIDTextComponent::OnDeselected()
 
 void UUUIDTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
 {
-	const FVector& OwnerActorLocation = GetOwner()->GetActorLocation();
+	const FVector& OwnerActorLocation = POwnerActor->GetActorLocation();
 
 	FVector ToCamera = InCameraLocation - OwnerActorLocation;
 	ToCamera.Normalize();

@@ -21,13 +21,23 @@ public:
 	void SetText(const FString& InText);
 
 	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
-private:
-	FString Text = FString("Text");
-
+	
 public:
 	virtual UObject* Duplicate() override;
-
+	
 protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
-
+	
+private:
+	FString Text = FString("Text");
+	FAABB PickingAreaBoundingBox;
+	
+	TArray<FNormalVertex> PickingAreaVertex;
+	const static inline TArray<uint32> PickingAreaIndex =
+	{
+		// First Triangle
+		0, 1, 2,
+		// Second Triangle
+		1, 3, 2
+	};
 };

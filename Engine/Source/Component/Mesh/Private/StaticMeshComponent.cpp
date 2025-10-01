@@ -140,19 +140,3 @@ void UStaticMeshComponent::SetMaterial(int32 Index, UMaterial* InMaterial)
 	}
 	OverrideMaterials[Index] = InMaterial;
 }
-
-UObject* UStaticMeshComponent::Duplicate()
-{
-	UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(Super::Duplicate());
-
-	StaticMeshComponent->bIsScrollEnabled = bIsScrollEnabled;
-	StaticMeshComponent->ElapsedTime = ElapsedTime;
-	StaticMeshComponent->StaticMesh = StaticMesh;
-	StaticMeshComponent->OverrideMaterials = OverrideMaterials;
-	return StaticMeshComponent;
-}
-
-void UStaticMeshComponent::DuplicateSubObjects(UObject* DuplicatedObject)
-{
-	Super::DuplicateSubObjects(DuplicatedObject);
-}

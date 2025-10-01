@@ -3,147 +3,145 @@
 #include <algorithm> // for std::transform
 #include <cctype>    // for std::tolower
 
-FName::FName() : DisplayIndex(0), ComparisonIndex(0), Number(-1)
+// '최초 사용 시 생성(Construct on First Use)' 기법을 적용하기 위한 헬퍼 함수들입니다.
+// 익명 네임스페이스를 사용하여 이 파일 외부에서는 접근할 수 없도록 합니다.
+namespace
 {
-}
+	// DisplayNames 배열에 대한 접근자
+	TArray<FString>& GetDisplayNames()
+	{
+		// 이 함수가 최초로 호출될 때 단 한 번만 안전하게 초기화됩니다.
+		static TArray<FString> DisplayNames = { "None" };
+		return DisplayNames;
+	}
 
-FName::FName(const FString& Str)
-{
-    TPair<int32, int32> Indices = FNameTable::GetInstance().FindOrAddName(Str);
-    ComparisonIndex = Indices.first;
-    DisplayIndex = Indices.second;
-    Number = -1;
-}
+	// NameMap에 대한 접근자
+	TMap<FString, uint32>& GetNameMap()
+	{
+		static TMap<FString, uint32> NameMap = { {"none", 0} };
+		return NameMap;
+	}
 
-FName::FName(const char* Str) : FName(FString(Str)) { }
+	// NextIndex 카운터에 대한 접근자
+	uint32& GetNextIndex()
+	{
+		static uint32 NextIndex = 1;
+		return NextIndex;
+	}
+}
 
 /**
-* @brief NameTable에서 UniqueName을 만들 때 사용하는 생성자
-* 
-*/
-FName::FName(int32 InDisplayIndex, int32 InComparisonIndex, int32 InNumber)
-    : DisplayIndex(InDisplayIndex), ComparisonIndex(InComparisonIndex), Number(InNumber) {}
-
-bool FName::operator==(const FName& Other) const
+ * @brief 'None' 값을 나타내는 정적 FName 객체를 반환합니다.
+ */
+const FName& FName::GetNone()
 {
-    return ComparisonIndex == Other.ComparisonIndex && Number == Other.Number;
+	static const FName NoneInstance(0);
+	return NoneInstance;
 }
 
-int32 FName::Compare(const FName& Other) const
-{
-    if (*this == Other) { return 0; }
-
-    // ComparisonIndex로 먼저 비교
-    if (ComparisonIndex < Other.ComparisonIndex) { return -1; }
-    if (ComparisonIndex > Other.ComparisonIndex) { return 1; }
-
-    // ComparisonIndex가 같으면 Number로 비교
-    if (Number < Other.Number) { return -1; }
-    if (Number > Other.Number) { return 1; }
-
-    return 0;
-}
-
-FString FName::ToString() const
-{
-    FString BaseName = FNameTable::GetInstance().GetDisplayString(DisplayIndex);
-    if (Number >= 0)
-    {
-        return BaseName + "_" + to_string(Number);
-    }
-    return BaseName;
-}
-
-FString FName::ToBaseNameString() const
-{
-    return FNameTable::GetInstance().GetDisplayString(DisplayIndex);
-}
-
-FName FName::GetNone()
-{
-    return None;
-}
-const FName FName::None(0, 0, -1); 
-
-// FNameTable
 /**
-* @brief FString 객체를 받아 풀에 없으면 반환
-* @param Str FName으로 등록되었는지 확인할 FString
-* @return DisplayIndex, ComparisonIndex
-*/
-FNameTable::FNameTable()
+ * @brief FName 생성자
+ * @param InString FString 타입의 문자열
+ */
+FName::FName(const FString& InString)
 {
-    ComparisonMap["None"] = 0;
-    DisplayMap["None"] = 0;
+	// 비교는 Lower로 진행
+	FString LowerString = InString;
+	std::transform(LowerString.begin(), LowerString.end(), LowerString.begin(),
+		[](unsigned char InChar) { return std::tolower(InChar); });
+
+	// 헬퍼 함수를 통해 안전하게 NameMap에 접근합니다.
+	auto& NameMapRef = GetNameMap();
+	auto FindResult = NameMapRef.find(LowerString);
+
+	// 동일 이름이 존재하지 않는 경우
+	if (FindResult == NameMapRef.end())
+	{
+		// 헬퍼 함수를 통해 안전하게 정적 데이터들을 수정합니다.
+		auto& NextIndexRef = GetNextIndex();
+		NameMapRef.insert({ LowerString, NextIndexRef });
+		GetDisplayNames().push_back(InString);
+
+		// 인덱스 제공
+		ComparisonIndex = NextIndexRef++;
+		DisplayIndex = ComparisonIndex;
+	}
+	// 이미 존재하는 경우
+	else
+	{
+		ComparisonIndex = FindResult->second;
+		DisplayIndex = ComparisonIndex;
+	}
 }
 
-FNameTable::~FNameTable() = default;
-
-FNameTable& FNameTable::GetInstance()
+FName::FName() : FName(FString(""))
 {
-    static FNameTable Instance;
-    return Instance;
 }
 
-TPair<int32, int32> FNameTable::FindOrAddName(const FString& Str)
+/**
+ * @brief c-style 문자열을 인자로 받는 FName 생성자
+ * @param InStringPtr c-style 문자열
+ */
+FName::FName(const char* InStringPtr)
+	: FName(FString(InStringPtr))
 {
-    FString LowerStr = ToLower(Str);
-
-    int32 ComparisonIndex;
-    auto ItComparison = ComparisonMap.find(LowerStr);
-    if (ItComparison != ComparisonMap.end())
-    {
-        ComparisonIndex = ItComparison->second;
-    }
-    else
-    {
-        ComparisonIndex = ComparisonStringPool.size();
-        ComparisonStringPool.push_back(LowerStr);
-        ComparisonMap[LowerStr] = ComparisonIndex;
-    }
-
-    int32 DisplayIndex;
-    auto ItDisplay = DisplayMap.find(Str);
-    if (ItDisplay != DisplayMap.end())
-    {
-        DisplayIndex = ItDisplay->second;
-    }
-    else
-    {
-        DisplayIndex = DisplayStringPool.size();
-        DisplayStringPool.push_back(Str);
-        DisplayMap[Str] = DisplayIndex;
-    }
-
-    return { ComparisonIndex, DisplayIndex };
 }
 
-FName FNameTable::GetUniqueName(const FString& BaseStr)
+/**
+ * @brief 특정 인덱스로 FName을 생성하는 private 생성자
+ */
+FName::FName(int32 InComparisonIndex)
 {
-    TPair<int32, int32> Indices = FindOrAddName(BaseStr);
-    int32 DisplayIndex = Indices.second;
-    int32 ComparisonIndex = Indices.first;
-
-    int32 Number = NextNumberMap[BaseStr];
-    NextNumberMap[BaseStr]++;
-
-    return FName(DisplayIndex, ComparisonIndex, Number);
+	this->ComparisonIndex = InComparisonIndex;
+	this->DisplayIndex = this->ComparisonIndex;
 }
 
-FString FNameTable::GetDisplayString(int32 Idx) const
+
+/**
+ * @brief 두 FName을 비교하는 멤버 함수
+ * @param InOther 다른 FName
+ * @return 둘 사이의 인덱스 거리 차이
+ */
+int32 FName::Compare(const FName& InOther) const
 {
-    if (Idx >= 0 && Idx < DisplayStringPool.size())
-    {
-        return DisplayStringPool[Idx];
-    }
-    static const FString EmptyString = "None";
-    return EmptyString;
+	return this->ComparisonIndex - InOther.ComparisonIndex;
 }
 
-FString FNameTable::ToLower(const FString& Str) const
+/**
+ * FName 비교 연산자
+ * @param InOther 비교할 다른 FName
+ * @return 같은지 여부
+ */
+bool FName::operator==(const FName& InOther) const
 {
-    FString LowerStr = Str;
-    std::transform(LowerStr.begin(), LowerStr.end(), LowerStr.begin(),
-        [](unsigned char C) { return std::tolower(C); });
-    return LowerStr;
+	return this->Compare(InOther) == 0;
+}
+
+/**
+ * FName 비교 연산자 (부등호)
+ * @param InOther 비교할 다른 FName
+ * @return 다른지 여부
+ */
+bool FName::operator!=(const FName& InOther) const
+{
+	return !(*this == InOther);
+}
+
+/**
+ * @brief 사용자가 제공한 이름을 반환하는 멤버 함수
+ * @return DisplayName
+ */
+const FString& FName::ToString() const
+{
+	// 헬퍼 함수를 통해 안전하게 DisplayNames에 접근합니다.
+	return GetDisplayNames()[DisplayIndex];
+}
+
+/**
+ * @brief Display 이름을 변경하는 함수
+ * @param InDisplayName 변경할 새로운 이름
+ */
+void FName::SetDisplayName(const FString& InDisplayName) const
+{
+	GetDisplayNames()[this->DisplayIndex] = InDisplayName;
 }
