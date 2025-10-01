@@ -129,12 +129,6 @@ void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
 	{
 		GWorld->GetLevel()->RegisterPrimitiveComponent(PrimitiveComponent);
 	}
-
-UObject* AActor::Duplicate()
-{
-	AActor* Actor = Cast<AActor>(Super::Duplicate());
-	Actor->bCanEverTick = bCanEverTick;
-	return Actor;
 }
 
 void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
