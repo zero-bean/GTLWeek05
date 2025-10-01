@@ -16,8 +16,15 @@ UTextComponent::UTextComponent()
 {
 	Type = EPrimitiveType::Text;
 
-	RenderState.CullMode = ECullMode::Back;
-	RenderState.FillMode = EFillMode::Solid;
+	UAssetManager& ResourceManager = UAssetManager::GetInstance();
+
+	Vertices = &PickingAreaVertex;
+	NumVertices = PickingAreaVertex.size();
+
+	Indices = &PickingAreaIndex;
+	NumIndices = PickingAreaIndex.size();
+
+	RegulatePickingAreaByTextLength();
 }
 
 UTextComponent::~UTextComponent()
@@ -28,9 +35,43 @@ void UTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation) {}
 FMatrix UTextComponent::GetRTMatrix() const { return FMatrix(); }
 
 const FString& UTextComponent::GetText() { return Text; }
-void UTextComponent::SetText(const FString& InText) { Text = InText; }
+void UTextComponent::SetText(const FString& InText)
+{
+	Text = InText;
+	RegulatePickingAreaByTextLength();
+}
 
 TObjectPtr<UClass> UTextComponent::GetSpecificWidgetClass() const
 {
 	return USetTextComponentWidget::StaticClass();
+}
+
+void UTextComponent::RegulatePickingAreaByTextLength()
+{
+	PickingAreaVertex.clear();
+	int32 NewStrLen = Text.size();
+
+	const static TPair<int32, int32> Offset[] =
+	{
+		{-1, 1},
+		{1, 1},
+		{-1, -1},
+		{1, -1}
+	};
+
+	for (int i = 0; i < 4; i++)
+	{
+		FNormalVertex NewVertex = {
+			{0.0f, 0.5f * NewStrLen * Offset[i].first, 0.5f * Offset[i].second},
+			{}, {}, {}
+		};
+		PickingAreaVertex.push_back(NewVertex);
+	}
+
+	PickingAreaBoundingBox =
+		FAABB(
+			FVector(0.0f, -0.5f * NewStrLen, -0.5f),
+			FVector(0.0f, 0.5f * NewStrLen, 0.5f)
+		);
+	BoundingBox = &PickingAreaBoundingBox;
 }

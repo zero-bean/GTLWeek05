@@ -10,8 +10,9 @@ IMPLEMENT_CLASS(UBillBoardComponent, UPrimitiveComponent)
 
 UBillBoardComponent::UBillBoardComponent()
 {
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 	Type = EPrimitiveType::Sprite;
+	
+    UAssetManager& ResourceManager = UAssetManager::GetInstance();
 
 	Vertices = ResourceManager.GetVertexData(Type);
 	VertexBuffer = ResourceManager.GetVertexbuffer(Type);

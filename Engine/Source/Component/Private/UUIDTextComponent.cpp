@@ -10,13 +10,16 @@ IMPLEMENT_CLASS(UUUIDTextComponent, UTextComponent)
  * Actor has a UBillBoardComponent
  */
 
-UUUIDTextComponent::UUUIDTextComponent() : POwnerActor(nullptr), ZOffset(0.0f) {};
+UUUIDTextComponent::UUUIDTextComponent() : POwnerActor(nullptr), ZOffset(0.0f)
+{
+	Type = EPrimitiveType::UUID;
+};
 
 UUUIDTextComponent::UUUIDTextComponent(AActor* InOwnerActor, float InYOffset)
 	: POwnerActor(InOwnerActor)
 	, ZOffset(InYOffset)
 {
-	Type = EPrimitiveType::Text;
+	Type = EPrimitiveType::UUID;
 	SetVisibility(false); // 현재는 시작하자마자 Visibility False, Select 시 True되는 시스템
 }
 
