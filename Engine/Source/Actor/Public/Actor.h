@@ -98,10 +98,6 @@ public:
 
 		if (NewComponent)
 		{
-			// 2. 정의하신 NewObject는 고유 이름을 자동 설정하므로,
-			//    여기서 원하는 이름(InName)으로 다시 설정(SetName)해줍니다.
-			NewComponent->SetName(InName);
-
 			// 3. 컴포넌트를 액터에 등록합니다.
 			RegisterComponent(NewComponent);
 		}

@@ -127,10 +127,7 @@ void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
 
 	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InNewComponent.Get()))
 	{
-		if (ULevel* OwnerLevel = Cast<ULevel>(GetOuter()))
-		{
-			OwnerLevel->RegisterPrimitiveComponent(PrimitiveComponent);
-		}
+		GWorld->GetLevel()->RegisterPrimitiveComponent(PrimitiveComponent);
 	}
 
 	if (bBegunPlay)

@@ -216,12 +216,6 @@ void ULevel::RegisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 		return;
 	}
 
-	// 텍스트 타입은 Octree에 넣지 않음 (기존 로직과 동일)
-	if (InComponent->GetPrimitiveType() == EPrimitiveType::Text)
-	{
-		return;
-	}
-
 	// StaticOctree에 먼저 삽입 시도
 	if (StaticOctree->Insert(InComponent) == false)
 	{

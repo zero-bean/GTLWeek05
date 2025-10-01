@@ -122,12 +122,10 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 {
 	if (!InSelectedActor) return;
 
-	const TArray<TObjectPtr<UActorComponent>>& Components = InSelectedActor->GetOwnedComponents();
+	const auto& Components = InSelectedActor->GetOwnedComponents();
 
 	ImGui::Text("Components (%d)", static_cast<int>(Components.size()));
-
 	RenderAddComponentButton(InSelectedActor);
-
 	ImGui::Separator();
 
 	if (Components.empty())
@@ -136,73 +134,51 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 		return;
 	}
 
-	for (int32 i = 0; i < static_cast<int32>(Components.size()); ++i)
+	// 모든 컴포넌트 중 부모가 없는 최상위 컴포넌트만 찾아 재귀 렌더링을 시작합니다.
+	for (const auto& Component : Components)
 	{
-		if (Components[i])
+		if (!Component) continue;
+
+		USceneComponent* SceneComp = Cast<USceneComponent>(Component.Get());
+		// SceneComponent가 아니거나, 부모가 없는 SceneComponent가 최상위입니다.
+		if (!SceneComp || !SceneComp->GetParentAttachment())
 		{
-			RenderComponentNode(Components[i]);
+			RenderComponentNodeRecursive(Component.Get());
 		}
 	}
 }
 
-/**
- * @brief 컴포넌트에 대한 정보를 표시하는 함수
- * 내부적으로 RTTI를 활용한 GetName 처리가 되어 있음
- * @param InComponent
- */
-void UActorDetailWidget::RenderComponentNode(TObjectPtr<UActorComponent> InComponent)
+void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InComponent)
 {
-	if (!InComponent)
-	{
-		return;
-	}
+	if (!InComponent) return;
 
-	// 컴포넌트 타입에 따른 아이콘
-	FName ComponentTypeName = InComponent.Get()->GetClass()->GetName();
-	FString ComponentIcon = "[C]"; // 기본 컴포넌트 아이콘
+	USceneComponent* SceneComponent = Cast<USceneComponent>(InComponent);
+	FString ComponentName = InComponent->GetName().ToString();
 
-	if (Cast<UPrimitiveComponent>(InComponent))
-	{
-		ComponentIcon = "[P]"; // PrimitiveComponent 아이콘
-	}
-	else if (Cast<USceneComponent>(InComponent))
-	{
-		ComponentIcon = "[S]"; // SceneComponent 아이콘
-	}
-
-	// 트리 노드 생성
-	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	// 현재 컴포넌트가 선택된 컴포넌트라면 Selected 플래그를 추가
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (!SceneComponent || SceneComponent->GetChildren().empty())
+		NodeFlags |= ImGuiTreeNodeFlags_Leaf;
 	if (SelectedComponent == InComponent)
-	{
 		NodeFlags |= ImGuiTreeNodeFlags_Selected;
-	}
 
-	FString NodeLabel = ComponentIcon + " " + InComponent->GetName().ToString();
-	ImGui::TreeNodeEx(NodeLabel.data(), NodeFlags);
+	// Use the component's pointer as a unique ID for the tree node.
+	bool bNodeOpen = ImGui::TreeNodeEx((void*)InComponent, NodeFlags, "%s", ComponentName.data());
 
-	// 노드를 클릭하면 SelectedComponent를 업데이트
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = InComponent;
-		UE_LOG("ActorDetailWidget: Selected component changed to '%s'", InComponent->GetName().ToString().data());
 	}
 
-	// 컴포넌트 세부 정보를 추가로 표시할 수 있음
-	if (ImGui::IsItemHovered())
+	if (bNodeOpen)
 	{
-		// 컴포넌트 타입 정보를 툴팁으로 표시
-		ImGui::SetTooltip("Component Type: %s", ComponentTypeName.ToString().data());
-	}
-
-	// PrimitiveComponent인 경우 추가 정보
-	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InComponent))
-	{
-		ImGui::SameLine();
-		ImGui::TextColored(
-			PrimitiveComponent->IsVisible() ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-			PrimitiveComponent->IsVisible() ? "[Visible]" : "[Hidden]"
-		);
+		if (SceneComponent)
+		{
+			for (auto& Child : SceneComponent->GetChildren())
+			{
+				RenderComponentNodeRecursive(Child);
+			}
+		}
+		ImGui::TreePop();
 	}
 }
 
@@ -347,7 +323,6 @@ void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, 
 		UE_LOG_SUCCESS("Non-Scene Component '%s'를 액터에 추가했습니다.", NewComponentName.ToString().data());
 	}
 }
-
 
 void UActorDetailWidget::StartRenamingActor(TObjectPtr<AActor> InActor)
 {

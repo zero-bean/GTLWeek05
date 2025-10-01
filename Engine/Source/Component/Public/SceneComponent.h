@@ -30,6 +30,7 @@ public:
 
 	bool IsUniformScale() const;
 
+	USceneComponent* GetParentAttachment() { return ParentAttachment; }
 	TArray<USceneComponent*> GetChildren() { return Children; }
 
 	const FVector& GetRelativeLocation() const;

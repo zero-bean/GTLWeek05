@@ -32,7 +32,7 @@ private:
 	// Helper functions
 	void RenderActorHeader(TObjectPtr<AActor> InSelectedActor);
 	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
-	void RenderComponentNode(TObjectPtr<UActorComponent> InComponent);
+	void RenderComponentNodeRecursive(UActorComponent* InComponent);
 	void RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor);
 	bool CenteredSelectable(const char* label);
 	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
