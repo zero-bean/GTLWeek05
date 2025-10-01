@@ -47,12 +47,6 @@ void USpriteSelectionWidget::Update()
 
 void USpriteSelectionWidget::RenderWidget()
 {
-	// Memory Information
-	// ImGui::Text("레벨 메모리 정보");
-	// ImGui::Text("Level Object Count: %u", LevelObjectCount);
-	// ImGui::Text("Level Memory: %.3f KB", static_cast<float>(LevelMemoryByte) / KILO);
-	// ImGui::Separator();
-
 	if (!SelectedActor)
 		return;
 	
@@ -64,7 +58,7 @@ void USpriteSelectionWidget::RenderWidget()
 	static int current_item = 0; // 현재 선택된 인덱스
 
 	// 예제 문자열 목록
-	TArray<const char*> items;
+	TArray<FString> items;
 	const TMap<FName, ID3D11ShaderResourceView*>& TextureCache = \
 		UAssetManager::GetInstance().GetTextureCache();
 
@@ -74,15 +68,17 @@ void USpriteSelectionWidget::RenderWidget()
 		if (Itr->first == SelectedBillBoard->GetSprite().first)
 			current_item = i;
 
-		items.push_back(Itr->first.ToString().c_str());
+		items.push_back(Itr->first.ToString());
 	}
 
-	if (ImGui::BeginCombo("Sprite", items[current_item])) // Label과 현재 값 표시
+	sort(items.begin(), items.end());
+	
+	if (ImGui::BeginCombo("Sprite", items[current_item].c_str())) // Label과 현재 값 표시
 	{
 		for (int n = 0; n < items.size(); n++)
 		{
 			bool is_selected = (current_item == n);
-			if (ImGui::Selectable(items[n], is_selected))
+			if (ImGui::Selectable(items[n].c_str(), is_selected))
 			{
 				current_item = n;
 				SetSpriteOfActor(items[current_item]);

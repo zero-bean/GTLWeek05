@@ -64,9 +64,9 @@ void USetTextComponentWidget::RenderWidget()
 	static char buf[256] = "";
 	const FString& TextOfComponent = SelectedTextComponent->GetText();
 	memcpy(buf, TextOfComponent.c_str(), std::min(sizeof(buf), TextOfComponent.size()));
-	const char* TagName = (FString("TypeText##") + std::to_string(WidgetNum)).c_str();
+	FString TagName = FString("TypeText##") + std::to_string(WidgetNum);
 
-	if (ImGui::InputText(TagName, buf, IM_ARRAYSIZE(buf)))
+	if (ImGui::InputText(TagName.c_str(), buf, IM_ARRAYSIZE(buf)))
 	{
 		SelectedTextComponent->SetText(FString(buf));
 	}

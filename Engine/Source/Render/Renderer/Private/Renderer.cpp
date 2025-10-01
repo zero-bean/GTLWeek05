@@ -351,7 +351,6 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 				Texts.push_back(Text);
 				if (GEditor->GetEditorModule()->GetPickedBillboard() == \
 					Cast<UUUIDTextComponent>(Text))
-					UE_LOG("Damn");
 				continue;
 			}
 
