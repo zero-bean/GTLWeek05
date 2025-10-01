@@ -126,7 +126,7 @@ void UFontRenderer::Release()
 
 /// @brief 임의의 텍스트 렌더링
 void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionCostants,
-	float CenterY, float StartZ, float CharWidth, float CharHeight)
+	float CenterY, float StartZ, float CharWidth, float CharHeight, bool DepthTest)
 {
     if (!Text || strlen(Text) == 0)
     {
@@ -320,10 +320,20 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
 	Device->CreateRasterizerState(&rasterDesc, &solidState);
 	DeviceContext->RSSetState(solidState);
 
-	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-	dsDesc.DepthEnable = FALSE;   // 깊이 검사 끄기
-	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	dsDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+
+    if (DepthTest)
+    {
+        dsDesc.DepthEnable = TRUE;   // 깊이 검사 켜기
+        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+    }
+    else
+    {
+        dsDesc.DepthEnable = FALSE;   // 깊이 검사 끄기
+        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        dsDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    }
 
 	ID3D11DepthStencilState* depthDisabledState = nullptr;
 	Device->CreateDepthStencilState(&dsDesc, &depthDisabledState);
