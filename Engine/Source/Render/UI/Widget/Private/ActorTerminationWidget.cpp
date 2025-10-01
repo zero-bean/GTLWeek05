@@ -53,7 +53,7 @@ void UActorTerminationWidget::RenderWidget()
 
 		// ImGui Deprecated (굳이 명시적인 버튼이 없어도 관용적으로 이해할 수 있는 키 매핑)
 		// if (ImGui::Button("Delete Actor") || InputManager.IsKeyDown(EKeyInput::Delete))
-		if (InputManager.IsKeyDown(EKeyInput::Delete))
+		if (InputManager.IsKeyPressed(EKeyInput::Delete))
 		{
 			DeleteSelectedActor();
 		}
@@ -88,7 +88,7 @@ void UActorTerminationWidget::DeleteSelectedActor()
 	       SelectedActor->GetName() == FName::GetNone() ? "UnNamed" : SelectedActor->GetName().ToString().data());
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
-	CurrentLevel->MarkActorForDeletion(SelectedActor);
+	GWorld->DestroyActor(SelectedActor);
 
 	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
 	SelectedActor = nullptr;

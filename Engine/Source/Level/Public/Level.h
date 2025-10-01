@@ -47,8 +47,6 @@ public:
 	~ULevel() override;
 
 	virtual void Init();
-	virtual void Update();
-	virtual void Tick(float DeltaTime);
 	virtual void Render();
 	virtual void Cleanup();
 
@@ -63,7 +61,6 @@ public:
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 
 	bool DestroyActor(AActor* InActor);
-	void MarkActorForDeletion(AActor* InActor);
 
 	void SetSelectedActor(AActor* InActor);
 	TObjectPtr<AActor> GetSelectedActor() const { return SelectedActor; }

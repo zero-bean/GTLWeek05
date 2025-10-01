@@ -11,6 +11,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Actor/Public/CubeActor.h"
+#include "Actor/Public/MovingCubeActor.h"
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/StaticMeshActor.h"
@@ -24,6 +25,10 @@ FString FActorTypeMapper::ActorToType(UClass* InClass)
 	if (TypeName == ACubeActor::StaticClass()->GetName())
 	{
 		return "Cube";
+	}
+	else if (TypeName == AMovingCubeActor::StaticClass()->GetName())
+	{
+		return "MovingCube";
 	}
 	else if (TypeName == ASphereActor::StaticClass()->GetName())
 	{
@@ -52,6 +57,10 @@ UClass* FActorTypeMapper::TypeToActor(const FString& InTypeString)
 	if (InTypeString == "Cube")
 	{
 		NewActorClass = ACubeActor::StaticClass();
+	}
+	else if (InTypeString == "MovingCube")
+	{
+		NewActorClass = AMovingCubeActor::StaticClass();
 	}
 	else if (InTypeString == "Sphere")
 	{

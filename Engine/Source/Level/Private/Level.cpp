@@ -4,12 +4,7 @@
 
 #include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
-#include "Actor/Public/CubeActor.h"
-#include "Actor/Public/SphereActor.h"
-#include "Actor/Public/TriangleActor.h"
-#include "Actor/Public/SquareActor.h"
 #include "Factory/Public/NewObject.h"
-#include "Factory/Public/FactorySystem.h"
 #include "Core/Public/Object.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
@@ -97,7 +92,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		for (const TObjectPtr<AActor>& Actor : LevelActors)
 		{
 			JSON PrimitiveJson;
-			PrimitiveJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());;
+			PrimitiveJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());
 			Actor->Serialize(bInIsLoading, PrimitiveJson);
 
 			PrimitivesJson[std::to_string(Actor->GetUUID())] = PrimitiveJson;
@@ -111,49 +106,6 @@ void ULevel::Init()
 	// TEST CODE
 }
 
-void ULevel::Update()
-{
-	// Process Delayed Task
-	ProcessPendingDeletions();
-
-	for (auto& Actor : LevelActors)
-	{
-		if (Actor)
-		{
-			if (Actor->CanTick()) { Actor->Tick(); }
-		}
-	}
-
-	/* * 
-	* 해당 코드는 불법 증축을 진행한 코드입니다. 이 코드를 정상화하는 방법은 다음과 같습니다.
-	* 1. 모든 액터 및 컴포넌트의 bEverTick 관련 기능을 싹 걷어야 합니다.
-	* 2. Scencomponent의 TickComponent에 시간 체크 기능을 넣으면 됩니다.
-	* 성능 저하로 인해 Week05 한정으로 만든 코드이니 잘 처리하시길 바랍니다. [PYB]
-	*/
-	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
-	{
-		if (Primitive == nullptr) { continue; }
-
-		Primitive->InactivityTimer += UTimeManager::GetInstance().GetDeltaTime();
-		if (Primitive->InactivityTimer >= Primitive->InactivityThreshold)
-		{
-			if (StaticOctree->Insert(Primitive))
-			{
-				if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), Primitive); It != DynamicPrimitives.end())
-				{
-					*It = std::move(DynamicPrimitives.back());
-					DynamicPrimitives.pop_back();
-				}
-				Primitive->InactivityTimer = 0.f;
-			}
-		}
-	}
-}
-
-void ULevel::Tick(float DeltaTime)
-{
-}
-
 void ULevel::Render()
 {
 }
@@ -162,22 +114,19 @@ void ULevel::Cleanup()
 {
 	SetSelectedActor(nullptr);
 
-	// 1. 지연 삭제 목록에 남아있는 액터들을 먼저 처리합니다.
-	ProcessPendingDeletions();
-
-	// 2. LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
+	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
 	for (const auto& Actor : LevelActors)
 	{
 		delete Actor;
 	}
 	LevelActors.clear();
 
-	// 3. 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
+	// 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
 	SafeDelete(StaticOctree);
 	DynamicPrimitives.clear();
 	ActorsToDelete.clear();
 
-	// 4. 선택된 액터 참조를 안전하게 해제합니다.
+	// 선택된 액터 참조를 안전하게 해제합니다.
 	SelectedActor = nullptr;
 }
 
@@ -195,12 +144,12 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		{
 			NewActor->SetName(InName);
 		}
+		LevelActors.push_back(TObjectPtr(NewActor));
+		NewActor->InitializeComponents();
 		if (ActorJsonData != nullptr)
 		{
 			NewActor->Serialize(true, *ActorJsonData);
 		}
-		LevelActors.push_back(TObjectPtr(NewActor));
-		NewActor->InitializeComponents();
 		NewActor->BeginPlay();
 		AddLevelPrimitiveComponent(NewActor);
 		return NewActor;
@@ -286,52 +235,20 @@ bool ULevel::DestroyActor(AActor* InActor)
 	{
 		*It = std::move(LevelActors.back());
 		LevelActors.pop_back();
-
-		return true;
 	}
 
 
 	// Remove Actor Selection
 	if (SelectedActor == InActor)
 	{
-		SelectedActor = nullptr;
+		SetSelectedActor(nullptr);
 	}
 
 	// Remove
-	delete InActor;
+	SafeDelete(InActor);
 
 	UE_LOG("Level: Actor Destroyed Successfully");
 	return true;
-}
-
-// 지연 삭제를 위한 마킹
-void ULevel::MarkActorForDeletion(AActor* InActor)
-{
-	if (!InActor)
-	{
-		UE_LOG("Level: MarkActorForDeletion: InActor Is Null");
-		return;
-	}
-
-	// 이미 삭제 대기 중인지 확인
-	for (AActor* PendingActor : ActorsToDelete)
-	{
-		if (PendingActor == InActor)
-		{
-			UE_LOG("Level: Actor Already Marked For Deletion");
-			return;
-		}
-	}
-
-	// 삭제 대기 리스트에 추가
-	ActorsToDelete.push_back(InActor);
-	UE_LOG("Level: 다음 Tick에 Actor를 제거하기 위한 마킹 처리: %s", InActor->GetName().ToString().data());
-
-	// 선택 해제는 바로 처리
-	if (SelectedActor == InActor)
-	{
-		SelectedActor = nullptr;
-	}
 }
 
 void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* Primitive)
