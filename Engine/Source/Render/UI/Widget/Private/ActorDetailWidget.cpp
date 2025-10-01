@@ -201,13 +201,23 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 
 			USceneComponent* DraggedScene = Cast<USceneComponent>(DraggedComp);
 			USceneComponent* TargetScene = Cast<USceneComponent>(InComponent);
-			TObjectPtr<AActor> Owner = DraggedScene ? DraggedScene->GetOwner() : nullptr;
-			if (!Owner) { ImGui::EndDragDropTarget(); return; }
+			TObjectPtr<AActor> Owner = DraggedComp->GetOwner();
+			if (!Owner)
+			{
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
+			// 사용자의 요청에 따라, 최상위 컴포넌트(Root Component)를 드롭 대상으로 지정할 수 없습니다.
+			if (InComponent == Owner->GetRootComponent())
+			{
+				ImGui::EndDragDropTarget();
+				return;
+			}
 
 			// -----------------------------
 			// 자기 자신이나 자식에게 Drop 방지
 			// -----------------------------
-			bool bInvalidDrop = false;
 			if (DraggedScene && TargetScene)
 			{
 				USceneComponent* Iter = TargetScene;
@@ -215,49 +225,45 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 				{
 					if (Iter == DraggedScene)
 					{
-						bInvalidDrop = true;
-						break;
+						UE_LOG_WARNING("Cannot drop onto self or own child.");
+						ImGui::EndDragDropTarget();
+						return;
 					}
 					Iter = Iter->GetParentAttachment();
 				}
 			}
-			if (bInvalidDrop)
-			{
-				UE_LOG_WARNING("Cannot drop onto self or own child.");
-				ImGui::EndDragDropTarget();
-				return;
-			}
 
 			// -----------------------------
-			// 기존 부모에서 detach
+			// 부모-자식 관계 설정
 			// -----------------------------
 			if (DraggedScene)
 			{
+				// 드롭 대상이 유효한 SceneComponent가 아니면, 작업을 진행하지 않습니다.
+				if (!TargetScene)
+				{
+					ImGui::EndDragDropTarget();
+					return;
+				}
+
+				// 자기 부모에게 드롭하는 경우, 아무 작업도 하지 않음
+				if (TargetScene == DraggedScene->GetParentAttachment())
+				{
+					ImGui::EndDragDropTarget();
+					return;
+				}
+
+				// 1. 이전 부모로부터 분리
 				if (USceneComponent* OldParent = DraggedScene->GetParentAttachment())
 				{
 					OldParent->RemoveChild(DraggedScene);
 				}
-			}
 
-			// -----------------------------
-			// Target의 자식으로 attach (월드 트랜스폼 유지)
-			// -----------------------------
-			if (DraggedScene && TargetScene)
-			{
-				// 1. 드래그된 컴포넌트의 현재 월드 트랜스폼을 저장합니다.
+				// 2. 새로운 부모에 연결하고 월드 트랜스폼 유지
 				const FMatrix OldWorldMatrix = DraggedScene->GetWorldTransformMatrix();
-
-				// 2. 부모를 변경합니다.
 				DraggedScene->SetParentAttachment(TargetScene);
-
-				// 3. 새 부모의 월드 트랜스폼의 역행렬을 구합니다.
 				const FMatrix NewParentWorldMatrixInverse = TargetScene->GetWorldTransformMatrixInverse();
-
-				// 4. 드래그된 컴포넌트의 새 로컬 트랜스폼을 계산합니다.
-				// NewLocal = OldWorld * NewParentInverse
 				const FMatrix NewLocalMatrix = OldWorldMatrix * NewParentWorldMatrixInverse;
 
-				// 5. 계산된 로컬 트랜스폼을 컴포넌트에 적용합니다.
 				FVector NewLocation, NewRotation, NewScale;
 				DecomposeMatrix(NewLocalMatrix, NewLocation, NewRotation, NewScale);
 
@@ -265,24 +271,18 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 				DraggedScene->SetRelativeRotation(NewRotation);
 				DraggedScene->SetRelativeScale3D(NewScale);
 			}
+			// -----------------------------
+			// Non-SceneComponent는 순서만 변경
+			// -----------------------------
 			else
 			{
-				// SceneComponent가 아닌 경우 → 최상위에 push (월드 트랜스폼 유지)
 				auto& Components = Owner->GetOwnedComponents();
 				auto it = std::find(Components.begin(), Components.end(), DraggedComp);
-				if (it != Components.end()) Components.erase(it);
-				Components.push_back(DraggedComp);
-			}
-
-			// -----------------------------
-			// Components 배열 순서 갱신
-			// -----------------------------
-			auto& Components = Owner->GetOwnedComponents();
-			auto it = std::find(Components.begin(), Components.end(), DraggedComp);
-			if (it != Components.end())
-			{
-				Components.erase(it);
-				Components.push_back(DraggedComp);
+				if (it != Components.end())
+				{
+					Components.erase(it);
+					Components.push_back(DraggedComp);
+				}
 			}
 		}
 		ImGui::EndDragDropTarget();
