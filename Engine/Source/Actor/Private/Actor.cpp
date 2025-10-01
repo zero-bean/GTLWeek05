@@ -259,9 +259,24 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 	Super::DuplicateSubObjects(DuplicatedObject);
 	AActor* DuplicatedActor = Cast<AActor>(DuplicatedObject);
 	USceneComponent* DuplicatedRoot = Cast<USceneComponent>(GetRootComponent()->Duplicate());
-	DuplicatedRoot->SetOwner(DuplicatedActor);
+
+	TQueue<USceneComponent*> DuplicatedChildren;
+	DuplicatedChildren.push(DuplicatedRoot);
+
+	while (DuplicatedChildren.size() > 0)
+	{
+		USceneComponent* Child = DuplicatedChildren.front();
+		DuplicatedChildren.pop();
+		
+		Child->SetOwner(DuplicatedActor);
+		DuplicatedActor->OwnedComponents.push_back(Child);
+		for (auto NewChild: Child->GetChildren())
+		{
+			DuplicatedChildren.push(NewChild);
+		}
+	}
+	
 	DuplicatedActor->SetRootComponent(DuplicatedRoot);
-	DuplicatedActor->OwnedComponents.push_back(DuplicatedRoot);
 	
 	for (UActorComponent* Component : OwnedComponents)
 	{
