@@ -37,6 +37,8 @@ private:
 	bool CenteredSelectable(const char* label);
 	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
 
+	void RenderTransformEdit();
+
 	// 이름 변경 함수
 	void StartRenamingActor(TObjectPtr<AActor> InActor);
 	void FinishRenamingActor(TObjectPtr<AActor> InActor);

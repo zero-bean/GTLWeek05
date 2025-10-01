@@ -13,6 +13,7 @@
 #include "Component/Mesh/Public/TriangleComponent.h"
 #include "Component/Mesh/Public/CubeComponent.h"
 #include "Component/Mesh/Public/MeshComponent.h"
+#include "Global/Quaternion.h"
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -65,6 +66,11 @@ void UActorDetailWidget::RenderWidget()
 
 	// 컴포넌트 트리 렌더링
 	RenderComponentTree(SelectedActor);
+
+	ImGui::Separator();
+
+	// 선택된 컴포넌트의 트랜스폼 정보 렌더링
+	RenderTransformEdit();
 }
 
 void UActorDetailWidget::RenderActorHeader(TObjectPtr<AActor> InSelectedActor)
@@ -363,4 +369,39 @@ void UActorDetailWidget::CancelRenamingActor()
 	bIsRenamingActor = false;
 	ActorNameBuffer[0] = '\0';
 	UE_LOG_WARNING("ActorDetailWidget: 이름 변경 취소");
+}
+
+void UActorDetailWidget::RenderTransformEdit()
+{
+	if (!SelectedComponent)
+		return;
+
+	USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+	if (!SceneComponent)
+		return;
+
+	ImGui::Text("Transform");
+
+	// 컴포넌트 포인터를 PushID로 사용해서 내부 ID 고유화
+	ImGui::PushID(SceneComponent);
+
+	FVector ComponentPosition = SceneComponent->GetRelativeLocation();
+	if (ImGui::DragFloat3("Position", &ComponentPosition.X, 0.1f))
+	{
+		SceneComponent->SetRelativeLocation(ComponentPosition);
+	}
+
+	FVector ComponentRotation = SceneComponent->GetRelativeRotation();
+	if (ImGui::DragFloat3("Rotation", &ComponentRotation.X, 1.0f))
+	{
+		SceneComponent->SetRelativeRotation(ComponentRotation);
+	}
+
+	FVector ComponentScale = SceneComponent->GetRelativeScale3D();
+	if (ImGui::DragFloat3("Scale", &ComponentScale.X, 0.1f))
+	{
+		SceneComponent->SetRelativeScale3D(ComponentScale);
+	}
+
+	ImGui::PopID();
 }
