@@ -8,5 +8,5 @@ ATriangleActor::ATriangleActor()
 {
 	TriangleComponent = CreateDefaultSubobject<UTriangleComponent>("TriangleComponent");
 	TriangleComponent->SetRelativeRotation({ 90, 0, 0 });
-	TriangleComponent->SetParentAttachment(GetRootComponent());
+	SetRootComponent(TriangleComponent);
 }

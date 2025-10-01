@@ -38,10 +38,4 @@ private:
 		// Second Triangle
 		1, 3, 2
 	};
-
-public:
-	virtual UObject* Duplicate() override;
-protected:
-	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
-
 };

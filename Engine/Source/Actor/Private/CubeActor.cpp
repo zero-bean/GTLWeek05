@@ -7,5 +7,5 @@ IMPLEMENT_CLASS(ACubeActor, AActor)
 ACubeActor::ACubeActor()
 {
 	CubeComponent = CreateDefaultSubobject<UCubeComponent>("CubeComponent");
-	CubeComponent->SetParentAttachment(GetRootComponent());
+	SetRootComponent(CubeComponent);
 }

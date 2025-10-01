@@ -11,18 +11,19 @@ class UUUIDTextComponent : public UTextComponent
 	DECLARE_CLASS(UUUIDTextComponent, UTextComponent)
 public:
 	UUUIDTextComponent();
+	UUUIDTextComponent(AActor* InOwnerActor, float InYOffset);
 	~UUUIDTextComponent();
 
 	virtual void OnSelected() override;
 	virtual void OnDeselected() override;
 
 	void UpdateRotationMatrix(const FVector& InCameraLocation) override;
-	void SetOffset(float Offset) { ZOffset = Offset; }
 
 	FMatrix GetRTMatrix() const override { return RTMatrix; }
 
 	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
 private:
 	FMatrix RTMatrix;
+	AActor* POwnerActor;
 	float ZOffset;
 };
