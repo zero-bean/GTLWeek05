@@ -45,6 +45,7 @@ public:
 
 	virtual void Init();
 	virtual void Update();
+	virtual void Tick(float DeltaTime);
 	virtual void Render();
 	virtual void Cleanup();
 

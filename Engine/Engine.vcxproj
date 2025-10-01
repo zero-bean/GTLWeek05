@@ -346,6 +346,7 @@
     <ClInclude Include="Source\Global\BVH.h" />
     <ClInclude Include="Source\Global\Octree.h" />
     <ClInclude Include="Source\Global\Quaternion.h" />
+    <ClInclude Include="Source\Level\Public\World.h" />
     <ClInclude Include="Source\Manager\Asset\Public\ObjImporter.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
@@ -496,6 +497,7 @@
     <ClCompile Include="Source\Global\BVH.cpp" />
     <ClCompile Include="Source\Global\Octree.cpp" />
     <ClCompile Include="Source\Global\Quaternion.cpp" />
+    <ClCompile Include="Source\Level\Private\World.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\AssetManager.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\ObjImporter.cpp">
       <DeploymentContent>false</DeploymentContent>

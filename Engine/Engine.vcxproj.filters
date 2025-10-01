@@ -356,7 +356,12 @@
     <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
+    <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp">
+      <Filter>Source\Utility\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Level\Private\World.cpp">
+      <Filter>Source\Level\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -743,6 +748,9 @@
     </ClInclude>
     <ClInclude Include="Source\Global\BVH.h">
       <Filter>Source\Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Level\Public\World.h">
+      <Filter>Source\Level\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
