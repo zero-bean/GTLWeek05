@@ -40,10 +40,6 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	// 불러오기
 	if (bInIsLoading)
 	{
-		// NOTE: Version 사용하지 않음
-		//uint32 Version = 0;
-		//FJsonSerializer::ReadUint32(InOutHandle, "Version", Version);
-
 		// NOTE: 레벨 로드 시 NextUUID를 변경하면 UUID 충돌이 발생하므로 관련 기능 구현을 보류합니다.
 		uint32 NextUUID = 0;
 		FJsonSerializer::ReadUint32(InOutHandle, "NextUUID", NextUUID);
@@ -54,23 +50,20 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			UConfigManager::GetInstance().SetCameraSettingsFromJson(PerspectiveCameraData);
 			URenderer::GetInstance().GetViewportClient()->ApplyAllCameraDataToViewportClients();
 		}
-
-		JSON PrimitivesJson;
-		if (FJsonSerializer::ReadObject(InOutHandle, "Primitives", PrimitivesJson))
+		
+		JSON ActorsJson;
+		if (FJsonSerializer::ReadObject(InOutHandle, "Actors", ActorsJson))
 		{
-			// ObjectRange()를 사용하여 Primitives 객체의 모든 키-값 쌍을 순회
-			for (auto& Pair : PrimitivesJson.ObjectRange())
+			for (auto& Pair : ActorsJson.ObjectRange())
 			{
-				// Pair.first는 ID 문자열, Pair.second는 단일 프리미티브의 JSON 데이터입니다.
 				const FString& IdString = Pair.first;
-				JSON& PrimitiveDataJson = Pair.second;
+				JSON& ActorDataJson = Pair.second;
 
 				FString TypeString;
-				FJsonSerializer::ReadString(PrimitiveDataJson, "Type", TypeString);
+				FJsonSerializer::ReadString(ActorDataJson, "Type", TypeString);
 
 				UClass* NewClass = FActorTypeMapper::TypeToActor(TypeString);
-
-				AActor* NewActor = SpawnActorToLevel(NewClass, IdString, &PrimitiveDataJson);
+				AActor* NewActor = SpawnActorToLevel(NewClass, IdString, &ActorDataJson); 
 			}
 		}
 	}
@@ -78,9 +71,6 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	// 저장
 	else
 	{
-		// NOTE: Version 사용하지 않음
-		//InOutHandle["Version"] = 1;
-
 		// NOTE: 레벨 로드 시 NextUUID를 변경하면 UUID 충돌이 발생하므로 관련 기능 구현을 보류합니다.
 		InOutHandle["NextUUID"] = 0;
 
@@ -88,16 +78,16 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		URenderer::GetInstance().GetViewportClient()->UpdateCameraSettingsToConfig();
 		InOutHandle["PerspectiveCamera"] = UConfigManager::GetInstance().GetCameraSettingsAsJson();
 
-		JSON PrimitivesJson = json::Object();
+		JSON ActorsJson = json::Object();
 		for (const TObjectPtr<AActor>& Actor : LevelActors)
 		{
-			JSON PrimitiveJson;
-			PrimitiveJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());
-			Actor->Serialize(bInIsLoading, PrimitiveJson);
+			JSON ActorJson;
+			ActorJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());
+			Actor->Serialize(bInIsLoading, ActorJson); 
 
-			PrimitivesJson[std::to_string(Actor->GetUUID())] = PrimitiveJson;
+			ActorsJson[std::to_string(Actor->GetUUID())] = ActorJson;
 		}
-		InOutHandle["Primitives"] = PrimitivesJson;
+		InOutHandle["Actors"] = ActorsJson;
 	}
 }
 
@@ -145,10 +135,13 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 			NewActor->SetName(InName);
 		}
 		LevelActors.push_back(TObjectPtr(NewActor));
-		NewActor->InitializeComponents();
 		if (ActorJsonData != nullptr)
 		{
 			NewActor->Serialize(true, *ActorJsonData);
+		}
+		else
+		{
+			NewActor->InitializeComponents();
 		}
 		NewActor->BeginPlay();
 		AddLevelPrimitiveComponent(NewActor);
@@ -283,7 +276,7 @@ void ULevel::UpdatePrimitiveInOctree(UPrimitiveComponent* Primitive)
 		// 3. Static에 없으면 그냥 Dynamic에 넣어줌 (중복 방지 체크 필요)
 		if (std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), Primitive) == DynamicPrimitives.end())
 		{
-			DynamicPrimitives.push_back(Primitive);
+			//DynamicPrimitives.push_back(Primitive);
 		}
 	}
 }
