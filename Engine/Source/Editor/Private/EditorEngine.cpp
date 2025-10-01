@@ -1,9 +1,11 @@
 ﻿#include "pch.h"
+#include "Core/Public/Object.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Editor.h"
 #include "Level/Public/Level.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
+
 
 IMPLEMENT_CLASS(UEditorEngine, UObject)
 UEditorEngine* GEditor = nullptr;

@@ -19,7 +19,6 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
-// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
 AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 {
 	if (!InActorToDuplicate)
@@ -394,4 +393,28 @@ void ULevel::ProcessPendingDeletions()
 	}
 
 	UE_LOG("Level: 모든 지연 삭제 프로세스 완료");
+}
+
+
+void ULevel::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
+{
+	Super::PostDuplicate(InDuplicationMap);
+	const ULevel* OriginalLevel = Cast<const ULevel>(SourceObject);
+	if (OriginalLevel)
+	{
+		LevelActors = OriginalLevel->LevelActors;
+		StaticOctree = new FOctree();
+		const FAABB AABB = OriginalLevel->StaticOctree->GetBoundingBox();
+		StaticOctree->SetBoundingBox(AABB);
+		DynamicPrimitives = OriginalLevel->DynamicPrimitives;
+		ShowFlags = OriginalLevel->ShowFlags;
+	}
+	for (auto& Actor : LevelActors)
+	{
+		if (Actor)
+		{
+			AddLevelPrimitiveComponent(Actor);
+			Actor->PostDuplicate(InDuplicationMap);
+		}
+	}
 }

@@ -242,3 +242,38 @@ void FOctree::TryMerge()
 		for (int Index = 0; Index < 8; ++Index) { SafeDelete(Children[Index]); }
 	}
 }
+
+void FOctree::DeepCopy(FOctree* OutOctree) const
+{
+	if (!OutOctree) { return; }
+
+	// 1) 필드 복사
+	OutOctree->BoundingBox = BoundingBox;
+	OutOctree->Depth = Depth;
+
+	// 2) 기존 대상의 프리미티브/자식 정리 후 초기화
+	//    - 프리미티브는 대입으로 교체
+	OutOctree->Primitives = Primitives; // shallow copy of pointers
+
+	//    - 기존 자식 노드 메모리 해제
+	for (FOctree* Child : OutOctree->Children)
+	{
+		SafeDelete(Child);
+	}
+	OutOctree->Children.clear();
+	OutOctree->Children.resize(8, nullptr);
+
+	// 3) 자식 재귀 복사
+	if (!IsLeaf())
+	{
+		for (int Index = 0; Index < 8; ++Index)
+		{
+			if (Children[Index] != nullptr)
+			{
+				// 자식 노드 생성 후 재귀 복사
+				OutOctree->Children[Index] = new FOctree(Children[Index]->BoundingBox, Children[Index]->Depth);
+				Children[Index]->DeepCopy(OutOctree->Children[Index]);
+			}
+		}
+	}
+}
