@@ -274,7 +274,11 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 	}
 
 	Level = InNewLevel;
-	SubObjects[Level->GetName()] = Level;
+	if (Level)
+	{
+		// Level을 SubObjects에 등록하여 복사 시스템이 인식하도록 함
+		SubObjects[Level->GetName()] = Level;
+	}
 	PendingDestroyActors.clear();
 	bBegunPlay = false;
 }
@@ -282,6 +286,7 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 void UWorld::CreateNewLevel(const FName& InLevelName)
 {
 	TObjectPtr<ULevel> NewLevel = TObjectPtr(new ULevel(InLevelName));
+	NewLevel->SetOuter(this);
 	SwitchToLevel(NewLevel);
 }
 
@@ -293,6 +298,18 @@ void UWorld::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
 	if (SourceWorld)
 	{
 		WorldType = SourceWorld->WorldType;
+		
+		// Level 복사 확인 및 처리
+		if (SourceWorld->Level)
+		{
+			// SubObjects를 통해 Level이 복사되었는지 확인
+			auto LevelIt = SubObjects.find(SourceWorld->Level->GetName());
+			if (LevelIt != SubObjects.end())
+			{
+				Level = Cast<ULevel>(LevelIt->second);
+				
+			}
+		}
 	}
 
 	if (Level)

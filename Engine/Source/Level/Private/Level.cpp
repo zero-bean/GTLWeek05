@@ -19,6 +19,8 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
+IMPLEMENT_CLASS(ULevel, UObject)
+
 AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 {
 	if (!InActorToDuplicate)
@@ -42,6 +44,11 @@ AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 	}
 
 	return nullptr;
+}
+
+ULevel::ULevel()
+{
+	StaticOctree = new FOctree(FVector(0, 0, -5), 75, 0);
 }
 
 ULevel::ULevel(const FName& InName)
