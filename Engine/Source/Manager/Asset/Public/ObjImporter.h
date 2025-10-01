@@ -155,8 +155,8 @@ struct FObjImporter
 		bool bIsObjectEnabled = false;
 		bool bIsBinaryEnabled = false;
 		bool bFlipWindingOrder = false;
-		bool bPositionToUEBasis = false;
-		bool bUVToUEBasis = false;
+		bool bPositionToUEBasis = true;
+		bool bUVToUEBasis = true;
 		// ...
 	};
 
@@ -190,7 +190,7 @@ private:
 
 	static FVector PositionToUEBasis(const FVector& InVector)
 	{
-		return FVector(InVector.X, InVector.Y, -InVector.Z);
+		return FVector(InVector.X, -InVector.Y, InVector.Z);
 	}
 
 	static FVector2 UVToUEBasis(const FVector2& InVector)
