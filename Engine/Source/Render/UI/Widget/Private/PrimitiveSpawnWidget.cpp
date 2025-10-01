@@ -62,7 +62,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	// ImGui가 받은 값을 반영
 
 
-	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
+	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber);
 
 	// Spawn 버튼과 개수 입력
 	ImGui::Text("Number of Spawn:");
