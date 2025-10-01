@@ -12,6 +12,10 @@ class ASphereActor : public AActor
 
 public:
 	ASphereActor();
+
+	// AActor의 PostDuplicate를 재정의하여 SphereComponent 포인터를 수정합니다.
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
+
 private:
 	USphereComponent* SphereComponent = nullptr;
 };

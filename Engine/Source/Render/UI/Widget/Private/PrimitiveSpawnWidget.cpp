@@ -74,6 +74,36 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::DragFloat("Max##SpawnRange", &SpawnRangeMax, 0.1f, SpawnRangeMin + 0.1f, 50.0f);
 
 	ImGui::Separator();
+
+	// ====================================================================
+	// Duplication 테스트 코드, 2025/10/01 PYB
+	ImGui::Spacing();
+	ImGui::Text("Duplicate Selected Actor");
+
+	// 1. 현재 레벨과 선택된 액터 정보를 가져옵니다.
+	ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	if (!CurrentLevel) return; // 레벨이 없으면 아무것도 하지 않습니다.
+
+	AActor* SelectedActor = CurrentLevel->GetSelectedActor();
+
+	// 2. 선택된 액터가 있을 경우에만 버튼을 표시합니다.
+	if (SelectedActor)
+	{
+		// 어떤 액터가 선택되었는지 이름을 표시해 줍니다.
+		ImGui::Text("Selected: %s", SelectedActor->GetName().ToString().c_str());
+
+		// 'Duplicate' 버튼을 누르면 레벨의 DuplicateActor 함수를 호출합니다.
+		if (ImGui::Button("Duplicate!"))
+		{
+			CurrentLevel->DuplicateActor(SelectedActor);
+		}
+	}
+	else
+	{
+		// 선택된 액터가 없을 경우 안내 문구를 표시합니다.
+		ImGui::Text("Select an actor in the level to duplicate.");
+	}
+	// ====================================================================
 }
 
 /**

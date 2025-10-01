@@ -20,6 +20,11 @@ public:
 
 	// 2. 가상 함수 (인터페이스)
 	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle);
+	/* *
+	* @brief PIE 시스템에 사용되는 복제 함수입니다. 상속받은 클래스에서 재정의함으로써 조율해야 합니다.
+	*/
+	virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap);
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap);
 
 	// 3. Public 멤버 함수
 	bool IsA(TObjectPtr<UClass> InClass) const;
@@ -37,6 +42,33 @@ public:
 	void SetOuter(UObject* InObject);
 	void SetDisplayName(const FString& InName) const { Name.SetDisplayName(InName); }
 
+protected:
+	/* *
+	* @brief PIE 시스템에 사용되는 복제 함수의 헬퍼입니다. 상속받은 클래스에서 재정의함으로써 조율해야 합니다.
+	*/
+	virtual void CopyPropertiesFrom(const UObject* InObject);
+	virtual void DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap);
+
+	/* *
+	* @brief 복제된 객체가 참조하는 원본 포인터
+	*/
+	const UObject* SourceObject = nullptr; 
+
+	/**
+	 * @brief Objects
+	 * "소유하지 않는" 참조 관계를 저장합니다.
+	 * 다른 UObject를 참조할 때 사용 (ex. Actor가 Mesh 컴포넌트를 가리키지만 소유하지 않음)
+	 * Duplicate()에서 얕은 복사를 하고, PostDuplicate()에서 Fix Up 처리됩니다.
+	 */
+	TMap<FName, TObjectPtr<UObject>> Objects{};
+
+	/**
+	 * "소유하는" 관계를 저장합니다.
+	 * Outer/Owner 개념과 유사하며, 생명주기를 함께합니다.
+	 * Duplicate() 에서 깊은 복사가 수행됩니다.
+	 */
+	TMap<FName, TObjectPtr<UObject>> SubObjects{};
+
 private:
 	// 4. Private 멤버 함수
 	void PropagateMemoryChange(uint64 InBytesDelta, uint32 InCountDelta);
@@ -50,7 +82,6 @@ private:
 	uint64 AllocatedBytes = 0;
 	uint32 AllocatedCounts = 0;
 };
-
 
 /**
  * @brief 안전한 타입 캐스팅 함수 (원시 포인터용)
