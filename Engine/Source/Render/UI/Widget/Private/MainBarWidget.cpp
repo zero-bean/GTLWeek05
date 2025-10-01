@@ -2,9 +2,9 @@
 #include "Render/UI/Widget/Public/MainBarWidget.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/UI/Window/Public/UIWindow.h"
-
 #include <shobjidl.h>
 
+#include <algorithm>
 #include "Level/Public/Level.h"
 
 
@@ -57,6 +57,7 @@ void UMainBarWidget::RenderWidget()
 		RenderShowFlagsMenu();
 		RenderWindowsMenu();
 		RenderHelpMenu();
+		RenderPlayControls();
 
 		// 메인 메뉴바 종료
 		ImGui::EndMainMenuBar();
@@ -329,6 +330,133 @@ void UMainBarWidget::RenderHelpMenu()
 
 		ImGui::EndMenu();
 	}
+}
+
+void UMainBarWidget::RenderPlayControls()
+{  
+	EPIEState CurrentState = GEditor->GetPIEState();
+
+	// 위치 조정
+	float CurrentMenuEndPos = ImGui::GetCursorPosX();
+	float MainBarWidth = ImGui::GetWindowWidth();
+
+	ImVec2 ButtonPadding(8.0f, 4.0f); 
+	float ButtonFramePaddingX = ButtonPadding.x * 2.0f; 
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ButtonPadding);
+	float ButtonPlayWidth = ImGui::CalcTextSize("▶").x + ButtonFramePaddingX;
+	float ButtonPauseWidth = ImGui::CalcTextSize("||").x + ButtonFramePaddingX;
+	float ButtonStopWidth = ImGui::CalcTextSize("■").x + ButtonFramePaddingX;
+	ImGui::PopStyleVar(2);
+
+	float TotalSpacingWidth = ImGui::GetStyle().ItemSpacing.x * 2.0f;
+	float TotalButtonGroupWidth = ButtonPlayWidth + ButtonPauseWidth + ButtonStopWidth + TotalSpacingWidth;
+
+	float TrueCenterStart = (MainBarWidth / 2.0f) - (TotalButtonGroupWidth / 2.0f);
+	float StartPos = TrueCenterStart;
+	StartPos = std::max(CurrentMenuEndPos, StartPos);
+	ImGui::SameLine(StartPos); 
+
+    // 상태 플래그 정의
+    bool bCanStart = CurrentState == EPIEState::Stopped; 
+    bool bCanPauseOrResume = CurrentState == EPIEState::Playing || CurrentState == EPIEState::Paused;
+    bool bCanStop = CurrentState != EPIEState::Stopped; 
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ButtonPadding);
+
+    // =========================================================================
+    if (bCanStart) 
+    {
+       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.6f, 0.0f, 1.0f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.4f, 0.0f, 1.0f));
+    }
+    else 
+    {
+       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.3f, 0.1f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.3f, 0.1f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.3f, 0.1f, 0.6f));
+    }
+
+    if (ImGui::Button("▶"))
+    {
+       if (bCanStart) 
+       {
+          GEditor->StartPIE(); 
+          UE_LOG("MainBarWidget: PIE 세션 시작 요청");
+       }
+    }
+    ImGui::PopStyleColor(3);
+
+
+    ImGui::SameLine();
+
+    // =========================================================================
+    if (bCanPauseOrResume)
+    {
+        if (CurrentState == EPIEState::Paused)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.6f, 0.0f, 1.0f));
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.6f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.0f, 1.0f));
+        }
+    }
+    else
+    {
+       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.0f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.0f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.0f, 0.6f));
+    }
+   
+    if (ImGui::Button("||"))
+    {
+       if (CurrentState == EPIEState::Playing)
+       {
+          GEditor->PausePIE();
+          UE_LOG("MainBarWidget: PIE 세션 일시 정지 요청");
+       }
+       else if (CurrentState == EPIEState::Paused)
+       {
+          GEditor->ResumePIE();
+          UE_LOG("MainBarWidget: PIE 세션 재개 요청");
+       }
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+
+    // =========================================================================
+    if (bCanStop)
+    {
+       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.0f, 0.0f, 1.0f));
+    }
+    else
+    {
+       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.0f, 0.0f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.0f, 0.0f, 0.6f));
+       ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.0f, 0.0f, 0.6f));
+    }
+   
+    if (ImGui::Button("■"))
+    {
+       if (bCanStop)
+       {
+          GEditor->EndPIE();
+          UE_LOG("MainBarWidget: PIE 세션 정지 요청");
+       }
+    }
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(2);
 }
 
 /**

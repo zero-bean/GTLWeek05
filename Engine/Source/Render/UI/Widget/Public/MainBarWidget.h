@@ -35,6 +35,7 @@ private:
 	static void RenderViewMenu();
 	static void RenderShowFlagsMenu();
 	static void RenderHelpMenu();
+	static void RenderPlayControls();
 
 	static void SaveCurrentLevel();
 	static void LoadLevel();

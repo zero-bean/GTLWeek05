@@ -52,7 +52,18 @@ void UEditorEngine::Tick(float DeltaSeconds)
         UWorld* World = Context.World();
         if (World)
         {
-            World->Tick(DeltaSeconds); 
+            if (World->GetWorldType() == EWorldType::Editor)
+            {
+                World->Tick(DeltaSeconds);
+            }
+            else if (World->GetWorldType() == EWorldType::PIE)
+            {
+                // PIE 상태가 Playing일 때만 틱을 실행
+                if (PIEState == EPIEState::Playing)
+                {
+                    World->Tick(DeltaSeconds);
+                }
+            }
         }
     }
 
@@ -60,7 +71,6 @@ void UEditorEngine::Tick(float DeltaSeconds)
     {
         EditorModule->Update();
     }
-
 }
 
 bool UEditorEngine::IsPIESessionActive() const
@@ -77,6 +87,8 @@ bool UEditorEngine::IsPIESessionActive() const
 
 void UEditorEngine::StartPIE()
 {
+    if (PIEState != EPIEState::Stopped) { return; }
+    PIEState = EPIEState::Playing;
     UWorld* EditorWorld = GetEditorWorldContext().World();
     if (!EditorWorld) { return; }
 
@@ -96,6 +108,8 @@ void UEditorEngine::StartPIE()
 
 void UEditorEngine::EndPIE()
 {
+    if (PIEState != EPIEState::Playing) { return; }
+    PIEState = EPIEState::Stopped;
     FWorldContext* PIEContext = GetPIEWorldContext();
     if (PIEContext)
     {
@@ -107,6 +121,18 @@ void UEditorEngine::EndPIE()
     }
     
     GWorld = GetEditorWorldContext().World(); 
+}
+
+void UEditorEngine::PausePIE()
+{
+    if (PIEState != EPIEState::Playing) { return; }
+    PIEState = EPIEState::Paused;
+}
+
+void UEditorEngine::ResumePIE()
+{
+    if (PIEState != EPIEState::Paused) { return; }
+    PIEState = EPIEState::Playing;
 }
 
 bool UEditorEngine::LoadLevel(const FString& InFilePath)
