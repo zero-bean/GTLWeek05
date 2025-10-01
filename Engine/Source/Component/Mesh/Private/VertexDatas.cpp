@@ -6510,7 +6510,7 @@ TArray<FNormalVertex> VerticesTorus = {
 	{{ 1.098480f, -0.218501f, -0.000000f }, {}, { 1.000000f, 1.000000f, 1.000000f, 1.000000f }, {} },
 };
 
-TArray<FNormalVertex> VerticesBillBoard =
+TArray<FNormalVertex> VerticesVerticalSquare =
 {
 	{{0.0f, -0.5f, 0.5f}, {}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f} },
 	{{0.0f, 0.5f, 0.5f}, {}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f} },
@@ -6518,7 +6518,7 @@ TArray<FNormalVertex> VerticesBillBoard =
 	{{0.0f, 0.5f, -0.5f}, {}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} },
 };
 
-TArray<uint32> IndicesBillBoard =
+TArray<uint32> IndicesVerticalSquare =
 {
 	// First Triangle
 	0, 1, 2,

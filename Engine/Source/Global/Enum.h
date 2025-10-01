@@ -139,6 +139,7 @@ enum class EPrimitiveType : uint8
 	CubeArrow,
 	Ring,
 	Line,
+	UUID,
 
 	End = 0xFF
 };
