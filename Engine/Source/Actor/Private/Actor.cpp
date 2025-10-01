@@ -147,25 +147,33 @@ void AActor::CopyPropertiesFrom(const UObject* InObject)
 
 void AActor::DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap)
 {
-	// 1. 부모 클래스의 DuplicatesSubObjects를 먼저 호출합니다.
-	/*Super::DuplicatesSubObjects(InNewOuter, InOutDuplicationMap);*/
-	// AActor는 OwnedComponents를 통해 컴포넌트 소유권을 직접 관리하므로,
-	// UObject의 기본 SubObjects 복제 로직을 따르지 않습니다.
+	// AActor는 OwnedComponents를 통해 컴포넌트 소유권을 직접 관리하므로, UObject의 기본 SubObjects 복제 로직을 따르지 않습니다.
 
 	// 2. 원본 객체를 AActor 타입으로 캐스팅합니다.
 	const AActor* OriginalActor = Cast<const AActor>(SourceObject);
 	if (!OriginalActor) return;
 
-	// 3. 원본 액터의 모든 소유 컴포넌트(OwnedComponents)를 순회하며 복제합니다.
+	// 3. 이 액터가 생성될 때 만들어진 기본 컴포넌트들을 정리합니다.
+	// 복제 시에는 원본 액터의 컴포넌트들만 복사해서 가져와야 하기 때문입니다.
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		SafeDelete(Component);
+	}
+	OwnedComponents.clear();
+	RootComponent = nullptr;
+	BillBoardComponent = nullptr;
+
+
+	// 4. 원본 액터의 모든 소유 컴포넌트(OwnedComponents)를 순회하며 복제합니다.
 	for (const auto& OriginalComponentPtr : OriginalActor->OwnedComponents)
 	{
 		if (UActorComponent* OriginalComponent = OriginalComponentPtr.Get())
 		{
-			// 4. 각 컴포넌트에 대해 재귀적으로 Duplicate 함수를 호출하여 깊은 복사를 수행합니다.
+			// 5. 각 컴포넌트에 대해 재귀적으로 Duplicate 함수를 호출하여 깊은 복사를 수행합니다.
 			// 여기서 생성된 새 컴포넌트의 Outer는 '새로운 액터(this)'가 됩니다.
 			if (UActorComponent* NewComponent = Cast<UActorComponent>(OriginalComponent->Duplicate(this, InOutDuplicationMap)))
 			{
-				// 5. 새로 복제된 컴포넌트를 나의 OwnedComponents 목록에 추가합니다.
+				// 6. 새로 복제된 컴포넌트를 나의 OwnedComponents 목록에 추가합니다.
 				this->OwnedComponents.push_back(TObjectPtr<UActorComponent>(NewComponent));
 			}
 		}
