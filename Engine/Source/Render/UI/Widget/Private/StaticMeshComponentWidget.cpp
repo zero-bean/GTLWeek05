@@ -2,7 +2,7 @@
 #include "Render/UI/Widget/Public/StaticMeshComponentWidget.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Mesh/Public/StaticMesh.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Texture/Public/Material.h"
@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(UStaticMeshComponentWidget, UWidget)
 
 void UStaticMeshComponentWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

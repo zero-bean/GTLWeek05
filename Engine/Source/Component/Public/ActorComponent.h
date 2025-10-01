@@ -25,6 +25,13 @@ public:
 	virtual void OnSelected();
 	virtual void OnDeselected();
 
+	/**
+	 * @brief 특정 컴포넌트 전용 Widget이 필요할 경우 재정의 필요
+	 */
+	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const { return nullptr; }
+
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
+
 	EComponentType GetComponentType() { return ComponentType; }
 
 	void SetOwner(AActor* InOwner) { Owner = InOwner; }
@@ -32,11 +39,12 @@ public:
 
 	EComponentType GetComponentType() const { return ComponentType; }
 
-	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const;
 	bool CanTick() const { return bCanEverTick; }
 	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 
 protected:
+	virtual void CopyPropertiesFrom(const UObject* InObject) override;
+
 	EComponentType ComponentType;
 	bool bCanEverTick = false;
 

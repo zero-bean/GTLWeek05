@@ -45,6 +45,7 @@ public:
 
 	virtual void Init();
 	virtual void Update();
+	virtual void Tick(float DeltaTime);
 	virtual void Render();
 	virtual void Cleanup();
 
@@ -72,6 +73,8 @@ public:
 	FOctree* GetStaticOctree() { return StaticOctree; }
 	TArray<UPrimitiveComponent*>& GetDynamicPrimitives() { return DynamicPrimitives; }
 
+	AActor* DuplicateActor(AActor* InActorToDuplicate);
+	void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;

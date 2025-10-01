@@ -8,7 +8,7 @@
 #include "Render/UI/Widget/Public/SplitterDebugWidget.h"
 #include "Render/UI/Widget/Public/CameraControlWidget.h"
 #include "Render/UI/Widget/Public/ViewportMenuBarWidget.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Config/Public/ConfigManager.h"
@@ -74,7 +74,7 @@ void UEditor::Update()
 		}
 	}
 
-	if (AActor* SelectedActor = ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor())
+	if (AActor* SelectedActor = GWorld->GetLevel()->GetSelectedActor())
 	{
 		for (const auto& Component : SelectedActor->GetOwnedComponents())
 		{
@@ -83,7 +83,7 @@ void UEditor::Update()
 				FVector WorldMin, WorldMax;
 				PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
 
-				uint64 ShowFlags = ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags();
+				uint64 ShowFlags = GWorld->GetLevel()->GetShowFlags();
 
 				if ((ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds))
 				{
@@ -103,7 +103,7 @@ void UEditor::Update()
 
 	BatchLines.UpdateVertexBuffer();
 
-	ProcessMouseInput(ULevelManager::GetInstance().GetCurrentLevel());
+	ProcessMouseInput(GWorld->GetLevel());
 
 	UpdateLayout();
 }
@@ -117,7 +117,7 @@ void UEditor::RenderEditor(UCamera* InCamera)
 	// Gizmo 렌더링 시, 현재 활성화된 카메라의 위치를 전달해야 합니다.
 	if (InCamera)
 	{
-		AActor* SelectedActor = ULevelManager::GetInstance().GetCurrentLevel()->GetSelectedActor();
+		AActor* SelectedActor = GWorld->GetLevel()->GetSelectedActor();
 		Gizmo.RenderGizmo(SelectedActor, InCamera);
 	}
 }
@@ -424,11 +424,11 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 
 		if (!ImGui::GetIO().WantCaptureMouse && InputManager.IsKeyPressed(EKeyInput::MouseLeft))
 		{
-			if (ULevelManager::GetInstance().GetCurrentLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
+			if (GWorld->GetLevel()->GetShowFlags() & EEngineShowFlags::SF_Primitives)
 			{
 				TArray<UPrimitiveComponent*> Candidate;
 
-				ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+				ULevel* CurrentLevel = GWorld->GetLevel();
 				ObjectPicker.FindCandidateFromOctree(CurrentLevel->GetStaticOctree(), WorldRay, Candidate);
 
 				TArray<UPrimitiveComponent*>& DynamicCandidates = CurrentLevel->GetDynamicPrimitives();
@@ -437,13 +437,13 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 					Candidate.insert(Candidate.end(), DynamicCandidates.begin(), DynamicCandidates.end());
 				}
 				
-				TIME_PROFILE(Picking)
-				FScopeCycleCounter PickCounter{ TStatId() }; // 피킹 시간 측정 시작
+
+				TStatId StatId("Picking");
+				FScopeCycleCounter PickCounter(StatId);
 				UPrimitiveComponent* PrimitiveCollided = ObjectPicker.PickPrimitive(CurrentCamera, WorldRay, Candidate, &ActorDistance);
 				ActorPicked = PrimitiveCollided ? PrimitiveCollided->GetOwner() : nullptr;
 				float ElapsedMs = PickCounter.Finish(); // 피킹 시간 측정 종료
 				UStatOverlay::GetInstance().RecordPickingStats(ElapsedMs);
-				TIME_PROFILE_END(Picking)
 			}
 		}
 

@@ -334,7 +334,7 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
 	//FRenderState RenderState = PrimitiveComponent->GetRenderState();
 
 	//// Get view mode from editor
-	//const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+	//const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 	//if (ViewMode == EViewModeIndex::VMI_Wireframe)
 	//{
 	//	RenderState.CullMode = ECullMode::None;

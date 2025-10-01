@@ -15,21 +15,6 @@ TArray<TObjectPtr<UObject>>& GetUObjectArray()
 
 IMPLEMENT_CLASS_BASE(UObject)
 
-UObject::~UObject()
-{
-	/** @todo: 이후에 리뷰 필요 */
-
-	// std::vector에 맞는 올바른 인덱스 유효성 검사
-	if (InternalIndex < GetUObjectArray().size())
-	{
-		GetUObjectArray()[InternalIndex] = nullptr;
-	}
-}
-
-void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
-{
-}
-
 UObject::UObject()
 	: Name(FName::GetNone()), Outer(nullptr)
 {
@@ -48,6 +33,91 @@ UObject::UObject(const FName& InName)
 
 	GetUObjectArray().emplace_back(this);
 	InternalIndex = static_cast<uint32>(GetUObjectArray().size()) - 1;
+}
+
+UObject::~UObject()
+{
+	/** @todo: 이후에 리뷰 필요 */
+
+	// std::vector에 맞는 올바른 인덱스 유효성 검사
+	if (InternalIndex < GetUObjectArray().size())
+	{
+		GetUObjectArray()[InternalIndex] = nullptr;
+	}
+}
+
+void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+}
+
+UObject* UObject::Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap)
+{
+	// 0. 이미  복제된 객체가 있다는 뜻이므로, 반환 및 종료
+	if (auto It = InOutDuplicationMap.find(this); It != InOutDuplicationMap.end()) { return It->second; }
+
+	// 1. 깊은 복사를 통해 텅 빈 객체를 생성
+	UObject* NewObject = GetClass()->CreateDefaultObject();
+	InOutDuplicationMap[this] = NewObject;
+	NewObject->SourceObject = this;
+
+	NewObject->SetOuter(InNewOuter);
+
+	// 2. 소유하지 않는 참조 관계 얕은 복사
+	NewObject->CopyPropertiesFrom(this);
+
+	// 3. 소유하는 SubObject 깊은 복사
+	NewObject->DuplicatesSubObjects(NewObject, InOutDuplicationMap);
+
+	return NewObject;
+}
+
+void UObject::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
+{
+	// 'Objects' 맵의 포인터들을 재연결
+	for (auto& Pair : this->Objects)
+	{
+		TObjectPtr<UObject>& RefObjectPtr = Pair.second;
+		if (RefObjectPtr)
+		{
+			auto It = InDuplicationMap.find(RefObjectPtr.Get());
+			if (It != InDuplicationMap.end())
+			{
+				RefObjectPtr = It->second;
+			}
+		}
+	}
+
+	// 'SubObjects' 맵에 있는 자식들에게도 재귀적으로 PostDuplicate 호출
+	for (auto& Pair : this->SubObjects)
+	{
+		if (Pair.second)
+		{
+			Pair.second->PostDuplicate(InDuplicationMap);
+		}
+	}
+}
+
+void UObject::DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap)
+{
+	if (SourceObject == nullptr) { return; }
+
+	for (const auto& Pair : SourceObject->SubObjects)
+	{
+		const FName& SubObjectName = Pair.first;
+		const TObjectPtr<UObject>& OriginalSubObject = Pair.second;
+
+		if (OriginalSubObject)
+		{
+			UObject* NewSubObject = OriginalSubObject->Duplicate(InNewOuter, InOutDuplicationMap);
+			this->SubObjects[SubObjectName] = NewSubObject;
+		}
+	}
+}
+
+void UObject::CopyPropertiesFrom(const UObject* InObject)
+{
+	// 'Objects' 맵은 포인터만 그대로 복사 (얕은 복사)
+	this->Objects = InObject->Objects;
 }
 
 void UObject::SetOuter(UObject* InObject)
@@ -131,4 +201,26 @@ bool UObject::IsExactly(TObjectPtr<UClass> InClass) const
 	}
 
 	return GetClass() == InClass;
+}
+
+// 최상위 복제 관리 함수
+UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter)
+{
+	if (!InObjectToDuplicate) return nullptr;
+
+	TMap<UObject*, UObject*> DuplicationMap;
+
+	// Pass 1: 객체 생성 및 복사
+	UObject* DuplicatedRootObject = InObjectToDuplicate->Duplicate(InNewOuter, DuplicationMap);
+
+	// Pass 2: 참조 재연결
+	for (auto const& [Original, Duplicated] : DuplicationMap)
+	{
+		if (Duplicated)
+		{
+			Duplicated->PostDuplicate(DuplicationMap);
+		}
+	}
+
+	return DuplicatedRootObject;
 }

@@ -12,7 +12,6 @@
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Global/Macro.h"
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
 #include "Utility/Public/FileDialog.h"
 
 std::filesystem::path OpenFileDialog()
@@ -78,8 +77,7 @@ bool OpenObjFromFileDialog()
 		return false;
 	}
 
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

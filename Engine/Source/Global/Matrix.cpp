@@ -254,8 +254,7 @@ FMatrix FMatrix::GetModelMatrix(const FVector& Location, const FVector& Rotation
 	FMatrix S = ScaleMatrix(Scale);
 	FMatrix modelMatrix = S * R * T;
 
-	// Dx11 y-up 왼손좌표계에서 정의된 물체의 정점을 UE z-up 왼손좌표계로 변환
-	return  FMatrix::UEToDx * modelMatrix;
+	return  modelMatrix;
 }
 
 FMatrix FMatrix::GetModelMatrixInverse(const FVector& Location, const FVector& Rotation, const FVector& Scale)
@@ -265,8 +264,7 @@ FMatrix FMatrix::GetModelMatrixInverse(const FVector& Location, const FVector& R
 	FMatrix S = ScaleMatrixInverse(Scale);
 	FMatrix modelMatrixInverse = T * R * S;
 
-	// UE 좌표계로 변환된 물체의 정점을 원래의 Dx 11 왼손좌표계 정점으로 변환
-	return modelMatrixInverse * FMatrix::DxToUE;
+	return modelMatrixInverse;
 }
 
 FVector4 FMatrix::VectorMultiply(const FVector4& V, const FMatrix& M)

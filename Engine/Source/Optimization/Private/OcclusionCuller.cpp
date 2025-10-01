@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "Optimization/Public/OcclusionCuller.h"
 #include "Component/Public/PrimitiveComponent.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Global/Octree.h"
 
@@ -39,7 +39,7 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
 
 
     // 1. 오클루더 동적 선택
-    ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+    ULevel* CurrentLevel = GWorld->GetLevel();
     TArray<UPrimitiveComponent*> OccluderCandidates = CurrentLevel->GetStaticOctree()->FindNearestPrimitives(CameraPos, AllPrimitives.size() / 10);
     TArray<UPrimitiveComponent*> SelectedOccluders = SelectOccluders(OccluderCandidates, CameraPos);
 
