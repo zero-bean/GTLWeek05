@@ -35,6 +35,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 
 	// Primitive 타입 선택 DropDown
 	const char* PrimitiveTypes[] = {
+		"Actor",
 		"Sphere",
 		"Cube",
 		"Triangle",
@@ -45,11 +46,12 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	};
 
 	// None을 고려한 Enum 변환 처리
-	int TypeNumber = static_cast<int>(SelectedPrimitiveType) - 1;
+	int TypeNumber = static_cast<int>(SelectedPrimitiveType);
 
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
+
 	ImGui::Combo(
 		"##PrimitiveType",
 		&TypeNumber,
@@ -140,7 +142,11 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		AActor* NewActor = nullptr;
 
 		// 타입에 따라 액터 생성
-		if (SelectedPrimitiveType == EPrimitiveType::Cube)
+		if (SelectedPrimitiveType == EPrimitiveType::None)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(AActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Cube)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(ACubeActor::StaticClass());
 		}

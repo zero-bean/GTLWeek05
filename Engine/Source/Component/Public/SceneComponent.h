@@ -32,6 +32,8 @@ public:
 
 	bool IsUniformScale() const;
 
+	TArray<USceneComponent*> GetChildren() { return Children; }
+
 	const FVector& GetRelativeLocation() const;
 	const FVector& GetRelativeRotation() const;
 	const FVector& GetRelativeScale3D() const;

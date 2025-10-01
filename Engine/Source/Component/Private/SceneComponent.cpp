@@ -48,39 +48,40 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void USceneComponent::SetParentAttachment(USceneComponent* NewParent)
 {
-	if (NewParent == this)
+	if (NewParent == this || NewParent == ParentAttachment)
 	{
 		return;
 	}
 
-	if (NewParent == ParentAttachment)
+	for (USceneComponent* Ancester = NewParent; Ancester != nullptr; Ancester = Ancester->ParentAttachment)
 	{
-		return;
+		// 만약 거슬러 올라가다 나 자신을 만나면 순환 구조이므로 함수를 종료합니다.
+		if (Ancester == this)
+		{
+			return; 
+		}
 	}
 
-	//부모의 조상중에 내 자식이 있으면 순환참조 -> 스택오버플로우 일어남.
-	for (USceneComponent* Ancester = NewParent; NewParent; Ancester = NewParent->ParentAttachment)
-	{
-		if (NewParent == this) //조상중에 내 자식이 있다면 조상중에 내가 있을 것임.
-			return;
-	}
-
-	//부모가 될 자격이 있음, 이제 부모를 바꿈.
-
-	if (ParentAttachment) //부모 있었으면 이제 그 부모의 자식이 아님
+	// 기존 부모가 있었다면, 그 부모의 자식 목록에서 나를 제거합니다.
+	if (ParentAttachment)
 	{
 		ParentAttachment->RemoveChild(this);
 	}
 
+	// 새로운 부모를 설정합니다.
 	ParentAttachment = NewParent;
 
+	// 새로운 부모가 있다면, 그 부모의 자식 목록에 나를 추가합니다.
+	if (ParentAttachment)
+	{
+		ParentAttachment->Children.push_back(this);
+	}
+
 	MarkAsDirty();
-
 }
-
 void USceneComponent::RemoveChild(USceneComponent* ChildDeleted)
 {
-	Children.erase(std::remove(Children.begin(), Children.end(), this), Children.end());
+	Children.erase(std::remove(Children.begin(), Children.end(), ChildDeleted), Children.end());
 }
 
 void USceneComponent::CopyPropertiesFrom(const UObject* InObject)

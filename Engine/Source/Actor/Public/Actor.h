@@ -74,6 +74,32 @@ public:
 		return NewComponent;
 	}
 
+	/**
+	 * @brief 런타임에 이 액터에 새로운 컴포넌트를 생성하고 등록합니다.
+	 * @tparam T UActorComponent를 상속받는 컴포넌트 타입
+	 * @param InName 컴포넌트의 이름
+	 * @return 생성된 컴포넌트를 가리키는 포인터
+	 */
+	template<class T>
+	T* AddComponent(const FName& InName)
+	{
+		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
+
+		// 1. NewObject는 여전히 로우 포인터(T*)를 반환합니다.
+		T* NewComponent = NewObject<T>(this, T::StaticClass(), InName);
+
+		if (NewComponent)
+		{
+			// 2. 로우 포인터를 RegisterComponent에 전달합니다.
+			//    T* -> TObjectPtr<UActorComponent> 로의 안전한 암시적 변환이 일어납니다.
+			RegisterComponent(NewComponent);
+		}
+
+		return NewComponent;
+	}
+
+	void RegisterComponent(TObjectPtr<UActorComponent> InNewComponent);
+
 	bool CanTick() const { return bCanEverTick; }
 	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 

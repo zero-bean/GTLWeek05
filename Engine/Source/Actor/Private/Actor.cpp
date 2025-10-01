@@ -7,6 +7,9 @@ IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
+	USceneComponent* SceneComp = CreateDefaultSubobject<USceneComponent>("SceneComponent");
+	SetRootComponent(SceneComp);
+
 	// to do: primitive factory로 빌보드 생성
 	UUIDTextComponent = new UUUIDTextComponent(this, 5.0f);
 	OwnedComponents.push_back(TObjectPtr<UUUIDTextComponent>(UUIDTextComponent));
@@ -129,6 +132,23 @@ void AActor::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
 		{
 			ComponentPtr->PostDuplicate(InDuplicationMap);
 		}
+	}
+}
+
+void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
+{
+	if (!InNewComponent || InNewComponent->GetOwner() != this)
+	{
+		InNewComponent->SetOwner(this);
+	}
+
+	// 1. 액터의 소유 컴포넌트 목록에 추가합니다.
+	OwnedComponents.push_back(InNewComponent);
+
+	// 2. 만약 액터가 이미 월드에 생성되어 BeginPlay가 호출된 상태라면,
+	if (bBegunPlay)
+	{
+		InNewComponent->BeginPlay();
 	}
 }
 
