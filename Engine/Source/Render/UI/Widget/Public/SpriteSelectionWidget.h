@@ -14,16 +14,16 @@ public:
 	void Initialize() override;
 	void Update() override;
 	void RenderWidget() override;
-	void PostProcess() override;
 
 	// Special Member Function
 	USpriteSelectionWidget();
 	~USpriteSelectionWidget() override;
 
 private:
-	void UpdateSpriteFromActor();
-	void SetSpriteOfActor();
+	void SetSpriteOfActor(FString NewSprite);
 
-	AActor* SelectedActor;
-	FName SelectedSpriteName{""};
+	AActor* SelectedActor = nullptr;
+	UBillBoardComponent* SelectedBillBoard = nullptr;
+
+	inline static uint32 WidgetNum = 0;
 };

@@ -11,6 +11,8 @@
 #include "Actor/Public/TextActor.h"
 #include "Component/Public/TextComponent.h"
 
+#include <climits>
+
 IMPLEMENT_CLASS(USetTextComponentWidget, UWidget)
 
 USetTextComponentWidget::USetTextComponentWidget()
@@ -39,7 +41,6 @@ void USetTextComponentWidget::Update()
 		if (SelectedActor != NewSelectedActor)
 		{
 			SelectedActor = NewSelectedActor;
-			SelectedTextComponent = nullptr;
 		}
 
 		// Get Current Selected Actor Information
@@ -63,7 +64,7 @@ void USetTextComponentWidget::RenderWidget()
 	static char buf[256] = "";
 	const FString& TextOfComponent = SelectedTextComponent->GetText();
 	memcpy(buf, TextOfComponent.c_str(), std::min(sizeof(buf), TextOfComponent.size()));
-	const char* TagName = (FString("Text of ") + SelectedActor->GetName().ToString()).c_str();
+	const char* TagName = (FString("TypeText##") + std::to_string(WidgetNum)).c_str();
 
 	if (ImGui::InputText(TagName, buf, IM_ARRAYSIZE(buf)))
 	{
@@ -71,6 +72,8 @@ void USetTextComponentWidget::RenderWidget()
 	}
 	
 	ImGui::Separator();
+
+	WidgetNum = (WidgetNum + 1) % std::numeric_limits<uint32>::max();
 }
 
 void USetTextComponentWidget::UpdateTextFromActor()
