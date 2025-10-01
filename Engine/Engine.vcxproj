@@ -316,6 +316,7 @@
     <ClInclude Include="Source\Actor\Public\StaticMeshActor.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\TextActor.h" />
     <ClInclude Include="Source\Actor\Public\TriangleActor.h" />
     <ClInclude Include="Source\Component\Mesh\Public\MeshComponent.h">
       <DeploymentContent>false</DeploymentContent>
@@ -327,6 +328,7 @@
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\BillBoardComponent.h" />
     <ClInclude Include="Source\Component\Public\TextComponent.h" />
+    <ClInclude Include="Source\Component\Public\UUIDTextComponent.h" />
     <ClInclude Include="Source\Component\Public\LineComponent.h" />
     <ClInclude Include="Source\Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Source\Component\Public\SceneComponent.h" />
@@ -428,6 +430,7 @@
     <ClInclude Include="Source\Render\UI\Widget\Public\PrimitiveSpawnWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SceneHierarchyWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SceneIOWidget.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SetTextComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SplitterDebugWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SpriteSelectionWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\StaticMeshComponentWidget.h" />
@@ -467,6 +470,7 @@
     <ClCompile Include="Source\Actor\Private\StaticMeshActor.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\TextActor.cpp" />
     <ClCompile Include="Source\Actor\Private\TriangleActor.cpp" />
     <ClCompile Include="Source\Component\Mesh\Private\MeshComponent.cpp">
       <DeploymentContent>false</DeploymentContent>
@@ -480,6 +484,7 @@
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillBoardComponent.cpp" />
     <ClCompile Include="Source\Component\Private\TextComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\UUIDTextComponent.cpp" />
     <ClCompile Include="Source\Component\Private\LineComponent.cpp" />
     <ClCompile Include="Source\Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Component\Private\SceneComponent.cpp" />
@@ -568,6 +573,7 @@
     <ClCompile Include="Source\Render\UI\Widget\Private\PrimitiveSpawnWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SceneHierarchyWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SceneIOWidget.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SetTextComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SplitterDebugWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SpriteSelectionWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\StaticMeshComponentWidget.cpp" />

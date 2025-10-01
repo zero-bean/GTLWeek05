@@ -23,7 +23,6 @@ void USpriteSelectionWidget::Initialize()
 void USpriteSelectionWidget::Update()
 {
 	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
-	// TODO(KHJ): 적절한 위치를 찾을 것
 	ULevelManager& LevelManager = ULevelManager::GetInstance();
 	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
 
@@ -107,9 +106,9 @@ void USpriteSelectionWidget::UpdateSpriteFromActor()
 {
 	for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
 	{
-		TObjectPtr<UBillBoardComponent> BillBoardComponent = Cast<UBillBoardComponent>(Component);
-		if (BillBoardComponent)
-			SelectedSpriteName = BillBoardComponent->GetSprite().first;
+		TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
+		if (UUIDTextComponent)
+			SelectedSpriteName = UUIDTextComponent->GetSprite().first;
 	}
 }
 
@@ -120,10 +119,10 @@ void USpriteSelectionWidget::SetSpriteOfActor()
 
 	for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
 	{
-		TObjectPtr<UBillBoardComponent> BillBoardComponent = Cast<UBillBoardComponent>(Component);
-		if (BillBoardComponent)
+		TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
+		if (UUIDTextComponent)
 		{
-			BillBoardComponent->SetSprite(*TextureCache.find(SelectedSpriteName));
+			UUIDTextComponent->SetSprite(*TextureCache.find(SelectedSpriteName));
 			break;
 		}
 	}

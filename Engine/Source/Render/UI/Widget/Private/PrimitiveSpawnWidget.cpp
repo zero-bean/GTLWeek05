@@ -9,6 +9,7 @@
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Actor/Public/BillBoardActor.h"
+#include "Actor/Public/TextActor.h"
 
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
 	: UWidget("Primitive Spawn Widget")
@@ -39,7 +40,8 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Triangle",
 		"Square",
 		"StaticMesh",
-		"BillBoard"
+		"BillBoard",
+		"Text"
 	};
 
 	// None을 고려한 Enum 변환 처리
@@ -132,6 +134,10 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		else if (SelectedPrimitiveType == EPrimitiveType::Sprite)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(ABillBoardActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Text)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(ATextActor::StaticClass());
 		}
 
 		if (NewActor)

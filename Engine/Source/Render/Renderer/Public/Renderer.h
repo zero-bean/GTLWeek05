@@ -5,11 +5,12 @@
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Component/Public/BillBoardComponent.h"
+#include "Component/Public/TextComponent.h"
 
 class UDeviceResources;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
-class UTextComponent;
+class UUUIDTextComponent;
 class AActor;
 class AGizmo;
 class UEditor;
@@ -73,7 +74,8 @@ public:
 	void RenderEnd() const;
 	void RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents);
 	void RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBillBoardComponent>>& InBillBoardComp);
-	void RenderUUID(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
+	void RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp);
+	void RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
 	void RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState,

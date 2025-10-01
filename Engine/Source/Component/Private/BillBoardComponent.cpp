@@ -4,6 +4,7 @@
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Physics/Public/AABB.h"
+#include "Render/UI/Widget/Public/SpriteSelectionWidget.h"
 
 IMPLEMENT_CLASS(UBillBoardComponent, UPrimitiveComponent)
 
@@ -103,3 +104,8 @@ const ID3D11SamplerState* UBillBoardComponent::GetSampler() const
 { 
     return Sampler;
 };
+
+TObjectPtr<UClass> UBillBoardComponent::GetSpecificWidgetClass() const
+{
+    return USpriteSelectionWidget::StaticClass();
+}

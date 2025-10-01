@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/FontRenderer/Public/FontRenderer.h"
-#include "Component/Public/TextComponent.h"
+#include "Component/Public/UUIDTextComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Editor/Public/Editor.h"
@@ -312,6 +312,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
 	TArray<TObjectPtr<UBillBoardComponent>> BillBoards;
+	TArray<TObjectPtr<UTextComponent>> Texts;
 
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
@@ -345,6 +346,16 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 				continue;
 			}
 
+			TObjectPtr<UTextComponent> Text = Cast<UTextComponent>(Prim);
+			if (Text && !Text->IsExactly(UUUIDTextComponent::StaticClass()))
+			{
+				Texts.push_back(Text);
+				if (LevelManager.GetEditor()->GetPickedBillboard() == \
+					Cast<UUUIDTextComponent>(Text))
+					UE_LOG("Damn");
+				continue;
+			}
+
 			DefaultPrimitives.push_back(Prim);
 		}
 		TIME_PROFILE_END(FinalVisiblePrims)
@@ -364,16 +375,16 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
 		}
-
-		RenderBillBoard(InCurrentCamera, BillBoards);
-
 		TIME_PROFILE_END(PrimitiveComponent)
+		
+		RenderBillBoard(InCurrentCamera, BillBoards);
+		RenderText(InCurrentCamera, Texts);
 	}
 
 	TIME_PROFILE(RenderUUID)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UUUIDTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
 		{
 			RenderUUID(PickedBillboard, InCurrentCamera);
 		}
@@ -654,9 +665,44 @@ void URenderer::RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBil
 	}
 }
 
+void  URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp)
+{
+	const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
+	ULevelManager& LevelManager = ULevelManager::GetInstance();
 
+	ID3D11RasterizerState* LoadedRasterizerState = nullptr;
 
-void URenderer::RenderUUID(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
+	for (const TObjectPtr<UTextComponent>& Text : InTextComp)
+	{
+		FRenderState RenderState = Text->GetRenderState();
+		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe)
+		{
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
+		}
+		LoadedRasterizerState = GetRasterizerState(RenderState);
+
+		FontRenderer->RenderText(
+			Text->GetText().c_str(),
+			Text->GetWorldTransformMatrix(),
+			ViewProj
+		);
+	}
+
+	// RenderText 이후 파이프라인 복원
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		LoadedRasterizerState,
+		DefaultDepthStencilState,
+		DefaultPixelShader,
+		nullptr,
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+}
+
+void URenderer::RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
 {
 	if (!InCurrentCamera)	return;
 

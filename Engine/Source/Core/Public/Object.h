@@ -23,6 +23,7 @@ public:
 
 	// 3. Public 멤버 함수
 	bool IsA(TObjectPtr<UClass> InClass) const;
+	bool IsExactly(TObjectPtr<UClass> InClass) const;
 	void AddMemoryUsage(uint64 InBytes, uint32 InCount);
 	void RemoveMemoryUsage(uint64 InBytes, uint32 InCount);
 

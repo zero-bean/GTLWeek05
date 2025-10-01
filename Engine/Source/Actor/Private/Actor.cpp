@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/SceneComponent.h"
-#include "Component/Public/TextComponent.h"
+#include "Component/Public/UUIDTextComponent.h"
 
 IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
 	// to do: primitive factory로 빌보드 생성
-	BillBoardComponent = new UTextComponent(this, 5.0f);
-	OwnedComponents.push_back(TObjectPtr<UTextComponent>(BillBoardComponent));
+	UUIDTextComponent = new UUUIDTextComponent(this, 5.0f);
+	OwnedComponents.push_back(TObjectPtr<UUUIDTextComponent>(UUIDTextComponent));
 }
 
 AActor::AActor(UObject* InOuter)
