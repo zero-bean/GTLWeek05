@@ -78,7 +78,7 @@ public:
 
 	AActor* DuplicateActor(AActor* InActorToDuplicate);
 	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
-	//virtual void DuplicateSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
+	virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
 
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.

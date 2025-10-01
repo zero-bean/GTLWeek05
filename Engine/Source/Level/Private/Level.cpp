@@ -403,6 +403,17 @@ void ULevel::ProcessPendingDeletions()
 }
 
 
+UObject* ULevel::Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap)
+{
+	for(auto& Actor : LevelActors)
+	{
+		SubObjects[Actor->GetName()] = Actor;
+	}
+	UObject* NewLevel = Super::Duplicate(InNewOuter, InOutDuplicationMap);
+
+	return NewLevel;
+}
+
 void ULevel::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
 {
 	Super::PostDuplicate(InDuplicationMap);
