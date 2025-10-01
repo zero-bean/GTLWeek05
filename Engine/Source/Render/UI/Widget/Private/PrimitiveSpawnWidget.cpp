@@ -108,7 +108,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		// 'Duplicate' 버튼을 누르면 레벨의 DuplicateActor 함수를 호출합니다.
 		if (ImGui::Button("Duplicate!"))
 		{
-			CurrentLevel->DuplicateActor(SelectedActor);
+			//CurrentLevel->DuplicateActor(SelectedActor);
 		}
 	}
 	else

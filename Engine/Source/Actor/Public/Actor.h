@@ -35,11 +35,6 @@ public:
 	virtual void EndPlay();
 	virtual void Tick();
 
-	// Duplication
-	virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
-	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
-
-
 	// Getter & Setter
 	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
 	const TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents() const { return OwnedComponents; }
@@ -105,10 +100,6 @@ public:
 	void SetTickInEditor(bool InbTickInEditor) { bTickInEditor = InbTickInEditor; }
 
 protected:
-	// Duplication
-	virtual void CopyPropertiesFrom(const UObject* InObject) override;
-	virtual void DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
-
 	bool bCanEverTick = false;
 	bool bTickInEditor = false;
 	bool bBegunPlay = false;
@@ -117,4 +108,10 @@ private:
 	TObjectPtr<USceneComponent> RootComponent = nullptr;
 	TObjectPtr<UUUIDTextComponent> UUIDTextComponent = nullptr;
 	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
+	
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 };

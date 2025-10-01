@@ -76,9 +76,11 @@ public:
 	FOctree* GetStaticOctree() { return StaticOctree; }
 	TArray<UPrimitiveComponent*>& GetDynamicPrimitives() { return DynamicPrimitives; }
 
-	AActor* DuplicateActor(AActor* InActorToDuplicate);
-	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
-	virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.

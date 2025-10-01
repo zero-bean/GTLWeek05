@@ -23,4 +23,11 @@ public:
 	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
 private:
 	FString Text = FString("Text");
+
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
+
 };

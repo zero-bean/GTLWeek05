@@ -24,7 +24,6 @@ UWorld::~UWorld()
 	EndPlay();
 	if (Level)
 	{
-		SubObjects.erase(Level->GetName());
 		ULevel* CurrentLevel = Level.Get();
 		SafeDelete(CurrentLevel); // 내부 Clean up은 Level의 소멸자에서 수행
 		Level = nullptr;
@@ -267,20 +266,27 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 	EndPlay();
 	if (Level)
 	{
-		SubObjects.erase(Level->GetName());
 		ULevel* OldLevel = Level.Get();
 		SafeDelete(OldLevel);
 		Level = nullptr;
 	}
 
 	Level = InNewLevel;
-	if (Level)
-	{
-		// Level을 SubObjects에 등록하여 복사 시스템이 인식하도록 함
-		SubObjects[Level->GetName()] = Level;
-	}
 	PendingDestroyActors.clear();
 	bBegunPlay = false;
+}
+
+UObject* UWorld::Duplicate()
+{
+	UWorld* World = Cast<UWorld>(Super::Duplicate());
+	return World;
+}
+
+void UWorld::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	Super::DuplicateSubObjects(DuplicatedObject);
+	UWorld* World = Cast<UWorld>(DuplicatedObject);
+	World->Level = Cast<ULevel>(Level->Duplicate());
 }
 
 void UWorld::CreateNewLevel(const FName& InLevelName)
@@ -288,32 +294,4 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 	TObjectPtr<ULevel> NewLevel = TObjectPtr(new ULevel(InLevelName));
 	NewLevel->SetOuter(this);
 	SwitchToLevel(NewLevel);
-}
-
-void UWorld::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
-{
-	Super::PostDuplicate(InDuplicationMap);
-	const UWorld* SourceWorld = Cast<UWorld>(SourceObject);
-	
-	if (SourceWorld)
-	{
-		WorldType = SourceWorld->WorldType;
-		
-		// Level 복사 확인 및 처리
-		if (SourceWorld->Level)
-		{
-			// SubObjects를 통해 Level이 복사되었는지 확인
-			auto LevelIt = SubObjects.find(SourceWorld->Level->GetName());
-			if (LevelIt != SubObjects.end())
-			{
-				Level = Cast<ULevel>(LevelIt->second);
-				
-			}
-		}
-	}
-
-	if (Level)
-	{
-		Level->PostDuplicate(InDuplicationMap);
-	}
 }

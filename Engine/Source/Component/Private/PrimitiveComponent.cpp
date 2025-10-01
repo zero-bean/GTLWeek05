@@ -180,29 +180,30 @@ void UPrimitiveComponent::MarkAsDirty()
 	Super::MarkAsDirty();
 }
 
-void UPrimitiveComponent::CopyPropertiesFrom(const UObject* InObject)
+
+UObject* UPrimitiveComponent::Duplicate()
 {
-	// 1. 부모(USceneComponent)의 작업을 먼저 호출합니다.
-	Super::CopyPropertiesFrom(InObject);
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Super::Duplicate());
+	
+	PrimitiveComponent->Color = Color;
+	PrimitiveComponent->Topology = Topology;
+	PrimitiveComponent->RenderState = RenderState;
+	PrimitiveComponent->Type = Type;
+	PrimitiveComponent->bVisible = bVisible;
 
-	// 2. 원본을 UPrimitiveComponent로 캐스팅합니다.
-	if (const UPrimitiveComponent* SourceComponent = Cast<const UPrimitiveComponent>(InObject))
-	{
-		// 3. 고유한 값들을 복사합니다.
-		this->Color = SourceComponent->Color;
-		this->Topology = SourceComponent->Topology;
-		this->RenderState = SourceComponent->RenderState;
-		this->Type = SourceComponent->Type;
-		this->bVisible = SourceComponent->bVisible;
+	PrimitiveComponent->Vertices = Vertices;
+	PrimitiveComponent->Indices = Indices;
+	PrimitiveComponent->VertexBuffer = VertexBuffer;
+	PrimitiveComponent->IndexBuffer = IndexBuffer;
+	PrimitiveComponent->NumVertices = NumVertices;
+	PrimitiveComponent->NumIndices = NumIndices;
+	PrimitiveComponent->BoundingBox = BoundingBox;
+	
+	return PrimitiveComponent;
+}
 
-		// 4. 버텍스/인덱스 데이터, GPU 버퍼, 바운딩 박스 등은 '공유 리소스'입니다.
-		// 데이터를 통째로 복사하는 것이 아니라, 같은 리소스를 가리키도록 포인터만 복사합니다.
-		this->Vertices = SourceComponent->Vertices;
-		this->Indices = SourceComponent->Indices;
-		this->VertexBuffer = SourceComponent->VertexBuffer;
-		this->IndexBuffer = SourceComponent->IndexBuffer;
-		this->NumVertices = SourceComponent->NumVertices;
-		this->NumIndices = SourceComponent->NumIndices;
-		this->BoundingBox = SourceComponent->BoundingBox;
-	}
+void UPrimitiveComponent::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	Super::DuplicateSubObjects(DuplicatedObject);
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(DuplicatedObject);
 }

@@ -30,7 +30,6 @@ public:
 	 */
 	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const { return nullptr; }
 
-	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
 
 	EComponentType GetComponentType() { return ComponentType; }
 
@@ -43,11 +42,16 @@ public:
 	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 
 protected:
-	virtual void CopyPropertiesFrom(const UObject* InObject) override;
-
 	EComponentType ComponentType;
 	bool bCanEverTick = false;
 
 private:
 	AActor* Owner;
+	
+public:
+	virtual UObject* Duplicate() override;
+
+protected:
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
+
 };
