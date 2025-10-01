@@ -195,7 +195,8 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 
 			if (!DraggedComp || DraggedComp == InComponent)
 			{
-				ImGui::EndDragDropTarget();
+				ImGui::EndDragDropTarget();		ImGui::TreePop();
+
 				return;
 			}
 
@@ -204,17 +205,18 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 			TObjectPtr<AActor> Owner = DraggedComp->GetOwner();
 			if (!Owner)
 			{
-				ImGui::EndDragDropTarget();
+				ImGui::EndDragDropTarget();		ImGui::TreePop();
+
 				return;
 			}
-
-			// 사용자의 요청에 따라, 최상위 컴포넌트(Root Component)를 드롭 대상으로 지정할 수 없습니다.
-			if (InComponent == Owner->GetRootComponent())
+			
+			if (DraggedScene->GetParentComponent() == TargetScene)
 			{
-				ImGui::EndDragDropTarget();
+				ImGui::EndDragDropTarget();		ImGui::TreePop();
+
 				return;
 			}
-
+			
 			// -----------------------------
 			// 자기 자신이나 자식에게 Drop 방지
 			// -----------------------------
@@ -227,6 +229,8 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 					{
 						UE_LOG_WARNING("Cannot drop onto self or own child.");
 						ImGui::EndDragDropTarget();
+						ImGui::TreePop();
+
 						return;
 					}
 					Iter = Iter->GetParentAttachment();
@@ -241,14 +245,16 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 				// 드롭 대상이 유효한 SceneComponent가 아니면, 작업을 진행하지 않습니다.
 				if (!TargetScene)
 				{
-					ImGui::EndDragDropTarget();
+					ImGui::EndDragDropTarget();		ImGui::TreePop();
+
 					return;
 				}
 
 				// 자기 부모에게 드롭하는 경우, 아무 작업도 하지 않음
 				if (TargetScene == DraggedScene->GetParentAttachment())
 				{
-					ImGui::EndDragDropTarget();
+					ImGui::EndDragDropTarget();		ImGui::TreePop();
+
 					return;
 				}
 
