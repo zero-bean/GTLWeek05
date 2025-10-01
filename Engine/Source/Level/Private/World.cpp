@@ -69,12 +69,30 @@ void UWorld::Tick(float DeltaTime)
 	}
 
 	// 입력 수집
-	// 월드 타이머 갱신
 	// 스폰 / 삭제 처리
 	FlushPendingDestroy();
 
-	// Level Tick
-	Level->Tick(DeltaTime);
+	if (WorldType == EWorldType::Editor )
+	{
+		for (AActor* Actor : Level->GetLevelActors())
+		{
+			if(Actor->CanTickInEditor() && Actor->CanTick())
+			{
+				Actor->Tick();
+			}
+		}
+	}
+
+	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
+	{
+		for (AActor* Actor : Level->GetLevelActors())
+		{
+			if(Actor->CanTick())
+			{
+				Actor->Tick();
+			}
+		}
+	}
 
 	// Render Command 제출
 }
@@ -254,6 +272,27 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 	}
 
 	Level = InNewLevel;
+	PendingDestroyActors.clear();
+	bBegunPlay = false;
+}
+
+void UWorld::CreateNewLevel(const FName& InLevelName)
+{
+	// 내부는 갈아치울 예정
+	if (Level)
+	{
+		ULevel* OldLevel = Level.Get();
+		SafeDelete(OldLevel);
+		Level = nullptr;
+	}
+	FName NewLevelName = InLevelName;
+	if (NewLevelName == FName::GetNone())
+	{
+		NewLevelName = FName("NewLevel");
+	}
+	ULevel* NewLevel = new ULevel(NewLevelName);
+	NewLevel->SetOuter(this);
+	Level = NewLevel;
 	PendingDestroyActors.clear();
 	bBegunPlay = false;
 }

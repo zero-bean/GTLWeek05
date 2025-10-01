@@ -77,12 +77,17 @@ public:
 	bool CanTick() const { return bCanEverTick; }
 	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 
+	bool CanTickInEditor() const { return bTickInEditor; }
+	void SetTickInEditor(bool InbTickInEditor) { bTickInEditor = InbTickInEditor; }
+
 protected:
 	// Duplication
 	virtual void CopyPropertiesFrom(const UObject* InObject) override;
 	virtual void DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
 
 	bool bCanEverTick = false;
+	bool bTickInEditor = false;
+	bool bBegunPlay = false;
 
 private:
 	TObjectPtr<USceneComponent> RootComponent = nullptr;

@@ -193,8 +193,26 @@ void AActor::Tick()
 
 void AActor::BeginPlay()
 {
+	if (bBegunPlay) return;
+	bBegunPlay = true;
+	for (auto& Component : OwnedComponents)
+	{
+		if (Component)
+		{
+			Component->BeginPlay();
+		}
+	}
 }
 
 void AActor::EndPlay()
 {
+	if (!bBegunPlay) return;
+	bBegunPlay = false;
+	for (auto& Component : OwnedComponents)
+	{
+		if (Component)
+		{
+			Component->EndPlay();
+		}
+	}
 }

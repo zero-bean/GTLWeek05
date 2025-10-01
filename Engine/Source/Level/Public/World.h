@@ -50,6 +50,7 @@ public:
 
 	// Level Management Triggers
 	TObjectPtr<ULevel> GetLevel() const;
+	void CreateNewLevel(const FName& InLevelName = FName::GetNone());
 	bool LoadLevel(path InLevelFilePath);
 	bool SaveCurrentLevel(path InLevelFilePath) const;
 
