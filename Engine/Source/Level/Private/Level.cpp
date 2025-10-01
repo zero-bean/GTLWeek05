@@ -92,7 +92,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		for (const TObjectPtr<AActor>& Actor : LevelActors)
 		{
 			JSON PrimitiveJson;
-			PrimitiveJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());;
+			PrimitiveJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());
 			Actor->Serialize(bInIsLoading, PrimitiveJson);
 
 			PrimitivesJson[std::to_string(Actor->GetUUID())] = PrimitiveJson;
@@ -190,12 +190,12 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		{
 			NewActor->SetName(InName);
 		}
+		LevelActors.push_back(TObjectPtr(NewActor));
+		NewActor->InitializeComponents();
 		if (ActorJsonData != nullptr)
 		{
 			NewActor->Serialize(true, *ActorJsonData);
 		}
-		LevelActors.push_back(TObjectPtr(NewActor));
-		NewActor->InitializeComponents();
 		NewActor->BeginPlay();
 		AddLevelPrimitiveComponent(NewActor);
 		return NewActor;
