@@ -10,7 +10,10 @@ IMPLEMENT_CLASS(UUUIDTextComponent, UTextComponent)
  * Actor has a UBillBoardComponent
  */
 
-UUUIDTextComponent::UUUIDTextComponent() : ZOffset(0.0f) {};
+UUUIDTextComponent::UUUIDTextComponent() : ZOffset(0.0f)
+{
+	Type = EPrimitiveType::UUID;
+};
 
 UUUIDTextComponent::~UUUIDTextComponent()
 {
