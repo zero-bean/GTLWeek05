@@ -687,7 +687,10 @@ void  URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextCom
 			Text->GetWorldTransformMatrix(),
 			ViewProj,
 			0.0f,
-			-1.0f
+			-1.0f,
+			1.0f,
+			2.0f,
+			true
 		);
 	}
 
