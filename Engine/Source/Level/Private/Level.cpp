@@ -181,8 +181,6 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Text) { continue; }
-
 		if (StaticOctree->Insert(PrimitiveComponent) == false)
 		{
 			DynamicPrimitives.push_back(PrimitiveComponent);

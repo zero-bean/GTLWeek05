@@ -55,7 +55,7 @@ UObject* UTextComponent::Duplicate()
 
 void UTextComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 {
-	UPrimitiveComponent::DuplicateSubObjects(DuplicatedObject);
+	Super::DuplicateSubObjects(DuplicatedObject);
 }
 
 void UTextComponent::RegulatePickingAreaByTextLength()
