@@ -50,6 +50,16 @@ void UUUIDTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
 	RTMatrix *= FMatrix::TranslationMatrix(Translation);
 }
 
+void UUUIDTextComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	UTextComponent::Serialize(bInIsLoading, InOutHandle);
+	if (bInIsLoading)
+	{
+		GetOwner()->SetUUIDTextComponent(this);
+		SetOffset(5);
+	}
+}
+
 TObjectPtr<UClass> UUUIDTextComponent::GetSpecificWidgetClass() const
 {
 	return TObjectPtr<UClass>();

@@ -44,6 +44,7 @@ public:
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
 	UUUIDTextComponent* GetUUIDTextComponent() const { return UUIDTextComponent.Get(); }
+	void SetUUIDTextComponent(UUUIDTextComponent* InUUIDTextComponent) { UUIDTextComponent = InUUIDTextComponent; }
 
 	const FVector& GetActorLocation() const;
 	const FVector& GetActorRotation() const;

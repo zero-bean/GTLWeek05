@@ -4,6 +4,39 @@
 
 using std::stringstream;
 
+void UClass::SignUpClass(TObjectPtr<UClass> InClass)
+{
+	if (InClass)
+	{
+		for (UClass* Class : GetAllClasses())
+		{
+			if (Class == InClass) return;
+		}
+		GetAllClasses().emplace_back(InClass);
+		UE_LOG("UClass: Class registered: %s (Total: %llu)", InClass->GetName().ToString().data(), GetAllClasses().size());
+	}
+}
+
+TObjectPtr<UClass> UClass::FindClass(const FName& InClassName)
+{
+	for (TObjectPtr<UClass> Class : GetAllClasses())
+	{
+		if (Class && Class->GetName() == InClassName)
+		{
+			return Class;
+		}
+	}
+
+	return nullptr;
+}
+
+TArray<TObjectPtr<UClass>>& UClass::GetAllClasses()
+{
+	// 이 함수가 최초로 호출될 때 단 한 번만 안전하게 초기화됩니다.
+	static TArray<TObjectPtr<UClass>> AllClasses;
+	return AllClasses;
+}
+
 /**
  * @brief UClass Constructor
  * @param InName Class 이름

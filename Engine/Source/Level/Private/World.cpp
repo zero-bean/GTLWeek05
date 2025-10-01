@@ -126,6 +126,7 @@ bool UWorld::LoadLevel(path InLevelFilePath)
 		}
 
 		NewLevel->SetOuter(this);
+		SwitchToLevel(NewLevel);
 		NewLevel->Serialize(true, LevelJson);
 
 		UConfigManager::GetInstance().SetLastUsedLevelPath(InLevelFilePath.string());
@@ -134,10 +135,10 @@ bool UWorld::LoadLevel(path InLevelFilePath)
 	{
 		UE_LOG_ERROR("World: Level 로드 중 예외 발생: %s", Exception.what());
 		SafeDelete(NewLevel);
+		CreateNewLevel();
 		return false;
 	}
 
-	SwitchToLevel(NewLevel);
 
 	return true;
 }

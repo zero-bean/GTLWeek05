@@ -29,8 +29,8 @@ void USetTextComponentWidget::Initialize()
 
 void USetTextComponentWidget::Update()
 {
-	// ¸Å ÇÁ·¹ÀÓ LevelÀÇ ¼±ÅÃµÈ Actor¸¦ È®ÀÎÇØ¼­ Á¤º¸ ¹Ý¿µ
-	// TODO(KHJ): ÀûÀýÇÑ À§Ä¡¸¦ Ã£À» °Í
+	// ë§¤ í”„ë ˆìž„ Levelì˜ ì„ íƒëœ Actorë¥¼ í™•ì¸í•´ì„œ ì •ë³´ ë°˜ì˜
+	// TODO(KHJ): ì ì ˆí•œ ìœ„ì¹˜ë¥¼ ì°¾ì„ ê²ƒ
 	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
@@ -59,7 +59,7 @@ void USetTextComponentWidget::RenderWidget()
 
 	ImGui::Spacing();
 
-	// ¹öÆÛ¸¦ Á÷Á¢ °ü¸®ÇØ¾ß ÇÔ
+	// ë²„í¼ë¥¼ ì§ì ‘ ê´€ë¦¬í•´ì•¼ í•¨
 	
 	static char buf[256] = "";
 	const FString& TextOfComponent = SelectedTextComponent->GetText();

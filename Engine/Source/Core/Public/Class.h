@@ -16,7 +16,12 @@ class UClass
 public:
     // 생성자 함수 포인터 타입 정의
     typedef UObject* (*ClassConstructorType)();
-
+public:
+    static void SignUpClass(TObjectPtr<UClass> InClass);
+    static TObjectPtr<UClass> FindClass(const FName& InClassName);
+private:
+    static TArray<TObjectPtr<UClass>>& GetAllClasses();
+    
 public:
     UClass(const FName& InName, TObjectPtr<UClass> InSuperClass, size_t InClassSize, ClassConstructorType InConstructor);
 
@@ -64,13 +69,14 @@ static UObject* CreateDefaultObject##ClassName();
 UClass* ClassName::StaticClass() \
 { \
 /* 정적 지역 변수를 사용하여 UClass 객체를 자동 관리 */ \
-static UClass Instance( \
-FString(#ClassName), \
-SuperClassName::StaticClass(), \
-sizeof(ClassName), \
-&ClassName::CreateDefaultObject##ClassName \
-); \
-return &Instance; \
+    static UClass Instance( \
+        FString(#ClassName), \
+        SuperClassName::StaticClass(), \
+        sizeof(ClassName), \
+        &ClassName::CreateDefaultObject##ClassName \
+    ); \
+    UClass::SignUpClass(&Instance); \
+    return &Instance; \
 } \
 UClass* ClassName::GetClass() const \
 { \
@@ -79,7 +85,8 @@ return ClassName::StaticClass(); \
 UObject* ClassName::CreateDefaultObject##ClassName() \
 { \
 return new ClassName(); \
-}
+} \
+static bool bIsRegistered_##ClassName = [](){ ClassName::StaticClass(); return true; }();
 
 
 /**
@@ -114,6 +121,7 @@ UClass* ClassName::StaticClass() \
         sizeof(ClassName), \
         nullptr /* 싱글톤은 동적 생성을 지원하지 않으므로 생성자 포인터를 null로 전달 */ \
     ); \
+    UClass::SignUpClass(&Instance); \
     return &Instance; \
 } \
 UClass* ClassName::GetClass() const \
@@ -129,7 +137,8 @@ ClassName& ClassName::GetInstance() \
 { \
     static ClassName Instance; \
     return Instance; \
-}
+}\
+static bool bIsRegistered_##ClassName = [](){ ClassName::StaticClass(); return true; }();
 
 // 싱글톤 베이스 클래스용 매크로 (SuperClass가 nullptr인 경우) (수정됨: TObjectPtr, ClassPrivate, 람다 제거)
 #define IMPLEMENT_SINGLETON_CLASS_BASE(ClassName) \
@@ -170,6 +179,7 @@ UClass* ClassName::StaticClass() \
         sizeof(ClassName), \
         &ClassName::CreateDefaultObject##ClassName \
     ); \
+    UClass::SignUpClass(&Instance); \
     return &Instance; \
 } \
 UClass* ClassName::GetClass() const \
@@ -179,4 +189,5 @@ UClass* ClassName::GetClass() const \
 UObject* ClassName::CreateDefaultObject##ClassName() \
 { \
     return new ClassName(); \
-}
+}\
+static bool bIsRegistered_##ClassName = [](){ ClassName::StaticClass(); return true; }();
