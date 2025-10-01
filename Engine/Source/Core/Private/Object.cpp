@@ -62,7 +62,7 @@ UObject* UObject::Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOut
 
 	NewObject->SetOuter(InNewOuter);
 
-	// 2. 값 복사
+	// 2. 소유하지 않는 참조 관계 얕은 복사
 	NewObject->CopyPropertiesFrom(this);
 
 	// 3. 소유하는 SubObject 깊은 복사

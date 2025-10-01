@@ -61,6 +61,8 @@ public:
 	// Editor에서 쿼리 요청시 Level에 바로 요청하지 않고 World를 통해 요청하도록 변경 
 
 	EWorldType GetWorldType() const;
+	void SetWorldType(EWorldType InWorldType);
+	// virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
 
 private:
 	EWorldType WorldType;

@@ -209,6 +209,12 @@ EWorldType UWorld::GetWorldType() const
 	return WorldType;
 }
 
+void UWorld::SetWorldType(EWorldType InWorldType)
+{
+	WorldType = InWorldType;
+	//Type에 따른 추가 설정 필요시 여기에 작성
+}
+
 /**
  * @brief 삭제 대기 중인 Actor들을 실제로 삭제합니다.
  * @note 이 함수는 Tick 루프 내에서 안전한 시점에 호출되어야 합니다.
