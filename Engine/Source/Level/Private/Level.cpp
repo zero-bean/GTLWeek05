@@ -143,6 +143,10 @@ void ULevel::Update()
 	}
 }
 
+void ULevel::Tick(float DeltaTime)
+{
+}
+
 void ULevel::Render()
 {
 }
