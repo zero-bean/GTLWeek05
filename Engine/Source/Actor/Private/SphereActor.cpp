@@ -7,7 +7,7 @@ IMPLEMENT_CLASS(ASphereActor, AActor)
 ASphereActor::ASphereActor()
 {
 	SphereComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
-	SetRootComponent(SphereComponent);
+	SphereComponent->SetParentAttachment(GetRootComponent());
 }
 
 void ASphereActor::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
