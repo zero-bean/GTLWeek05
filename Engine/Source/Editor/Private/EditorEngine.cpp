@@ -29,6 +29,7 @@ UEditorEngine::UEditorEngine()
     FString LastSavedLevelPath = UConfigManager::GetInstance().GetLastSavedLevelPath();
     bool bSuccessLoad = LoadLevel(LastSavedLevelPath);
     if (!bSuccessLoad) { CreateNewLevel(); }
+    EditorWorld->BeginPlay();
 }
 
 UEditorEngine::~UEditorEngine()
@@ -123,6 +124,7 @@ void UEditorEngine::EndPIE()
     }
     
     GWorld = GetEditorWorldContext().World(); 
+    GWorld->BeginPlay();
 }
 
 void UEditorEngine::PausePIE()

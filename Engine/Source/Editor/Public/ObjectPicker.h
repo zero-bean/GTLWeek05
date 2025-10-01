@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 #include "Editor/Public/Gizmo.h"
 
 class UPrimitiveComponent;

@@ -215,6 +215,7 @@ bool UWorld::DestroyActor(AActor* InActor)
 
 	if (std::find(PendingDestroyActors.begin(), PendingDestroyActors.end(), InActor) != PendingDestroyActors.end())
 	{
+		UE_LOG_ERROR("World: 이미 삭제 대기 중인 액터에 대한 중복 삭제 요청입니다.");
 		return false; // 이미 삭제 대기 중인 액터
 	}
 
@@ -230,7 +231,6 @@ EWorldType UWorld::GetWorldType() const
 void UWorld::SetWorldType(EWorldType InWorldType)
 {
 	WorldType = InWorldType;
-	//Type에 따른 추가 설정 필요시 여기에 작성
 }
 
 /**
@@ -246,7 +246,7 @@ void UWorld::FlushPendingDestroy()
 
 	TArray<AActor*> ActorsToProcess = PendingDestroyActors;
 	PendingDestroyActors.clear();
-
+	UE_LOG("World: %zu개의 Actor를 삭제합니다.", ActorsToProcess.size());
 	for (AActor* ActorToDestroy : ActorsToProcess)
 	{
 		if (!Level->DestroyActor(ActorToDestroy))
