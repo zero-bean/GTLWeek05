@@ -422,3 +422,6 @@ Engine/editor.ini
 # AI Agent Init Files
 AGENTS.md
 WARP.md
+
+# Rider
+.idea/
