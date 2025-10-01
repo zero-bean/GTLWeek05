@@ -20,32 +20,6 @@
 #include <json.hpp>
 
 // World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
-namespace
-{
-	// 최상위 복제 관리 함수
-	UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter)
-	{
-		if (!InObjectToDuplicate) return nullptr;
-
-		TMap<UObject*, UObject*> DuplicationMap;
-
-		// Pass 1: 객체 생성 및 복사
-		UObject* DuplicatedRootObject = InObjectToDuplicate->Duplicate(InNewOuter, DuplicationMap);
-
-		// Pass 2: 참조 재연결
-		for (auto const& [Original, Duplicated] : DuplicationMap)
-		{
-			if (Duplicated)
-			{
-				Duplicated->PostDuplicate(DuplicationMap);
-			}
-		}
-
-		return DuplicatedRootObject;
-	}
-}
-
-// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
 AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 {
 	if (!InActorToDuplicate)

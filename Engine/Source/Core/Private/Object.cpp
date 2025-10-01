@@ -188,3 +188,25 @@ bool UObject::IsA(TObjectPtr<UClass> InClass) const
 
 	return GetClass()->IsChildOf(InClass);
 }
+
+// 최상위 복제 관리 함수
+UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter)
+{
+	if (!InObjectToDuplicate) return nullptr;
+
+	TMap<UObject*, UObject*> DuplicationMap;
+
+	// Pass 1: 객체 생성 및 복사
+	UObject* DuplicatedRootObject = InObjectToDuplicate->Duplicate(InNewOuter, DuplicationMap);
+
+	// Pass 2: 참조 재연결
+	for (auto const& [Original, Duplicated] : DuplicationMap)
+	{
+		if (Duplicated)
+		{
+			Duplicated->PostDuplicate(DuplicationMap);
+		}
+	}
+
+	return DuplicatedRootObject;
+}

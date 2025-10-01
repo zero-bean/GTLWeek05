@@ -257,3 +257,5 @@ bool IsValid(const TObjectPtr<U>& InObjectPtr)
 }
 
 TArray<TObjectPtr<UObject>>& GetUObjectArray();
+
+UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter);
