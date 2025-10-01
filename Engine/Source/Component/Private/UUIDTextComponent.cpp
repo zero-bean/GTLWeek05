@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Component/Public/UUIDTextComponent.h"
-#include "Manager/Level/Public/LevelManager.h"
 #include "Editor/Public/Editor.h"
 #include "Actor/Public/Actor.h"
 

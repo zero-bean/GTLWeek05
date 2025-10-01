@@ -18,8 +18,6 @@ UTextComponent::UTextComponent()
 
 	RenderState.CullMode = ECullMode::Back;
 	RenderState.FillMode = EFillMode::Solid;
-
-	SetRelativeRotation({ 0.0f, -90.0f, -90.0f });
 }
 
 UTextComponent::~UTextComponent()

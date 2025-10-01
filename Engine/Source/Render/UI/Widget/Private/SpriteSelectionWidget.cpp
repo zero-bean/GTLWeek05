@@ -2,7 +2,6 @@
 #include "Render/UI/Widget/Public/SpriteSelectionWidget.h"
 
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Component/Public/BillBoardComponent.h"
 
@@ -23,8 +22,7 @@ void USpriteSelectionWidget::Initialize()
 void USpriteSelectionWidget::Update()
 {
 	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{
@@ -114,6 +112,9 @@ void USpriteSelectionWidget::UpdateSpriteFromActor()
 
 void USpriteSelectionWidget::SetSpriteOfActor()
 {
+	if (!SelectedActor)
+		return;
+
 	const TMap<FName, ID3D11ShaderResourceView*>& TextureCache = \
 		UAssetManager::GetInstance().GetTextureCache();
 

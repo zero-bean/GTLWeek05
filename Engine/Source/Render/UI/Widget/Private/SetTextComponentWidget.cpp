@@ -2,7 +2,6 @@
 #include "Render/UI/Widget/Public/SetTextComponentWidget.h"
 
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
 #include "Actor/Public/CubeActor.h"
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/SquareActor.h"
@@ -30,8 +29,7 @@ void USetTextComponentWidget::Update()
 {
 	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
 	// TODO(KHJ): 적절한 위치를 찾을 것
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{

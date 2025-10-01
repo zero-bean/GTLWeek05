@@ -161,7 +161,7 @@ void AActor::DuplicatesSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>&
 	}
 	OwnedComponents.clear();
 	RootComponent = nullptr;
-	BillBoardComponent = nullptr;
+	UUIDTextComponent = nullptr;
 
 
 	// 4. 원본 액터의 모든 소유 컴포넌트(OwnedComponents)를 순회하며 복제합니다.

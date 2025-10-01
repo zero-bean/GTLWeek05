@@ -349,7 +349,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 			if (Text && !Text->IsExactly(UUUIDTextComponent::StaticClass()))
 			{
 				Texts.push_back(Text);
-				if (LevelManager.GetEditor()->GetPickedBillboard() == \
+				if (GEditor->GetEditorModule()->GetPickedBillboard() == \
 					Cast<UUUIDTextComponent>(Text))
 					UE_LOG("Damn");
 				continue;
@@ -383,7 +383,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TIME_PROFILE(RenderUUID)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UUUIDTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UUUIDTextComponent* PickedBillboard = GEditor->GetEditorModule()->GetPickedBillboard())
 		{
 			RenderUUID(PickedBillboard, InCurrentCamera);
 		}
@@ -611,7 +611,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 void URenderer::RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBillBoardComponent>>& InBillBoardComp)
 {
 	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+	const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 
 	// Diffuse 말고 다른 모든 텍스처를 초기화한다.
 	Pipeline->SetTexture(1, false, nullptr);
@@ -667,14 +667,13 @@ void URenderer::RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBil
 void  URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp)
 {
 	const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
 
 	ID3D11RasterizerState* LoadedRasterizerState = nullptr;
 
 	for (const TObjectPtr<UTextComponent>& Text : InTextComp)
 	{
 		FRenderState RenderState = Text->GetRenderState();
-		const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+		const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 		if (ViewMode == EViewModeIndex::VMI_Wireframe)
 		{
 			RenderState.CullMode = ECullMode::None;
