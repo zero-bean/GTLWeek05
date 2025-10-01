@@ -189,6 +189,20 @@ bool UObject::IsA(TObjectPtr<UClass> InClass) const
 	return GetClass()->IsChildOf(InClass);
 }
 
+/**
+ * @brief 해당 클래스가 현재 내 클래스와 동일한지 판단하는 함수
+ * @return 판정 결과
+ */
+bool UObject::IsExactly(TObjectPtr<UClass> InClass) const
+{
+	if (!InClass)
+	{
+		return false;
+	}
+
+	return GetClass() == InClass;
+}
+
 // 최상위 복제 관리 함수
 UObject* DuplicateObjectGraph(UObject* InObjectToDuplicate, UObject* InNewOuter)
 {

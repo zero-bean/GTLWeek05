@@ -60,6 +60,8 @@ public:
 	const FAABB& GetAABB(EPrimitiveType InType);
 	const FAABB& GetStaticMeshAABB(FName InName);
 
+	const TMap<FName, ID3D11ShaderResourceView*>& GetTextureCache() const;
+
 private:
 	// Vertex Resource
 	TMap<EPrimitiveType, ID3D11Buffer*> VertexBuffers;

@@ -33,11 +33,18 @@ void UAssetManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::CubeArrow, &VerticesCubeArrow);
 	VertexDatas.emplace(EPrimitiveType::Ring, &VerticesRing);
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
+	VertexDatas.emplace(EPrimitiveType::Sprite, &VerticesBillBoard);
 
 	IndexDatas.emplace(EPrimitiveType::Cube, &IndicesCube);
+	IndexDatas.emplace(EPrimitiveType::Sprite, &IndicesBillBoard);
+
 	IndexBuffers.emplace(EPrimitiveType::Cube,
 		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
+	IndexBuffers.emplace(EPrimitiveType::Sprite,
+		Renderer.CreateIndexBuffer(IndicesBillBoard.data(), static_cast<int>(IndicesBillBoard.size()) * sizeof(uint32)));
+
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
+	NumIndices.emplace(EPrimitiveType::Sprite, static_cast<uint32>(IndicesBillBoard.size()));
 
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
 	VertexBuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
@@ -58,6 +65,8 @@ void UAssetManager::Initialize()
 		VerticesRing.data(), static_cast<int>(VerticesRing.size() * sizeof(FNormalVertex))));
 	VertexBuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
 		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FNormalVertex))));
+	VertexBuffers.emplace(EPrimitiveType::Sprite, Renderer.CreateVertexBuffer(
+		VerticesBillBoard.data(), static_cast<int>(VerticesBillBoard.size() * sizeof(FNormalVertex))));
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
 	NumVertices.emplace(EPrimitiveType::Sphere, static_cast<uint32>(VerticesSphere.size()));
@@ -68,6 +77,7 @@ void UAssetManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::CubeArrow, static_cast<uint32>(VerticesCubeArrow.size()));
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
+	NumVertices.emplace(EPrimitiveType::Sprite, static_cast<uint32>(VerticesBillBoard.size()));
 
 	// Calculate AABB for all primitive types (excluding StaticMesh)
 	for (const auto& Pair : VertexDatas)
@@ -275,6 +285,11 @@ const FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
 const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 {
 	return StaticMeshAABBs[InName];
+}
+
+const TMap<FName, ID3D11ShaderResourceView*>& UAssetManager::GetTextureCache() const
+{
+	return TextureCache;
 }
 
 // StaticMesh Cache Accessors

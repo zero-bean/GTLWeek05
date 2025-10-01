@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
 #include "Component/Public/PrimitiveComponent.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/CubeActor.h"
@@ -19,7 +19,8 @@
 #include "Global/Octree.h"
 #include <json.hpp>
 
-// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
+IMPLEMENT_CLASS(ULevel, UObject)
+
 AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 {
 	if (!InActorToDuplicate)
@@ -43,6 +44,11 @@ AActor* ULevel::DuplicateActor(AActor* InActorToDuplicate)
 	}
 
 	return nullptr;
+}
+
+ULevel::ULevel()
+{
+	StaticOctree = new FOctree(FVector(0, 0, -5), 75, 0);
 }
 
 ULevel::ULevel(const FName& InName)
@@ -240,7 +246,7 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::BillBoard) { continue; }
+		if (PrimitiveComponent->GetPrimitiveType() == EPrimitiveType::Text) { continue; }
 
 		if (StaticOctree->Insert(PrimitiveComponent) == false)
 		{
@@ -394,4 +400,28 @@ void ULevel::ProcessPendingDeletions()
 	}
 
 	UE_LOG("Level: 모든 지연 삭제 프로세스 완료");
+}
+
+
+void ULevel::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
+{
+	Super::PostDuplicate(InDuplicationMap);
+	const ULevel* OriginalLevel = Cast<const ULevel>(SourceObject);
+	if (OriginalLevel)
+	{
+		LevelActors = OriginalLevel->LevelActors;
+		StaticOctree = new FOctree();
+		const FAABB AABB = OriginalLevel->StaticOctree->GetBoundingBox();
+		StaticOctree->SetBoundingBox(AABB);
+		DynamicPrimitives = OriginalLevel->DynamicPrimitives;
+		ShowFlags = OriginalLevel->ShowFlags;
+	}
+	for (auto& Actor : LevelActors)
+	{
+		if (Actor)
+		{
+			AddLevelPrimitiveComponent(Actor);
+			Actor->PostDuplicate(InDuplicationMap);
+		}
+	}
 }

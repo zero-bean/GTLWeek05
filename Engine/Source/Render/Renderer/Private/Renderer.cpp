@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/FontRenderer/Public/FontRenderer.h"
-#include "Component/Public/TextComponent.h"
+#include "Component/Public/UUIDTextComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Editor/Public/Editor.h"
@@ -9,7 +9,7 @@
 #include "Editor/Public/ViewportClient.h"
 #include "Editor/Public/Camera.h"
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 #include "Texture/Public/Material.h"
@@ -261,7 +261,7 @@ void URenderer::Update()
 		// 4. 에디터를 렌더링합니다.
 		{
 			TIME_PROFILE(RenderEditor)
-				ULevelManager::GetInstance().GetEditor()->RenderEditor(CurrentCamera);
+			GEditor->GetEditorModule()->RenderEditor(CurrentCamera);
 		}
 
 	}
@@ -302,34 +302,16 @@ void URenderer::RenderBegin() const
 
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	const TObjectPtr<ULevel>& CurrentLevel = LevelManager.GetCurrentLevel();
+	const TObjectPtr<ULevel>& CurrentLevel = GWorld->GetLevel();
 
 	// Level 없으면 Early Return
 	if (!CurrentLevel) { return; }
 
-	uint64 ShowFlags = LevelManager.GetCurrentLevel()->GetShowFlags();
+	uint64 ShowFlags =  GWorld->GetLevel()->GetShowFlags();
 
-	TArray<TObjectPtr<UPrimitiveComponent>> OcclusionCandidates;
-	TArray<TObjectPtr<UTextComponent>> BillboardComponents;
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
-
-	TIME_PROFILE(GetViewVolumeCuller)
-	for (auto& PrimitiveComponent : InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects())
-	{
-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible()) { continue; }
-
-		OcclusionCandidates.push_back(PrimitiveComponent);
-		switch (PrimitiveComponent->GetPrimitiveType())
-		{
-		case EPrimitiveType::StaticMesh:
-			break;
-		default:
-			DefaultPrimitives.push_back(PrimitiveComponent);
-			break;
-		}
-	}
-	TIME_PROFILE_END(GetViewVolumeCuller)
+	TArray<TObjectPtr<UBillBoardComponent>> BillBoards;
+	TArray<TObjectPtr<UTextComponent>> Texts;
 
 	if (ShowFlags & EEngineShowFlags::SF_Primitives)
 	{
@@ -338,7 +320,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		static COcclusionCuller Culler;
 		const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
 		Culler.InitializeCuller(ViewProj.View, ViewProj.Projection);
-		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(OcclusionCandidates, InCurrentCamera->GetLocation());
+		TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(
+			InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects(),
+			InCurrentCamera->GetLocation()
+		);
 		TIME_PROFILE_END(Occlusion)
 
 			TIME_PROFILE(FinalVisiblePrims)
@@ -350,7 +335,27 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 			if (StaticMesh)
 			{
 				FinalVisibleMeshes.push_back(StaticMesh);
+				continue;
 			}
+
+			TObjectPtr<UBillBoardComponent> BillBoard = Cast<UBillBoardComponent>(Prim);
+			if (BillBoard)
+			{
+				BillBoards.push_back(BillBoard);
+				continue;
+			}
+
+			TObjectPtr<UTextComponent> Text = Cast<UTextComponent>(Prim);
+			if (Text && !Text->IsExactly(UUUIDTextComponent::StaticClass()))
+			{
+				Texts.push_back(Text);
+				if (GEditor->GetEditorModule()->GetPickedBillboard() == \
+					Cast<UUUIDTextComponent>(Text))
+					UE_LOG("Damn");
+				continue;
+			}
+
+			DefaultPrimitives.push_back(Prim);
 		}
 		TIME_PROFILE_END(FinalVisiblePrims)
 		RenderStaticMeshes(FinalVisibleMeshes);
@@ -359,7 +364,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
-			const EViewModeIndex ViewMode = LevelManager.GetEditor()->GetViewMode();
+			const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 			if (ViewMode == EViewModeIndex::VMI_Wireframe)
 			{
 				RenderState.CullMode = ECullMode::None;
@@ -369,16 +374,18 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 
 			RenderPrimitiveDefault(PrimitiveComponent, LoadedRasterizerState);
 		}
-
 		TIME_PROFILE_END(PrimitiveComponent)
+		
+		RenderBillBoard(InCurrentCamera, BillBoards);
+		RenderText(InCurrentCamera, Texts);
 	}
 
-	TIME_PROFILE(RenderBillboard)
+	TIME_PROFILE(RenderUUID)
 	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
 	{
-		if (UTextComponent* PickedBillboard = LevelManager.GetEditor()->GetPickedBillboard())
+		if (UUUIDTextComponent* PickedBillboard = GEditor->GetEditorModule()->GetPickedBillboard())
 		{
-			RenderBillboard(PickedBillboard, InCurrentCamera);
+			RenderUUID(PickedBillboard, InCurrentCamera);
 		}
 	}
 }
@@ -493,7 +500,7 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = ULevelManager::GetInstance().GetEditor()->GetViewMode();
+	const EViewModeIndex ViewMode =  GEditor->GetEditorModule()->GetViewMode();
 
 	for (UStaticMeshComponent* MeshComp : MeshComponents) 
 	{
@@ -601,7 +608,99 @@ void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& Mes
 	}
 }
 
-void URenderer::RenderBillboard(UTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
+void URenderer::RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBillBoardComponent>>& InBillBoardComp)
+{
+	ID3D11RasterizerState* CurrentRasterizer = nullptr;
+	const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
+
+	// Diffuse 말고 다른 모든 텍스처를 초기화한다.
+	Pipeline->SetTexture(1, false, nullptr);
+	Pipeline->SetTexture(2, false, nullptr);
+	Pipeline->SetTexture(4, false, nullptr);
+
+	for (UBillBoardComponent* BillBoardComp : InBillBoardComp)
+	{
+		BillBoardComp->FaceCamera(
+			InCurrentCamera->GetLocation(),
+			InCurrentCamera->GetUp(),
+			InCurrentCamera->GetRight()
+		);
+
+		// RasterizerState 설정
+		FRenderState RenderState = BillBoardComp->GetRenderState();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe)
+		{
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
+		}
+		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
+
+		// Pipeline 변경시에만 업데이트
+		if (CurrentRasterizer != RasterizerState)
+		{
+			static FPipelineInfo PipelineInfo = {
+				TextureInputLayout,
+				TextureVertexShader,
+				RasterizerState,
+				DefaultDepthStencilState,
+				TexturePixelShader,
+				nullptr,
+			};
+			PipelineInfo.RasterizerState = RasterizerState;
+			Pipeline->UpdatePipeline(PipelineInfo);
+			CurrentRasterizer = RasterizerState;
+		}
+
+		Pipeline->SetVertexBuffer(BillBoardComp->GetVertexBuffer(), sizeof(FNormalVertex));
+		Pipeline->SetIndexBuffer(BillBoardComp->GetIndexBuffer(), 0);
+
+		// Transform 업데이트 (메시별로)
+		UpdateConstantBuffer(ConstantBufferModels, BillBoardComp->GetWorldTransformMatrix(), 0, true);
+
+		Pipeline->SetTexture(0, false, BillBoardComp->GetSprite().second);
+		Pipeline->SetSamplerState(0, false, const_cast<ID3D11SamplerState*>(BillBoardComp->GetSampler()));
+
+		Pipeline->DrawIndexed(BillBoardComp->GetNumIndices(), 0, 0);
+	}
+}
+
+void  URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp)
+{
+	const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
+
+	ID3D11RasterizerState* LoadedRasterizerState = nullptr;
+
+	for (const TObjectPtr<UTextComponent>& Text : InTextComp)
+	{
+		FRenderState RenderState = Text->GetRenderState();
+		const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
+		if (ViewMode == EViewModeIndex::VMI_Wireframe)
+		{
+			RenderState.CullMode = ECullMode::None;
+			RenderState.FillMode = EFillMode::WireFrame;
+		}
+		LoadedRasterizerState = GetRasterizerState(RenderState);
+
+		FontRenderer->RenderText(
+			Text->GetText().c_str(),
+			Text->GetWorldTransformMatrix(),
+			ViewProj
+		);
+	}
+
+	// RenderText 이후 파이프라인 복원
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		LoadedRasterizerState,
+		DefaultDepthStencilState,
+		DefaultPixelShader,
+		nullptr,
+	};
+	Pipeline->UpdatePipeline(PipelineInfo);
+}
+
+void URenderer::RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
 {
 	if (!InCurrentCamera)	return;
 

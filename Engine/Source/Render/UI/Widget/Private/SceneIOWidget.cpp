@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/SceneIOWidget.h"
 
-#include "Manager/Level/Public/LevelManager.h"
+
 
 #include <shobjidl.h>
 
@@ -83,8 +83,6 @@ void USceneIOWidget::RenderWidget()
  */
 void USceneIOWidget::SaveLevel(const FString& InFilePath)
 {
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-
 	try
 	{
 		bool bSuccess;
@@ -92,11 +90,11 @@ void USceneIOWidget::SaveLevel(const FString& InFilePath)
 		if (InFilePath.empty())
 		{
 			// Quick Save인 경우 기본 경로 사용
-			bSuccess = LevelManager.SaveCurrentLevel("");
+			bSuccess = GEditor->SaveCurrentLevel("");
 		}
 		else
 		{
-			bSuccess = LevelManager.SaveCurrentLevel(InFilePath);
+			bSuccess = GEditor->SaveCurrentLevel(InFilePath);
 		}
 
 		if (bSuccess)
@@ -128,8 +126,7 @@ void USceneIOWidget::LoadLevel(const FString& InFilePath)
 {
 	try
 	{
-		ULevelManager& LevelManager = ULevelManager::GetInstance();
-		bool bSuccess = LevelManager.LoadLevel(InFilePath);
+		bool bSuccess = GEditor->LoadLevel(InFilePath);
 
 		if (bSuccess)
 		{
@@ -168,8 +165,7 @@ void USceneIOWidget::CreateNewLevel()
 			return;
 		}
 
-		ULevelManager& LevelManager = ULevelManager::GetInstance();
-		bool bSuccess = LevelManager.CreateNewLevel(LevelName);
+		bool bSuccess = GEditor->CreateNewLevel(LevelName);
 
 		if (bSuccess)
 		{

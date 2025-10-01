@@ -3,7 +3,7 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/Config/Public/ConfigManager.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Component/Public/PrimitiveComponent.h"
 #include "Level/Public/Level.h"
 
@@ -114,7 +114,7 @@ void UCamera::Update(const D3D11_VIEWPORT& InViewport)
 
 	// 카메라가 업데이트할 때마다 Cull한다.
 	// 카메라가 업데이트하지 않으면 Culling을 갱신할 이유가 없다.
-    ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel().Get();
+    ULevel* CurrentLevel = GWorld->GetLevel();
     if (CurrentLevel)
     {
         ViewVolumeCuller.Cull(

@@ -2,12 +2,14 @@
 #include "Render/UI/Widget/Public/PrimitiveSpawnWidget.h"
 
 #include "Level/Public/Level.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Actor/Public/CubeActor.h"
 #include "Actor/Public/SphereActor.h"
 #include "Actor/Public/SquareActor.h"
 #include "Actor/Public/TriangleActor.h"
 #include "Actor/Public/StaticMeshActor.h"
+#include "Actor/Public/BillBoardActor.h"
+#include "Actor/Public/TextActor.h"
 
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
 	: UWidget("Primitive Spawn Widget")
@@ -38,7 +40,9 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Cube",
 		"Triangle",
 		"Square",
-		"StaticMesh"
+		"StaticMesh",
+		"BillBoard",
+		"Text"
 	};
 
 	// None을 고려한 Enum 변환 처리
@@ -47,10 +51,18 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::Text("Primitive Type:");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::Combo("##PrimitiveType", &TypeNumber, PrimitiveTypes, 6);
+
+	ImGui::Combo(
+		"##PrimitiveType",
+		&TypeNumber,
+		PrimitiveTypes,
+		sizeof(PrimitiveTypes) / sizeof(PrimitiveTypes[0])
+	);
 
 	// ImGui가 받은 값을 반영
-	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber);
+
+
+	SelectedPrimitiveType = static_cast<EPrimitiveType>(TypeNumber + 1);
 
 	// Spawn 버튼과 개수 입력
 	ImGui::Text("Number of Spawn:");
@@ -82,7 +94,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ImGui::Text("Duplicate Selected Actor");
 
 	// 1. 현재 레벨과 선택된 액터 정보를 가져옵니다.
-	ULevel* CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 	if (!CurrentLevel) return; // 레벨이 없으면 아무것도 하지 않습니다.
 
 	AActor* SelectedActor = CurrentLevel->GetSelectedActor();
@@ -113,8 +125,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
  */
 void UPrimitiveSpawnWidget::SpawnActors() const
 {
-	ULevelManager& LevelManager = ULevelManager::GetInstance();
-	ULevel* CurrentLevel = LevelManager.GetCurrentLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();;
 
 	if (!CurrentLevel)
 	{
@@ -154,6 +165,14 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		else if (SelectedPrimitiveType == EPrimitiveType::StaticMesh)
 		{
 			NewActor = CurrentLevel->SpawnActorToLevel(AStaticMeshActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Sprite)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(ABillBoardActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Text)
+		{
+			NewActor = CurrentLevel->SpawnActorToLevel(ATextActor::StaticClass());
 		}
 
 		if (NewActor)

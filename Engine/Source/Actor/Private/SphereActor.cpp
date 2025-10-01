@@ -23,17 +23,17 @@ ASphereActor::ASphereActor()
 
 void ASphereActor::PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap)
 {
-	// 1. ºÎ¸ğ Å¬·¡½º(AActor)ÀÇ PostDuplicate¸¦ ¸ÕÀú È£ÃâÇÕ´Ï´Ù.
-	// ÀÌ È£Ãâ·Î RootComponent Æ÷ÀÎÅÍ¿Í ±âº» ÂüÁ¶µéÀÌ ¸ğµÎ Ã³¸®µË´Ï´Ù.
+	// 1. ë¶€ëª¨ í´ë˜ìŠ¤(AActor)ì˜ PostDuplicateë¥¼ ë¨¼ì € í˜¸ì¶œí•©ë‹ˆë‹¤.
+	// ì´ í˜¸ì¶œë¡œ RootComponent í¬ì¸í„°ì™€ ê¸°ë³¸ ì°¸ì¡°ë“¤ì´ ëª¨ë‘ ì²˜ë¦¬ë©ë‹ˆë‹¤.
 	Super::PostDuplicate(InDuplicationMap);
 
-	// 2. ¿øº» °´Ã¼¿¡¼­ ¿ø·¡ SphereComponent Æ÷ÀÎÅÍ¸¦ Ã£½À´Ï´Ù.
+	// 2. ì›ë³¸ ê°ì²´ì—ì„œ ì›ë˜ SphereComponent í¬ì¸í„°ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
 	if (const ASphereActor* OriginalActor = Cast<const ASphereActor>(SourceObject))
 	{
-		// 3. DuplicationMapÀ» »ç¿ëÇØ ¿øº» ÄÄÆ÷³ÍÆ®¿¡ ÇØ´çÇÏ´Â '»õ·Î¿î' ÄÄÆ÷³ÍÆ®¸¦ Ã£½À´Ï´Ù.
+		// 3. DuplicationMapì„ ì‚¬ìš©í•´ ì›ë³¸ ì»´í¬ë„ŒíŠ¸ì— í•´ë‹¹í•˜ëŠ” 'ìƒˆë¡œìš´' ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
 		if (auto It = InDuplicationMap.find(OriginalActor->SphereComponent); It != InDuplicationMap.end())
 		{
-			// 4. Ã£Àº »õ·Î¿î ÄÄÆ÷³ÍÆ®·Î ³ªÀÇ SphereComponent Æ÷ÀÎÅÍ¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+			// 4. ì°¾ì€ ìƒˆë¡œìš´ ì»´í¬ë„ŒíŠ¸ë¡œ ë‚˜ì˜ SphereComponent í¬ì¸í„°ë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
 			this->SphereComponent = Cast<USphereComponent>(It->second);
 		}
 	}

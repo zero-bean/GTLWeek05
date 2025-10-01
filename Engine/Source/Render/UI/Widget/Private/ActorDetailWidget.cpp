@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/ActorDetailWidget.h"
 
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/ActorComponent.h"
@@ -27,7 +27,7 @@ void UActorDetailWidget::Update()
 
 void UActorDetailWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = ULevelManager::GetInstance().GetCurrentLevel();
+	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

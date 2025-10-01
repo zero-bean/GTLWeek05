@@ -35,13 +35,12 @@ inline uint64 operator&(uint64 lhs, EEngineShowFlags rhs)
 	return lhs & static_cast<uint64>(rhs);
 }
 
+UCLASS()
 class ULevel :
 	public UObject
 {
-public:
-	// World에서 이뤄져야 하는데, 현재는 클래스가 없으니 임시로 레벨에 작성 [2025/10/01, 박영빈]
-	AActor* DuplicateActor(AActor* InActorToDuplicate);
-
+	GENERATED_BODY()
+	DECLARE_CLASS(ULevel, UObject)
 public:
 	ULevel();
 	ULevel(const FName& InName);
@@ -76,6 +75,10 @@ public:
 
 	FOctree* GetStaticOctree() { return StaticOctree; }
 	TArray<UPrimitiveComponent*>& GetDynamicPrimitives() { return DynamicPrimitives; }
+
+	AActor* DuplicateActor(AActor* InActorToDuplicate);
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
+	//virtual void DuplicateSubObjects(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
 
 private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.

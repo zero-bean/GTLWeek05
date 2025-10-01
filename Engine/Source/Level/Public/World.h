@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
 
@@ -51,8 +52,8 @@ public:
 	// Level Management Triggers
 	TObjectPtr<ULevel> GetLevel() const;
 	void CreateNewLevel(const FName& InLevelName = FName::GetNone());
-	bool LoadLevel(path InLevelFilePath);
-	bool SaveCurrentLevel(path InLevelFilePath) const;
+	bool LoadLevel(std::filesystem::path InLevelFilePath);
+	bool SaveCurrentLevel(std::filesystem::path InLevelFilePath) const;
 
 	// Actor Spawn & Destroy -> Level에서 기능 이전해오기
 	AActor* SpawnActor(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
@@ -63,7 +64,7 @@ public:
 
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
-	// virtual UObject* Duplicate(UObject* InNewOuter, TMap<UObject*, UObject*>& InOutDuplicationMap) override;
+	virtual void PostDuplicate(const TMap<UObject*, UObject*>& InDuplicationMap) override;
 
 private:
 	EWorldType WorldType;

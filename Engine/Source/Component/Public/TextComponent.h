@@ -4,20 +4,23 @@
 
 class AActor;
 
+UCLASS()
 class UTextComponent : public UPrimitiveComponent
 {
+	GENERATED_BODY()
+	DECLARE_CLASS(UTextComponent, UPrimitiveComponent)
+
 public:
-	UTextComponent(AActor* InOwnerActor, float InYOffset);
+	UTextComponent();
 	~UTextComponent();
 
-	virtual void OnSelected() override;
-	virtual void OnDeselected() override;
+	virtual void UpdateRotationMatrix(const FVector& InCameraLocation);
+	virtual FMatrix GetRTMatrix() const;
 
-	void UpdateRotationMatrix(const FVector& InCameraLocation);
+	const FString& GetText();
+	void SetText(const FString& InText);
 
-	FMatrix GetRTMatrix() const { return RTMatrix; }
+	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
 private:
-	FMatrix RTMatrix;
-	AActor* POwnerActor;
-	float ZOffset;
+	FString Text = FString("Text");
 };

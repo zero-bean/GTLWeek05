@@ -2,7 +2,7 @@
 #include "Component/Public/SceneComponent.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Utility/Public/JsonSerializer.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Component/Public/PrimitiveComponent.h"
 #include "Level/Public/Level.h"
 
@@ -121,7 +121,7 @@ void USceneComponent::SetRelativeLocation(const FVector& Location)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 
@@ -132,7 +132,7 @@ void USceneComponent::SetRelativeRotation(const FVector& Rotation)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 
@@ -143,7 +143,7 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 
 	if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(this))
 	{
-		ULevelManager::GetInstance().GetCurrentLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
+		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
 

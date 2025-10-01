@@ -1,56 +1,36 @@
 #include "pch.h"
 #include "Component/Public/TextComponent.h"
-#include "Manager/Level/Public/LevelManager.h"
+
 #include "Editor/Public/Editor.h"
 #include "Actor/Public/Actor.h"
+#include "Manager/Asset/Public/AssetManager.h"
+#include "Render/UI/Widget/Public/SetTextComponentWidget.h"
+
+IMPLEMENT_CLASS(UTextComponent, UPrimitiveComponent)
 
 /**
- * @brief Levelì—ì„œ ê° Actorë§ˆë‹¤ ê°€ì§€ê³  ìˆëŠ” UUIDë¥¼ ì¶œë ¥í•´ì£¼ê¸° ìœ„í•œ ë¹Œë³´ë“œ í´ë˜ìŠ¤
+ * @brief Level¿¡¼­ °¢ Actor¸¶´Ù °¡Áö°í ÀÖ´Â UUID¸¦ Ãâ·ÂÇØÁÖ±â À§ÇÑ ºôº¸µå Å¬·¡½º
  * Actor has a UBillBoardComponent
  */
-UTextComponent::UTextComponent(AActor* InOwnerActor, float InYOffset)
-	: POwnerActor(InOwnerActor)
-	, ZOffset(InYOffset)
+UTextComponent::UTextComponent()
 {
-	Type = EPrimitiveType::BillBoard;
-	SetVisibility(false); // í˜„ì¬ëŠ” ì‹œì‘í•˜ìë§ˆì Visibility False, Select ì‹œ Trueë˜ëŠ” ì‹œìŠ¤í…œ
+	Type = EPrimitiveType::Text;
+
+	RenderState.CullMode = ECullMode::Back;
+	RenderState.FillMode = EFillMode::Solid;
 }
 
 UTextComponent::~UTextComponent()
 {
-	POwnerActor = nullptr;
 }
 
-void UTextComponent::OnSelected()
+void UTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation) {}
+FMatrix UTextComponent::GetRTMatrix() const { return FMatrix(); }
+
+const FString& UTextComponent::GetText() { return Text; }
+void UTextComponent::SetText(const FString& InText) { Text = InText; }
+
+TObjectPtr<UClass> UTextComponent::GetSpecificWidgetClass() const
 {
-	SetVisibility(true);
-}
-
-void UTextComponent::OnDeselected()
-{
-	SetVisibility(false);
-}
-
-void UTextComponent::UpdateRotationMatrix(const FVector& InCameraLocation)
-{
-	const FVector& OwnerActorLocation = POwnerActor->GetActorLocation();
-
-	FVector ToCamera = InCameraLocation - OwnerActorLocation;
-	ToCamera.Normalize();
-
-	const FVector4 worldUp4 = FVector4(0, 0, 1, 1);
-	const FVector worldUp = { worldUp4.X, worldUp4.Y, worldUp4.Z };
-	FVector Right = worldUp.Cross(ToCamera);
-	Right.Normalize();
-	FVector Up = ToCamera.Cross(Right);
-	Up.Normalize();
-
-	RTMatrix = FMatrix(FVector4(0, 1, 0, 1), worldUp4, FVector4(1,0,0,1));
-	RTMatrix = FMatrix(ToCamera, Right, Up);
-	//RTMatrix = FMatrix::Identity();
-	//UE_LOG("%.2f, %.2f, %.2f", ToCamera.X, ToCamera.Y, ToCamera.Z);
-
-	const FVector Translation = OwnerActorLocation + FVector(0.0f, 0.0f, ZOffset);
-	//UE_LOG("%.2f, %.2f, %.2f", Translation.X, Translation.Y, Translation.Z);
-	RTMatrix *= FMatrix::TranslationMatrix(Translation);
+	return USetTextComponentWidget::StaticClass();
 }
