@@ -47,6 +47,8 @@ public:
 	mutable uint32 CachedFrame = 0;
 
 protected:
+	virtual void CopyPropertiesFrom(const UObject* InObject) override;
+
 	const TArray<FNormalVertex>* Vertices = nullptr;
 	const TArray<uint32>* Indices = nullptr;
 
