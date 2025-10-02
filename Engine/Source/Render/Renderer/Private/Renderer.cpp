@@ -349,9 +349,6 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 			if (Text && !Text->IsExactly(UUUIDTextComponent::StaticClass()))
 			{
 				Texts.push_back(Text);
-				if (GEditor->GetEditorModule()->GetPickedBillboard() == \
-					Cast<UUUIDTextComponent>(Text))
-				continue;
 			}
 
 			DefaultPrimitives.push_back(Prim);
@@ -732,19 +729,17 @@ void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3
 		nullptr,
 	};
 	Pipeline->UpdatePipeline(PipelineInfo);
-
-	// Update pipeline buffers
-	//UpdateConstantBuffer(ConstantBufferModels,
-	//	FMatrix::GetModelMatrix(InPrimitiveComp->GetRelativeLocation(), FVector::GetDegreeToRadian(InPrimitiveComp->GetRelativeRotation()), InPrimitiveComp->GetRelativeScale3D()),
-	//	0, true);
-	
-	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
-
-	// Transform 업데이트 (메시별로)
-	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true);
-	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true);
-
-	// Bind vertex buffer
+	// 2. 상수 버퍼 업데이트 및 설정
+	// 슬롯 0 (Model)
+	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true); 
+	// 슬롯 2 (Color)
+	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true); 
+    
+	// **[필수] 슬롯 1에 View/Projection 상수 버퍼를 설정하는 코드를 추가해야 합니다.**
+	// View/Projection 상수 버퍼는 URenderer의 멤버일 것입니다.
+	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj); // 예시: ConstantBufferViewProj 사용
+    
+	// 3. Vertex Buffer 바인딩
 	Pipeline->SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
 
 	// Draw vertex + index

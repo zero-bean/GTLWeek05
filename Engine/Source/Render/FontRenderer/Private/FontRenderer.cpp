@@ -147,6 +147,44 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
         return;
     }
 
+    // 1. **[핵심: 이전 D3D 상태 저장]**
+    //    블렌드, 래스터라이저, 깊이/스텐실 상태를 저장합니다.
+    
+    // 1-1. 블렌드 상태
+    ID3D11BlendState* prevBlendState = nullptr;
+    FLOAT prevBlendFactor[4];
+    UINT prevSampleMask;
+    DeviceContext->OMGetBlendState(&prevBlendState, prevBlendFactor, &prevSampleMask);
+    
+    // 1-2. 래스터라이저 상태
+    ID3D11RasterizerState* prevRasterizerState = nullptr;
+    DeviceContext->RSGetState(&prevRasterizerState);
+    
+    // 1-3. 깊이/스텐실 상태
+    ID3D11DepthStencilState* prevDepthStencilState = nullptr;
+    UINT prevStencilRef;
+    DeviceContext->OMGetDepthStencilState(&prevDepthStencilState, &prevStencilRef);
+
+    // 1-4. 입력 레이아웃 (추가)
+    ID3D11InputLayout* prevInputLayout = nullptr;
+    DeviceContext->IAGetInputLayout(&prevInputLayout);
+    
+    // 1-5. 셰이더 (추가 - 다음 함수가 덮어쓰지 않는 경우 대비)
+    ID3D11VertexShader* prevVS = nullptr;
+    ID3D11PixelShader* prevPS = nullptr;
+    DeviceContext->VSGetShader(&prevVS, nullptr, 0);
+    DeviceContext->PSGetShader(&prevPS, nullptr, 0);
+
+    // 1-6. 상수 버퍼 (바인딩 해제 시 Release()할 필요 없으니 포인터만 저장)
+    ID3D11Buffer* prevConstantBuffersVS[3] = { nullptr, };
+    DeviceContext->VSGetConstantBuffers(0, 3, prevConstantBuffersVS);
+
+    // 1-7. 셰이더 리소스 뷰 (SRV) 및 샘플러 저장 (PS 슬롯 0)
+    ID3D11ShaderResourceView* prevSRVs[1] = { nullptr, };
+    ID3D11SamplerState* prevSamplers[1] = { nullptr, };
+    DeviceContext->PSGetShaderResources(0, 1, prevSRVs);
+    DeviceContext->PSGetSamplers(0, 1, prevSamplers);
+
     // 텍스트를 위한 새 정점 버퍼 생성
     ID3D11Buffer* tempVertexBuffer = nullptr;
     uint32 tempVertexCount = 0;
@@ -279,9 +317,6 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
     }
 
     // 2. 알파 블렌딩 활성화
-    ID3D11BlendState* prevBlendState = nullptr;
-    FLOAT prevBlendFactor[4];
-    UINT prevSampleMask;
     DeviceContext->OMGetBlendState(&prevBlendState, prevBlendFactor, &prevSampleMask);
 
     ID3D11BlendState* alphaBlendState = nullptr;
@@ -368,15 +403,63 @@ void UFontRenderer::RenderText(const char* Text, const FMatrix& WorldMatrix, con
     // 7. 드로우 콜
     DeviceContext->Draw(tempVertexCount, 0);
 
-    // 8. 리소스 정리
+        // 8-1. **이전 상태 객체로 복구**
     DeviceContext->OMSetBlendState(prevBlendState, prevBlendFactor, prevSampleMask);
-    if (prevBlendState) prevBlendState->Release();
-    if (alphaBlendState) alphaBlendState->Release();
+    DeviceContext->RSSetState(prevRasterizerState);
+    DeviceContext->OMSetDepthStencilState(prevDepthStencilState, prevStencilRef);
+
+    // 8-2. **이전 파이프라인 리소스 복구 및 해제**
+    
+    // Input Assembler 복구 (IA)
+    DeviceContext->IASetInputLayout(prevInputLayout);
+    stride = 0;
+    offset = 0;
+    ID3D11Buffer* nullBuffer = nullptr;
+    DeviceContext->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset); // 버텍스 버퍼 명시적 해제
+    
+    // 셰이더 복구
+    DeviceContext->VSSetShader(prevVS, nullptr, 0);
+    DeviceContext->PSSetShader(prevPS, nullptr, 0);
+    
+    // 상수 버퍼 복구 (슬롯 0, 1, 2)
+    // 폰트 렌더러가 사용했던 슬롯 0, 1, 2를 원래 상태(prevConstantBuffersVS)로 복구합니다.
+    // 뷰/프로젝션 상수 버퍼(슬롯 1)가 원복되므로, 이후 함수에서 따로 SetConstantBuffers(1, ...) 할 필요가 줄어듭니다.
+    DeviceContext->VSSetConstantBuffers(0, 3, prevConstantBuffersVS);
+    
+    // 셰이더 리소스 뷰 (SRV) 및 샘플러 복구
+    DeviceContext->PSSetShaderResources(0, 1, prevSRVs);
+    DeviceContext->PSSetSamplers(0, 1, prevSamplers);
+
+
+    // 8-3. **모든 인터페이스 Release()**
+    
+    // 임시 생성 버퍼 Release
     if (tempVertexBuffer) tempVertexBuffer->Release();
     if (viewProjConstantBuffer) viewProjConstantBuffer->Release();
     if (fontDataBuffer) fontDataBuffer->Release();
-	if (solidState) solidState->Release();
-	if (depthDisabledState) depthDisabledState->Release();
+    
+    // 이 함수 내에서 생성된 상태 객체 Release
+    if (alphaBlendState) alphaBlendState->Release();
+    if (solidState) solidState->Release();
+    if (depthDisabledState) depthDisabledState->Release();
+    
+    // 저장했던 이전 상태 객체들 Release (GetXXXState로 얻어왔으므로 사용 후 Release 필요)
+    if (prevBlendState) prevBlendState->Release();
+    if (prevRasterizerState) prevRasterizerState->Release();
+    if (prevDepthStencilState) prevDepthStencilState->Release();
+    if (prevInputLayout) prevInputLayout->Release();
+    if (prevVS) prevVS->Release();
+    if (prevPS) prevPS->Release();
+
+    // 저장했던 상수 버퍼 포인터 Release (ConstantBuffer는 클래스 멤버가 아닐 가능성이 높으므로)
+    for (int i = 0; i < 3; ++i) {
+        if (prevConstantBuffersVS[i]) prevConstantBuffersVS[i]->Release();
+    }
+    // 저장했던 SRV/샘플러 포인터 Release
+    if (prevSRVs[0]) prevSRVs[0]->Release();
+    if (prevSamplers[0]) prevSamplers[0]->Release();
+
+
 }
 
 /// @brief 텍스트용 정점 버퍼 생성
