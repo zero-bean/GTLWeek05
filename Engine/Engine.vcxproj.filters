@@ -26,9 +26,6 @@
     <ClCompile Include="Source\Utility\Private\ActorTypeMapper.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Utility\Private\FileDialog.cpp">
-      <Filter>Source\Utility\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp">
       <Filter>Source\Utility\Private</Filter>
     </ClCompile>
@@ -390,6 +387,7 @@
     <ClCompile Include="Source\Render\UI\Widget\Private\SetTextComponentWidget.cpp">
       <Filter>Source\Render\UI\Widget\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\MovingCubeActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -397,9 +395,6 @@
       <Filter>Source\Editor\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utility\Public\ActorTypeMapper.h">
-      <Filter>Source\Utility\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Utility\Public\FileDialog.h">
       <Filter>Source\Utility\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utility\Public\JsonSerializer.h">
@@ -807,6 +802,7 @@
     <ClInclude Include="Source\Render\UI\Widget\Public\SetTextComponentWidget.h">
       <Filter>Source\Render\UI\Widget\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\MovingCubeActor.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

@@ -74,7 +74,7 @@ void UEditor::Update()
 		}
 	}
 
-	if (AActor* SelectedActor = GWorld->GetLevel()->GetSelectedActor())
+	if (AActor* SelectedActor = GetSelectedActor())
 	{
 		for (const auto& Component : SelectedActor->GetOwnedComponents())
 		{
@@ -103,7 +103,7 @@ void UEditor::Update()
 
 	BatchLines.UpdateVertexBuffer();
 
-	ProcessMouseInput(GWorld->GetLevel());
+	ProcessMouseInput();
 
 	UpdateLayout();
 }
@@ -118,7 +118,7 @@ void UEditor::RenderEditor(UCamera* InCamera)
 	// Gizmo 렌더링 시, 현재 활성화된 카메라의 위치를 전달해야 합니다.
 	if (InCamera)
 	{
-		AActor* SelectedActor = GWorld->GetLevel()->GetSelectedActor();
+		AActor* SelectedActor = GetSelectedActor();
 		Gizmo.RenderGizmo(SelectedActor, InCamera);
 	}
 }
@@ -330,7 +330,7 @@ void UEditor::UpdateLayout()
 	if (UInputManager::GetInstance().IsKeyReleased(EKeyInput::MouseLeft)) { DraggedSplitter = nullptr; }
 }
 
-void UEditor::ProcessMouseInput(ULevel* InLevel)
+void UEditor::ProcessMouseInput()
 {
 	// 선택된 뷰포트의 정보들을 가져옵니다.
 	FViewport* ViewportClient = URenderer::GetInstance().GetViewportClient();
@@ -347,7 +347,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 
 	CurrentCamera = &CurrentViewport->Camera;
 
-	TObjectPtr<AActor> ActorPicked = InLevel->GetSelectedActor();
+	TObjectPtr<AActor> ActorPicked = GetSelectedActor();
 
 	if (ActorPicked)
 	{
@@ -414,7 +414,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 	}
 	else
 	{
-		if (InLevel->GetSelectedActor() && Gizmo.HasActor())
+		if (GetSelectedActor() && Gizmo.HasActor())
 		{
 			ObjectPicker.PickGizmo(CurrentCamera, WorldRay, Gizmo, CollisionPoint);
 		}
@@ -450,7 +450,7 @@ void UEditor::ProcessMouseInput(ULevel* InLevel)
 
 		if (Gizmo.GetGizmoDirection() == EGizmoDirection::None)
 		{
-			InLevel->SetSelectedActor(ActorPicked);
+			SelectActor(ActorPicked);
 			if (PreviousGizmoDirection != EGizmoDirection::None)
 			{
 				Gizmo.OnMouseRelease(PreviousGizmoDirection);
@@ -591,6 +591,32 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 		return Gizmo.GetActorScale();
 	}
 	return Gizmo.GetActorScale();
+}
+
+void UEditor::SelectActor(AActor* InActor)
+{
+	// Set Selected Actor
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			Component->OnDeselected();
+		}
+	}
+
+	if (InActor != SelectedActor)
+	{
+		UUIManager::GetInstance().OnSelectedActorChanged(InActor);
+	}
+	SelectedActor = InActor;
+
+	if (SelectedActor)
+	{
+		for (auto& Component : SelectedActor->GetOwnedComponents())
+		{
+			Component->OnSelected();
+		}
+	}
 }
 
 UUUIDTextComponent* UEditor::GetPickedBillboard() const

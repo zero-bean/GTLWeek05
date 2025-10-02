@@ -68,7 +68,6 @@ void UWorld::Tick(float DeltaTimes)
 		return;
 	}
 
-	// 입력 수집
 	// 스폰 / 삭제 처리
 	FlushPendingDestroy();
 
@@ -93,8 +92,6 @@ void UWorld::Tick(float DeltaTimes)
 			}
 		}
 	}
-
-	// Render Command 제출
 }
 
 TObjectPtr<ULevel> UWorld::GetLevel() const
@@ -188,7 +185,7 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, const FName& InName, JSON* Acto
 {
 	if (!Level)
 	{
-		UE_LOG_ERROR("World: Level이 없어 Actor를 Spawn할 수 없습니다.");
+		UE_LOG_ERROR("World: Actor를 Spawn할 수 있는 Level이 없습니다.");
 		return nullptr;
 	}
 

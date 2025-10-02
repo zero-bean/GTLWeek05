@@ -99,7 +99,7 @@ void UPrimitiveSpawnWidget::RenderWidget()
 	ULevel* CurrentLevel = GWorld->GetLevel();
 	if (!CurrentLevel) return; // 레벨이 없으면 아무것도 하지 않습니다.
 
-	AActor* SelectedActor = CurrentLevel->GetSelectedActor();
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 	// 2. 선택된 액터가 있을 경우에만 버튼을 표시합니다.
 	if (SelectedActor)
@@ -127,14 +127,6 @@ void UPrimitiveSpawnWidget::RenderWidget()
  */
 void UPrimitiveSpawnWidget::SpawnActors() const
 {
-	ULevel* CurrentLevel = GWorld->GetLevel();;
-
-	if (!CurrentLevel)
-	{
-		UE_LOG("ControlPanel: Actor를 생성할 레벨이 존재하지 않습니다");
-		return;
-	}
-
 	UE_LOG("ControlPanel: %s 타입의 Actor를 %d개 생성 시도합니다",
 		EnumToString(SelectedPrimitiveType), NumberOfSpawn);
 
@@ -146,39 +138,39 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		// 타입에 따라 액터 생성
 		if (SelectedPrimitiveType == EPrimitiveType::None)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(AActor::StaticClass());
+			NewActor = GWorld->SpawnActor(AActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Cube)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ACubeActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ACubeActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::MovingCube)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(AMovingCubeActor::StaticClass());
+			NewActor = GWorld->SpawnActor(AMovingCubeActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Sphere)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ASphereActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ASphereActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Triangle)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ATriangleActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ATriangleActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Square)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ASquareActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ASquareActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::StaticMesh)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(AStaticMeshActor::StaticClass());
+			NewActor = GWorld->SpawnActor(AStaticMeshActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Sprite)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ABillBoardActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ABillBoardActor::StaticClass());
 		}
 		else if (SelectedPrimitiveType == EPrimitiveType::Text)
 		{
-			NewActor = CurrentLevel->SpawnActorToLevel(ATextActor::StaticClass());
+			NewActor = GWorld->SpawnActor(ATextActor::StaticClass());
 		}
 
 		if (NewActor)

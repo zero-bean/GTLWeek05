@@ -43,7 +43,7 @@ void UActorDetailWidget::RenderWidget()
 		return;
 	}
 
-	TObjectPtr<AActor> SelectedActor = CurrentLevel->GetSelectedActor();
+	TObjectPtr<AActor> SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 	if (!SelectedActor)
 	{
 		ImGui::TextUnformatted("No Object Selected");

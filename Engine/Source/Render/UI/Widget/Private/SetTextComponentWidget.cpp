@@ -35,7 +35,7 @@ void USetTextComponentWidget::Update()
 
 	if (CurrentLevel)
 	{
-		AActor* NewSelectedActor = CurrentLevel->GetSelectedActor();
+		AActor* NewSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 		// Update Current Selected Actor
 		if (SelectedActor != NewSelectedActor)

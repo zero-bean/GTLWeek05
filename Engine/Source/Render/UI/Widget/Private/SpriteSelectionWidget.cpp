@@ -23,12 +23,12 @@ void USpriteSelectionWidget::Initialize()
 
 void USpriteSelectionWidget::Update()
 {
-	// ¸Å ÇÁ·¹ÀÓ LevelÀÇ ¼±ÅÃµÈ Actor¸¦ È®ÀÎÇØ¼­ Á¤º¸ ¹Ý¿µ
+	// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Levelï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ Actorï¿½ï¿½ È®ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¿ï¿½
 	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (CurrentLevel)
 	{
-		AActor* NewSelectedActor = CurrentLevel->GetSelectedActor();
+		AActor* NewSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 
 		// Update Current Selected Actor
 		if (SelectedActor != NewSelectedActor)
@@ -55,9 +55,9 @@ void USpriteSelectionWidget::RenderWidget()
 
 	ImGui::Spacing();
 		
-	static int current_item = 0; // ÇöÀç ¼±ÅÃµÈ ÀÎµ¦½º
+	static int current_item = 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½Îµï¿½ï¿½ï¿½
 
-	// ¿¹Á¦ ¹®ÀÚ¿­ ¸ñ·Ï
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½ ï¿½ï¿½ï¿½
 	TArray<FString> items;
 	const TMap<FName, ID3D11ShaderResourceView*>& TextureCache = \
 		UAssetManager::GetInstance().GetTextureCache();
@@ -73,7 +73,7 @@ void USpriteSelectionWidget::RenderWidget()
 
 	sort(items.begin(), items.end());
 	
-	if (ImGui::BeginCombo("Sprite", items[current_item].c_str())) // Label°ú ÇöÀç °ª Ç¥½Ã
+	if (ImGui::BeginCombo("Sprite", items[current_item].c_str())) // Labelï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ç¥ï¿½ï¿½
 	{
 		for (int n = 0; n < items.size(); n++)
 		{
@@ -85,7 +85,7 @@ void USpriteSelectionWidget::RenderWidget()
 			}
 
 			if (is_selected)
-				ImGui::SetItemDefaultFocus(); // ±âº» Æ÷Ä¿½º
+				ImGui::SetItemDefaultFocus(); // ï¿½âº» ï¿½ï¿½Ä¿ï¿½ï¿½
 		}
 		ImGui::EndCombo();
 	}
