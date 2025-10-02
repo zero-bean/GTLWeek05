@@ -359,9 +359,15 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		TIME_PROFILE_END(FinalVisiblePrims)
 		RenderStaticMeshes(FinalVisibleMeshes);
 
+
 		TIME_PROFILE(PrimitiveComponent)
 		for (auto& PrimitiveComponent : DefaultPrimitives)
 		{
+			if (Cast<UTextComponent>(PrimitiveComponent) ||
+				PrimitiveComponent->IsExactly(UUUIDTextComponent::StaticClass()) ||
+				PrimitiveComponent->IsExactly(UTextComponent::StaticClass()))
+				continue;
+
 			FRenderState RenderState = PrimitiveComponent->GetRenderState();
 			const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
 			if (ViewMode == EViewModeIndex::VMI_Wireframe)
@@ -375,8 +381,8 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		}
 		TIME_PROFILE_END(PrimitiveComponent)
 		
-		RenderBillBoard(InCurrentCamera, BillBoards);
 		RenderText(InCurrentCamera, Texts);
+		RenderBillBoard(InCurrentCamera, BillBoards);
 	}
 
 	TIME_PROFILE(RenderUUID)
@@ -693,14 +699,28 @@ void  URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextCom
 		);
 	}
 
+	//// Pipeline 정보 구성
+	//FPipelineInfo PipelineInfo = {
+	//	InputLayout,
+	//	VertexShader,
+	//	RasterizerState,
+	//	DepthStencilState,
+	//	PixelShader,
+	//	nullptr,
+	//	InPrimitive.Topology
+	//};
+
 	// RenderText 이후 파이프라인 복원
-	FPipelineInfo PipelineInfo = {
+	FPipelineInfo PipelineInfo = {};
+
+	PipelineInfo = {
 		DefaultInputLayout,
 		DefaultVertexShader,
-		LoadedRasterizerState,
+		nullptr,
 		DefaultDepthStencilState,
 		DefaultPixelShader,
 		nullptr,
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 	};
 	Pipeline->UpdatePipeline(PipelineInfo);
 }

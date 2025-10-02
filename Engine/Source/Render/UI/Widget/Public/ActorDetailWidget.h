@@ -34,6 +34,7 @@ private:
 	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
 	void RenderComponentNodeRecursive(UActorComponent* InComponent);
 	void RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor);
+	void RenderRemoveComponentButton(TObjectPtr<AActor> InSelectedActor);
 	bool CenteredSelectable(const char* label);
 	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
 	void RenderTransformEdit();

@@ -106,6 +106,19 @@ public:
 		return NewComponent;
 	}
 
+	bool RemoveComponent(UActorComponent* Target)
+	{
+		for (auto Itr = OwnedComponents.begin(); Itr != OwnedComponents.end(); Itr++)
+		{
+			if (*Itr == Target)
+			{
+				OwnedComponents.erase(Itr);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void RegisterComponent(TObjectPtr<UActorComponent> InNewComponent);
 
 	bool CanTick() const { return bCanEverTick; }

@@ -15,6 +15,8 @@
 #include "Component/Mesh/Public/MeshComponent.h"
 #include "Global/Quaternion.h"
 #include "Global/Vector.h"
+#include "Global/Octree.h"
+#include "Component/Public/UUIDTextComponent.h"
 
 UActorDetailWidget::UActorDetailWidget()
 	: UWidget("Actor Detail Widget")
@@ -133,6 +135,7 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 
 	ImGui::Text("Components (%d)", static_cast<int>(Components.size()));
 	RenderAddComponentButton(InSelectedActor);
+	RenderRemoveComponentButton(InSelectedActor);
 	ImGui::Separator();
 
 	if (Components.empty())
@@ -313,6 +316,8 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 		{
 			for (auto& Child : SceneComp->GetChildren())
 			{
+				
+				
 				RenderComponentNodeRecursive(Child);
 			}
 		}
@@ -354,6 +359,71 @@ void UActorDetailWidget::RenderAddComponentButton(TObjectPtr<AActor> InSelectedA
 		}
 
 		ImGui::EndPopup();
+	}
+}
+
+void UActorDetailWidget::RenderRemoveComponentButton(TObjectPtr<AActor> InSelectedActor)
+{
+	FString SelectedComponentName;
+
+	if (SelectedComponent)
+		SelectedComponentName = SelectedComponent->GetName().ToString();
+
+	// 1. 현재 선택된 요소의 이름 출력
+	ImGui::Text("Selected: %s", SelectedComponentName.c_str());
+
+	// 같은 줄에 버튼 배치
+	ImGui::SameLine();
+
+	// 2. 버튼을 누르면 이벤트 발생
+	if (ImGui::Button("Delete"))
+	{
+		if (!SelectedComponent)
+			return;
+		
+		USceneComponent* RemovalTarget = Cast<USceneComponent>(SelectedComponent);
+		
+		if (RemovalTarget == InSelectedActor->GetRootComponent())
+			return;
+		if (RemovalTarget->IsExactly(UUUIDTextComponent::StaticClass()))
+			return;
+
+		USceneComponent* Parent = RemovalTarget->GetParentAttachment();
+
+		if (Parent)
+		{
+			for (USceneComponent* Child : RemovalTarget->GetChildren())
+			{
+				// 4. 새 부모 기준으로 로컬 트랜스폼 계산
+				// Local = Parent^(-1) × World
+				FMatrix ParentWorldMatrixInverse = Parent->GetWorldTransformMatrixInverse();
+				FMatrix NewLocalMatrix = Child->GetWorldTransformMatrix()\
+					* ParentWorldMatrixInverse;
+				
+				FVector Location, Rotation, Scale;
+
+				DecomposeMatrix(NewLocalMatrix, Location, Rotation, Scale);
+				Child->SetRelativeLocation(Location);
+				Child->SetRelativeRotation(Rotation);
+				Child->SetRelativeScale3D(Scale);
+
+				Child->SetParentAttachment(Parent);
+			}
+
+			Parent->RemoveChild(RemovalTarget);
+		}
+		InSelectedActor->RemoveComponent(RemovalTarget);
+
+		GWorld->GetLevel()->GetStaticOctree()->Remove(
+			Cast<UPrimitiveComponent>(RemovalTarget)
+		);
+
+		TArray<UPrimitiveComponent*>& Dynamic = GWorld->GetLevel()->GetDynamicPrimitives();
+		Dynamic.erase(remove(Dynamic.begin(), Dynamic.end(), RemovalTarget), Dynamic.end());
+
+		SafeDelete(RemovalTarget);
+
+		SelectedComponent = nullptr;
 	}
 }
 
