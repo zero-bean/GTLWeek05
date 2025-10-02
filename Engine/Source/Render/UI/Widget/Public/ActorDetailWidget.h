@@ -18,6 +18,9 @@ public:
 	void Update() override;
 	void RenderWidget() override;
 
+	TObjectPtr<UActorComponent> GetSelectedComponent() const { return SelectedComponent; }
+	void SetSelectedComponent(UActorComponent* InComponent);
+
 	// Special Member Function
 	UActorDetailWidget();
 	~UActorDetailWidget() override;
@@ -26,7 +29,7 @@ private:
 	bool bIsRenamingActor = false;
 	char ActorNameBuffer[256] = {};
 
-	TObjectPtr<UActorComponent> SelectedComponent = nullptr;
+	TObjectPtr<UActorComponent>  SelectedComponent = nullptr;
 	TObjectPtr<AActor> CachedSelectedActor = nullptr;
 
 	// Helper functions

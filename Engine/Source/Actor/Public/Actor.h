@@ -108,6 +108,8 @@ public:
 
 	void RegisterComponent(TObjectPtr<UActorComponent> InNewComponent);
 
+	bool RemoveComponent(UActorComponent* InComponentToDelete);
+
 	bool CanTick() const { return bCanEverTick; }
 	void SetCanTick(bool InbCanEverTick) { bCanEverTick = InbCanEverTick; }
 

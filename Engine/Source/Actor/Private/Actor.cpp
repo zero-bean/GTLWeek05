@@ -254,6 +254,44 @@ void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
 	}
 }
 
+bool AActor::RemoveComponent(UActorComponent* InComponentToDelete)
+{
+    auto It = std::find(OwnedComponents.begin(), OwnedComponents.end(), InComponentToDelete);
+    if (It != OwnedComponents.end())
+    {
+        if (InComponentToDelete == RootComponent)
+        {
+			UE_LOG_WARNING("루트 컴포넌트는 제거할 수 없습니다.");
+			return false;
+        }
+        else if (Cast<UUUIDTextComponent>(InComponentToDelete))
+        {
+			UE_LOG_WARNING("UUIDTextComponent는 제거할 수 없습니다.");
+			return false;
+        }
+
+        if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InComponentToDelete))
+        {
+            GWorld->GetLevel()->UnregisterPrimitiveComponent(PrimitiveComponent);
+        }
+        if (USceneComponent* SceneComponent = Cast<USceneComponent>(InComponentToDelete))
+        {
+            if (SceneComponent->GetParentComponent())
+            {
+                SceneComponent->GetParentComponent()->RemoveChild(SceneComponent);
+            }
+            for (USceneComponent* Child : SceneComponent->GetChildren())
+            {
+				RemoveComponent(Child);
+            }
+		}
+        OwnedComponents.erase(It);
+        SafeDelete(*It);
+        return true;
+    }
+    return false;
+}
+
 void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 {
 	Super::DuplicateSubObjects(DuplicatedObject);

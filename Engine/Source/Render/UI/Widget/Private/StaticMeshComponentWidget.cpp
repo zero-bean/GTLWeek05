@@ -40,7 +40,6 @@ void UStaticMeshComponentWidget::RenderWidget()
 
 	if (!StaticMeshComponent)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Target Component is not valid.");
 		return;
 	}
 

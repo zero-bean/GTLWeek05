@@ -5,10 +5,15 @@
 #include "Manager/Input/Public/InputManager.h"
 
 
-
 UActorTerminationWidget::UActorTerminationWidget()
 	: UWidget("Actor Termination Widget")
-	  , SelectedActor(nullptr)
+	  , ActorDetailWidget(nullptr)
+{
+}
+
+UActorTerminationWidget::UActorTerminationWidget(UActorDetailWidget* InActorDetailWidget)
+	: UWidget("Actor Termination Widget")
+      , ActorDetailWidget(InActorDetailWidget)
 {
 }
 
@@ -21,56 +26,40 @@ void UActorTerminationWidget::Initialize()
 
 void UActorTerminationWidget::Update()
 {
-	// 매 프레임 Level의 선택된 Actor를 확인해서 정보 반영
-	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
-
-	if (CurrentLevel)
-	{
-		AActor* CurrentSelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
-
-		// Update Current Selected Actor
-		if (SelectedActor != CurrentSelectedActor)
-		{
-			SelectedActor = CurrentSelectedActor;
-		}
-
-		// null이어도 갱신 필요
-		if (!CurrentSelectedActor)
-		{
-			SelectedActor = nullptr;
-		}
-	}
+	// Do Nothing Here
 }
 
 void UActorTerminationWidget::RenderWidget()
 {
 	auto& InputManager = UInputManager::GetInstance();
-
-	if (SelectedActor)
+	TObjectPtr<AActor> SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
+	if (!SelectedActor)
 	{
-		// ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "Selected: %s (%p)",
-		//                    SelectedActor->GetName().c_str(), SelectedActor);
-
-		// ImGui Deprecated (굳이 명시적인 버튼이 없어도 관용적으로 이해할 수 있는 키 매핑)
-		// if (ImGui::Button("Delete Actor") || InputManager.IsKeyDown(EKeyInput::Delete))
-		if (InputManager.IsKeyPressed(EKeyInput::Delete))
-		{
-			DeleteSelectedActor();
-		}
+		return;
 	}
-	else
+
+	if (InputManager.IsKeyPressed(EKeyInput::Delete))
 	{
-		// ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "No Actor Selected For Deletion");
+		// 컴포넌트 선택시 컴포넌트 삭제를 우선
+		if (ActorDetailWidget)
+		{
+			if (TObjectPtr<UActorComponent> ActorComp = ActorDetailWidget->GetSelectedComponent())
+			{
+				DeleteSelectedComponent(SelectedActor, ActorComp);
+				return;
+			}
+		}
+		DeleteSelectedActor(SelectedActor);
 	}
 }
 
 /**
  * @brief Selected Actor 삭제 함수
  */
-void UActorTerminationWidget::DeleteSelectedActor()
+void UActorTerminationWidget::DeleteSelectedActor(TObjectPtr<AActor> InSelectedActor)
 {
 	UE_LOG("ActorTerminationWidget: 삭제를 위한 Actor Marking 시작");
-	if (!SelectedActor)
+	if (!InSelectedActor)
 	{
 		UE_LOG("ActorTerminationWidget: 삭제를 위한 Actor가 선택되지 않았습니다");
 		return;
@@ -85,11 +74,17 @@ void UActorTerminationWidget::DeleteSelectedActor()
 	}
 
 	UE_LOG_INFO("ActorTerminationWidget: 선택된 Actor를 삭제를 위해 마킹 처리: %s",
-	       SelectedActor->GetName() == FName::GetNone() ? "UnNamed" : SelectedActor->GetName().ToString().data());
+	       InSelectedActor->GetName() == FName::GetNone() ? "UnNamed" : InSelectedActor->GetName().ToString().data());
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
-	GWorld->DestroyActor(SelectedActor);
+	GWorld->DestroyActor(InSelectedActor);
+}
 
-	// MarkActorForDeletion에서 선택 해제도 처리하므로 여기에서는 단순히 nullptr로 설정
-	SelectedActor = nullptr;
+void UActorTerminationWidget::DeleteSelectedComponent(TObjectPtr<AActor> InSelectedActor, TObjectPtr<UActorComponent> InSelectedComponent)
+{
+	bool bSuccess = InSelectedActor->RemoveComponent(InSelectedComponent);
+	if (bSuccess)
+	{
+		ActorDetailWidget->SetSelectedComponent(nullptr);
+	}
 }

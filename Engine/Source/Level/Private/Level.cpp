@@ -156,6 +156,24 @@ void ULevel::RegisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 	UE_LOG("Level: '%s' 컴포넌트를 씬에 등록했습니다.", InComponent->GetName().ToString().data());
 }
 
+void ULevel::UnregisterPrimitiveComponent(UPrimitiveComponent* InComponent)
+{
+	if (!InComponent)
+	{
+		return;
+	}
+	// StaticOctree에서 제거 시도
+	if (StaticOctree->Remove(InComponent) == false)
+	{
+		// 실패하면 DynamicPrimitives 목록에서 찾아서 제거
+		if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), InComponent); It != DynamicPrimitives.end())
+		{
+			*It = std::move(DynamicPrimitives.back());
+			DynamicPrimitives.pop_back();
+		}
+	}
+}
+
 void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 {
 	if (!Actor) return;

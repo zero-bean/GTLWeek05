@@ -45,10 +45,10 @@ void UDetailWindow::Initialize()
 void UDetailWindow::OnSelectedActorChanged(AActor* InActor)
 {
 	ClearWidget();
-
-	AddWidget(new UActorDetailWidget);
+	UActorDetailWidget* ActorDetailWidge = new UActorDetailWidget;
+	AddWidget(ActorDetailWidge);
 	AddWidget(new UTargetActorTransformWidget);
-	AddWidget(new UActorTerminationWidget);
+	AddWidget(new UActorTerminationWidget(ActorDetailWidge));
 
 	if (InActor)
 	{

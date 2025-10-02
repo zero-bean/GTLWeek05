@@ -607,3 +607,8 @@ void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLo
 
 	OutRotation = FVector::GetRadianToDegree(OutRotation);
 }
+
+void UActorDetailWidget::SetSelectedComponent(UActorComponent* InComponent)
+{ 
+	SelectedComponent = InComponent;
+}

@@ -53,6 +53,7 @@ public:
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
 	void RegisterPrimitiveComponent(UPrimitiveComponent* InComponent);
+	void UnregisterPrimitiveComponent(UPrimitiveComponent* InComponent);
 	bool DestroyActor(AActor* InActor);
 
 	uint64 GetShowFlags() const { return ShowFlags; }
