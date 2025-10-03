@@ -12,7 +12,7 @@ public:
 	//void SetGridProperty(float InCellSize, int InNumLines);
 
 	void UpdateVerticesBy(float NewCellSize);
-	void MergeVerticesAt(TArray<FVector>& destVertices, size_t insertStartIndex);
+	void MergeVerticesAt(TArray<FVector>& DestVertices, size_t InsertStartIndex);
 	//void RenderGrid();
 
 	uint32 GetNumVertices() const

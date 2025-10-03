@@ -69,26 +69,25 @@ void UGrid::UpdateVerticesBy(float NewCellSize)
 }
 
 
-void UGrid::MergeVerticesAt(TArray<FVector>& destVertices, size_t insertStartIndex)
+void UGrid::MergeVerticesAt(TArray<FVector>& DestVertices, size_t InsertStartIndex)
 {
 	// 인덱스 범위 보정
-	if (insertStartIndex > destVertices.size())
-		insertStartIndex = destVertices.size();
-
+	InsertStartIndex = std::min(DestVertices.size(), InsertStartIndex);
+	
 	// 미리 메모리 확보
-	destVertices.reserve(destVertices.size() + std::distance(Vertices.begin(), Vertices.end()));
+	DestVertices.reserve(DestVertices.size() + std::distance(Vertices.begin(), Vertices.end()));
 
 	// 덮어쓸 수 있는 개수 계산
 	size_t overwriteCount = std::min(
 		Vertices.size(),
-		destVertices.size() - insertStartIndex
+		DestVertices.size() - InsertStartIndex
 	);
 
 	// 기존 요소 덮어쓰기
 	std::copy(
 		Vertices.begin(),
 		Vertices.begin() + overwriteCount,
-		destVertices.begin() + insertStartIndex
+		DestVertices.begin() + InsertStartIndex
 	);
 
 	// 원하는 위치에 삽입

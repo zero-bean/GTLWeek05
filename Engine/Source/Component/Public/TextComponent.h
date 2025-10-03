@@ -4,7 +4,7 @@
 #include "Physics/Public/AABB.h"
 
 class AActor;
-class FAABB;
+struct FAABB;
 
 UCLASS()
 class UTextComponent : public UPrimitiveComponent
@@ -14,7 +14,7 @@ class UTextComponent : public UPrimitiveComponent
 
 public:
 	UTextComponent();
-	~UTextComponent();
+	~UTextComponent() override;
 
 	virtual void UpdateRotationMatrix(const FVector& InCameraLocation);
 	virtual FMatrix GetRTMatrix() const;

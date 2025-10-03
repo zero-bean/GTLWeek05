@@ -107,12 +107,12 @@ ID3D11Buffer* UPrimitiveComponent::GetIndexBuffer() const
 	return IndexBuffer;
 }
 
-const uint32 UPrimitiveComponent::GetNumVertices() const
+uint32 UPrimitiveComponent::GetNumVertices() const
 {
 	return NumVertices;
 }
 
-const uint32 UPrimitiveComponent::GetNumIndices() const
+uint32 UPrimitiveComponent::GetNumIndices() const
 {
 	return NumIndices;
 }

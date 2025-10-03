@@ -12,7 +12,7 @@ class UActorComponent : public UObject
 
 public:
 	UActorComponent();
-	~UActorComponent();
+	~UActorComponent() override;
 	/*virtual void Render(const URenderer& Renderer) const
 	{
 

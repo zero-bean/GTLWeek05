@@ -54,7 +54,6 @@ private:
 	FVector RelativeRotation = FVector{ 0,0,0.f };
 	FVector RelativeScale3D = FVector{ 0.3f,0.3f,0.3f };
 	bool bIsUniformScale = false;
-	const float MinScale = 0.01f;
 
 public:
 	float InactivityTimer = 0.0f;

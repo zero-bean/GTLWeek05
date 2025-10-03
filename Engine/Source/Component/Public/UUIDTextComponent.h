@@ -11,7 +11,7 @@ class UUUIDTextComponent : public UTextComponent
 	DECLARE_CLASS(UUUIDTextComponent, UTextComponent)
 public:
 	UUUIDTextComponent();
-	~UUUIDTextComponent();
+	~UUUIDTextComponent() override;
 
 	virtual void OnSelected() override;
 	virtual void OnDeselected() override;

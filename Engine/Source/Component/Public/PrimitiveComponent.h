@@ -20,8 +20,8 @@ public:
 	const TArray<uint32>* GetIndicesData() const;
 	ID3D11Buffer* GetVertexBuffer() const;
 	ID3D11Buffer* GetIndexBuffer() const;
-	const uint32 GetNumVertices() const;
-	const uint32 GetNumIndices() const;
+	uint32 GetNumVertices() const;
+	uint32 GetNumIndices() const;
 
 	const FRenderState& GetRenderState() const { return RenderState; }
 
