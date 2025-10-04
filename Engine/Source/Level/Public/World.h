@@ -49,12 +49,12 @@ public:
 
 	// Level Management Triggers
 	TObjectPtr<ULevel> GetLevel() const;
-	void CreateNewLevel(const FName& InLevelName = FName::GetNone());
+	void CreateNewLevel(const FName& InLevelName = FName::None);
 	bool LoadLevel(std::filesystem::path InLevelFilePath);
 	bool SaveCurrentLevel(std::filesystem::path InLevelFilePath) const;
 
 	// Actor Spawn & Destroy
-	AActor* SpawnActor(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
+	AActor* SpawnActor(UClass* InActorClass, const FName& InName = FName::None, JSON* ActorJsonData = nullptr);
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
 	// TODO: World Scope Query Entrypoint

@@ -3,7 +3,8 @@
 #include <algorithm> // for std::transform
 #include <cctype>    // for std::tolower
 
-FName::FName() : DisplayIndex(0), ComparisonIndex(0), Number(-1)
+/**@brief FName::None으로 초기화합니다.*/
+FName::FName() : ComparisonIndex(0), DisplayIndex(0), Number(-1)
 {
 }
 
@@ -17,12 +18,11 @@ FName::FName(const FString& Str)
 
 FName::FName(const char* Str) : FName(FString(Str)) { }
 
-/**
-* @brief NameTable에서 UniqueName을 만들 때 사용하는 생성자
-* 
-*/
-FName::FName(int32 InDisplayIndex, int32 InComparisonIndex, int32 InNumber)
-    : DisplayIndex(InDisplayIndex), ComparisonIndex(InComparisonIndex), Number(InNumber) {}
+/**@brief NameTable에서 UniqueName을 만들 때 사용하는 생성자*/
+FName::FName(int32 InComparisonIndex, int32 InDisplayIndex, int32 InNumber)
+    : ComparisonIndex(InComparisonIndex), DisplayIndex(InDisplayIndex), Number(InNumber)
+{
+}
 
 bool FName::operator==(const FName& Other) const
 {
@@ -59,18 +59,10 @@ FString FName::ToBaseNameString() const
     return FNameTable::GetInstance().GetDisplayString(DisplayIndex);
 }
 
-FName FName::GetNone()
-{
-    return None;
-}
 const FName FName::None(0, 0, -1); 
 
 // FNameTable
-/**
-* @brief FString 객체를 받아 풀에 없으면 반환
-* @param Str FName으로 등록되었는지 확인할 FString
-* @return DisplayIndex, ComparisonIndex
-*/
+
 FNameTable::FNameTable()
 {
     ComparisonMap["None"] = 0;
@@ -85,6 +77,11 @@ FNameTable& FNameTable::GetInstance()
     return Instance;
 }
 
+/**
+* @brief FString 객체를 받아 풀에 없으면 반환
+* @param Str FName으로 등록되었는지 확인할 FString
+* @return ComparisonIndex, DisplayIndex
+*/
 TPair<int32, int32> FNameTable::FindOrAddName(const FString& Str)
 {
     FString LowerStr = ToLower(Str);
@@ -121,13 +118,13 @@ TPair<int32, int32> FNameTable::FindOrAddName(const FString& Str)
 FName FNameTable::GetUniqueName(const FString& BaseStr)
 {
     TPair<int32, int32> Indices = FindOrAddName(BaseStr);
-    int32 DisplayIndex = Indices.second;
     int32 ComparisonIndex = Indices.first;
+    int32 DisplayIndex = Indices.second;
 
     int32 Number = NextNumberMap[BaseStr];
     NextNumberMap[BaseStr]++;
 
-    return FName(DisplayIndex, ComparisonIndex, Number);
+    return FName(ComparisonIndex, DisplayIndex, Number);
 }
 
 FString FNameTable::GetDisplayString(int32 Idx) const
@@ -140,7 +137,7 @@ FString FNameTable::GetDisplayString(int32 Idx) const
     return EmptyString;
 }
 
-FString FNameTable::ToLower(const FString& Str) const
+FString FNameTable::ToLower(const FString& Str)
 {
     FString LowerStr = Str;
     std::transform(LowerStr.begin(), LowerStr.end(), LowerStr.begin(),

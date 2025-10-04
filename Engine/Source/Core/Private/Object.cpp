@@ -16,7 +16,7 @@ TArray<TObjectPtr<UObject>>& GetUObjectArray()
 IMPLEMENT_CLASS_BASE(UObject)
 
 UObject::UObject()
-	: Name(FName::GetNone()), Outer(nullptr)
+	: Name(FName::None), Outer(nullptr)
 {
 	UUID = UEngineStatics::GenUUID();
 	

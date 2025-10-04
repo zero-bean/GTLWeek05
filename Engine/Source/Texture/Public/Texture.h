@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
 
-class FTextureRenderProxy;
+struct FTextureRenderProxy;
 
 UCLASS()
 class UTexture :
