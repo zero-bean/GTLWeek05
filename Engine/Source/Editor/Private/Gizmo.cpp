@@ -122,19 +122,19 @@ void UGizmo::RenderGizmo(AActor* Actor, UCamera* InCamera)
 	FQuaternion RotX = LocalRot * FQuaternion::Identity();
 	P.Rotation = RotX.ToEuler();
 	P.Color = ColorFor(EGizmoDirection::Forward);
-	Renderer.RenderPrimitive(P, RenderState);
+	Renderer.RenderEditorPrimitive(P, RenderState);
 
 	// Y축 (Right) - 초록색 (Z축 주위로 90도 회전)
 	FQuaternion RotY = LocalRot * FQuaternion::FromAxisAngle(FVector::UpVector(), 90.0f * (PI / 180.0f));
 	P.Rotation = RotY.ToEuler();
 	P.Color = ColorFor(EGizmoDirection::Right);
-	Renderer.RenderPrimitive(P, RenderState);
+	Renderer.RenderEditorPrimitive(P, RenderState);
 
 	// Z축 (Up) - 파란색 (Y축 주위로 -90도 회전)
 	FQuaternion RotZ = LocalRot * FQuaternion::FromAxisAngle(FVector::RightVector(), -90.0f * (PI / 180.0f));
 	P.Rotation = RotZ.ToEuler();
 	P.Color = ColorFor(EGizmoDirection::Up);
-	Renderer.RenderPrimitive(P, RenderState);
+	Renderer.RenderEditorPrimitive(P, RenderState);
 }
 
 void UGizmo::ChangeGizmoMode()

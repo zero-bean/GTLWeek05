@@ -1,7 +1,9 @@
 #pragma once
 
+class URenderer;
+
 /// @brief 폰트 아틀라스를 사용한 텍스트 렌더링 클래스
-/// DejaVu Sans Mono.png 512x512 아틀라스에서 16x16 픽셀 글자를 렌더링
+/// 동적 정점 버퍼를 사용하여 텍스트를 효율적으로 렌더링합니다.
 class UFontRenderer
 {
 public:
@@ -26,60 +28,49 @@ public:
     UFontRenderer();
     ~UFontRenderer();
 
-    /// @brief 폰트 렌더러 초기화 - 셰이더, 텍스처, 버퍼 생성
+    /// @brief 폰트 렌더러 초기화 - 리소스 로드 및 동적 정점 버퍼 생성
     bool Initialize();
 
     /// @brief 리소스 해제
     void Release();
 
-    /// @brief "Hello, World!" 텍스트를 화면에 렌더링 (호환성을 위해 유지)
-    /// @param WorldMatrix 월드 변환 행렬
-    /// @param ViewProjectionMatrix 뷰-프로젝션 변환 행렬
-    //void RenderHelloWorld(const FMatrix& WorldMatrix, const FMatrix& ViewProjectionMatrix);
-
     /// @brief 임의의 텍스트를 화면에 렌더링
     /// @param Text 렌더링할 텍스트 문자열
     /// @param WorldMatrix 월드 변환 행렬
-    /// @param ViewProjectionMatrix 뷰-프로젝션 변환 행렬
+    /// @param ViewProjectionConstants 뷰-프로젝션 상수 데이터
     /// @param CenterY 중앙 Y 좌표 (모델 좌표계)
-    /// @param StartZ시작 Z 좌표 (모델 좌표계)
+    /// @param StartZ 시작 Z 좌표 (모델 좌표계)
     /// @param CharWidth 문자 너비
     /// @param CharHeight 문자 높이
-    void RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionCostants,
-                    float CenterY = 0.0f, float StartZ = -2.5f, float CharWidth = 1.0f, float CharHeight = 2.0f, bool DepthTest = false);
+    /// @param bEnableDepthTest 깊이 테스트 활성화 여부
+    void RenderText(const char* Text, const FMatrix& WorldMatrix, const FViewProjConstants& ViewProjectionConstants,
+                    float CenterY = 0.0f, float StartZ = -2.5f, float CharWidth = 1.0f, float CharHeight = 2.0f, bool bEnableDepthTest = false);
 
 private:
-    /// @brief 텍스트를 위한 정점 버퍼 생성
-    /// @param Text 렌더링할 텍스트 문자열
-    /// @param StartX 시작 X 좌표
-    /// @param StartY 시작 Y 좌표
-    /// @param CharWidth 문자 너비
-    /// @param CharHeight 문자 높이
-    bool CreateVertexBufferForText(const char* Text, float StartX, float StartY, float CharWidth, float CharHeight);
-
-    /// @brief 셰이더 생성
-    bool CreateShaders();
+    /// @brief 텍스트 렌더링을 위한 동적 정점 버퍼 생성
+    bool CreateDynamicVertexBuffer();
 
     /// @brief 폰트 텍스처 로드
     bool LoadFontTexture();
 
-    /// @brief 샘플러 스테이트 생성
-    bool CreateSamplerState();
-
-    /// @brief 상수 버퍼 생성
-    bool CreateConstantBuffer();
-
+    // 렌더링 리소스 (셰이더, 레이아웃 등은 Renderer에서 관리)
     ID3D11VertexShader* FontVertexShader = nullptr;
     ID3D11PixelShader* FontPixelShader = nullptr;
     ID3D11InputLayout* FontInputLayout = nullptr;
-
-    /// @brief 텍스처 리소스
-    ID3D11ShaderResourceView* FontAtlasTexture = nullptr;
     ID3D11SamplerState* FontSampler = nullptr;
 
-    ID3D11Buffer* FontVertexBuffer = nullptr;
-    ID3D11Buffer* FontConstantBuffer = nullptr;
+    /// @brief 폰트 아틀라스 텍스처 리소스
+    ID3D11ShaderResourceView* FontAtlasTexture = nullptr;
 
-    uint32 VertexCount = 0;
+    /// @brief 텍스트 렌더링을 위한 동적 정점 버퍼
+    ID3D11Buffer* DynamicVertexBuffer = nullptr;
+
+    /// @brief 폰트 데이터용 상수 버퍼
+    ID3D11Buffer* FontDataConstantBuffer = nullptr;
+
+    /// @brief 폰트 데이터
     FFontConstantBuffer ConstantBufferData;
+
+    /// @brief 동적 정점 버퍼가 수용할 수 있는 최대 정점 개수
+    static constexpr uint32 MAX_FONT_VERTICES = 4096;
 };

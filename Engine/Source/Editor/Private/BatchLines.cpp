@@ -93,7 +93,7 @@ void UBatchLines::Render()
 	URenderer& Renderer = URenderer::GetInstance();
 
 	// to do: 아래 함수를 batch에 맞게 수정해야 함.
-	Renderer.RenderPrimitiveIndexed(Primitive, Primitive.RenderState, false, sizeof(FVector), sizeof(uint32));
+	Renderer.RenderEditorPrimitive(Primitive, Primitive.RenderState, sizeof(FVector), sizeof(uint32));
 }
 
 void UBatchLines::SetIndices()

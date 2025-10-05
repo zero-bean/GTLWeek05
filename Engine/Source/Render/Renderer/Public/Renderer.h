@@ -17,31 +17,10 @@ class UEditor;
 class UFontRenderer;
 class FViewport;
 class UCamera;
+class UPipeline;
 
 /**
  * @brief Rendering Pipeline 전반을 처리하는 클래스
- *
- * Direct3D 11 장치(Device)와 장치 컨텍스트(Device Context) 및 스왑 체인(Swap Chain)을 관리하기 위한 포인터들
- * @param Device GPU와 통신하기 위한 Direct3D 장치
- * @param DeviceContext GPU 명령 실행을 담당하는 컨텍스트
- * @param SwapChain 프레임 버퍼를 교체하는 데 사용되는 스왑 체인
- *
- * // 렌더링에 필요한 리소스 및 상태를 관리하기 위한 변수들
- * @param FrameBuffer 화면 출력용 텍스처
- * @param FrameBufferRTV 텍스처를 렌더 타겟으로 사용하는 뷰
- * @param RasterizerState 래스터라이저 상태(컬링, 채우기 모드 등 정의)
- * @param ConstantBuffer 쉐이더에 데이터를 전달하기 위한 상수 버퍼
- *
- * @param ClearColor 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
- * @param ViewportInfo 렌더링 영역을 정의하는 뷰포트 정보
- *
- * @param DefaultVertexShader
- * @param DefaultPixelShader
- * @param DefaultInputLayout
- * @param Stride
- *
- * @param vertexBufferSphere
- * @param numVerticesSphere
  */
 UCLASS()
 class URenderer :
@@ -57,14 +36,16 @@ public:
 	// Initialize
 	void CreateRasterizerState();
 	void CreateDepthStencilState();
+	void CreateBlendState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
-	void CreateConstantBuffer();
+	void CreateConstantBuffers();
 
 	// Release
-	void ReleaseConstantBuffer();
+	void ReleaseConstantBuffers();
 	void ReleaseDefaultShader();
 	void ReleaseDepthStencilState();
+	void ReleaseBlendState();
 	void ReleaseRasterizerState();
 
 	// Render
@@ -77,9 +58,7 @@ public:
 	void RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp);
 	void RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
-	void RenderPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState);
-	void RenderPrimitiveIndexed(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState,
-	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
+	void RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState, uint32 InStride = 0, uint32 InIndexBufferStride = 0);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0) const;
 
@@ -91,8 +70,23 @@ public:
 	ID3D11Buffer* CreateVertexBuffer(FVector* InVertices, uint32 InByteWidth, bool bCpuAccess) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
+	ID3D11SamplerState* CreateSamplerState(D3D11_FILTER InFilter, D3D11_TEXTURE_ADDRESS_MODE InAddressMode) const;
 
 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
+
+	template<typename T>
+	ID3D11Buffer* CreateConstantBuffer() const
+	{
+		D3D11_BUFFER_DESC Desc = {};
+		Desc.ByteWidth = sizeof(T) + 0xf & 0xfffffff0; // 16바이트 단위 정렬
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+		ID3D11Buffer* Buffer = nullptr;
+		GetDevice()->CreateBuffer(&Desc, nullptr, &Buffer);
+		return Buffer;
+	}
 
 	template<typename T>
 	void UpdateConstantBuffer(ID3D11Buffer* Buffer, const T& Data, int SlotIndex = -1, bool IsVertexShader = true) const
@@ -121,7 +115,15 @@ public:
 	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
 	UDeviceResources* GetDeviceResources() const { return DeviceResources; }
 	FViewport* GetViewportClient() const { return ViewportClient; }
+	UPipeline* GetPipeline() const { return Pipeline; }
 	bool GetIsResizing() const { return bIsResizing; }
+
+	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
+	ID3D11DepthStencilState* GetDefaultDepthStencilState() const { return DefaultDepthStencilState; }
+	ID3D11DepthStencilState* GetDisabledDepthStencilState() const { return DisabledDepthStencilState; }
+	ID3D11BlendState* GetAlphaBlendState() const { return AlphaBlendState; }
+	ID3D11Buffer* GetConstantBufferModels() const { return ConstantBufferModels; }
+	ID3D11Buffer* GetConstantBufferViewProj() const { return ConstantBufferViewProj; }
 
 	void SetIsResizing(bool isResizing) { bIsResizing = isResizing; }
 
@@ -131,8 +133,12 @@ private:
 	UFontRenderer* FontRenderer = nullptr;
 	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
+	// States
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
+	ID3D11BlendState* AlphaBlendState = nullptr;
+
+	// Constant Buffers
 	ID3D11Buffer* ConstantBufferModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 	ID3D11Buffer* ConstantBufferColor = nullptr;
@@ -141,10 +147,12 @@ private:
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 
+	// Default Shaders
 	ID3D11VertexShader* DefaultVertexShader = nullptr;
 	ID3D11PixelShader* DefaultPixelShader = nullptr;
 	ID3D11InputLayout* DefaultInputLayout = nullptr;
 	
+	// Texture Shaders
 	ID3D11VertexShader* TextureVertexShader = nullptr;
 	ID3D11PixelShader* TexturePixelShader = nullptr;
 	ID3D11InputLayout* TextureInputLayout = nullptr;
@@ -182,9 +190,6 @@ private:
 	};
 
 	TMap<FRasterKey, ID3D11RasterizerState*, FRasterKeyHasher> RasterCache;
-
-	ID3D11RasterizerState* GetRasterizerState(const FRenderState& InRenderState);
 	
 	bool bIsResizing = false;
 };
-
