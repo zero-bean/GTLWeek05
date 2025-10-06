@@ -4,6 +4,7 @@
 #include "Component/Mesh/Public/StaticMesh.h"
 
 struct FAABB;
+struct FOBB;
 
 /**
  * @brief 전역의 On-Memory Asset을 관리하는 매니저 클래스
@@ -59,6 +60,8 @@ public:
 	// Bounding Box
 	const FAABB& GetAABB(EPrimitiveType InType);
 	const FAABB& GetStaticMeshAABB(FName InName);
+	const FOBB& GetOBB(EPrimitiveType InType);
+	const FOBB& GetStaticMeshOBB(FName InName);
 
 	const TMap<FName, ID3D11ShaderResourceView*>& GetTextureCache() const;
 
@@ -91,8 +94,13 @@ private:
 
 	// Helper Functions
 	FAABB CalculateAABB(const TArray<FNormalVertex>& Vertices);
+	FOBB CalculateOBB(const TArray<FNormalVertex>& Vertices, const FMatrix& Rotation);
 
 	// AABB Resource
 	TMap<EPrimitiveType, FAABB> AABBs;		// 각 타입별 AABB 저장
 	TMap<FName, FAABB> StaticMeshAABBs;	// 스태틱 메시용 AABB 저장
+
+	// OBB Resource
+	TMap<EPrimitiveType, FOBB> OBBs;		// 각 타입별 OBB 저장
+	TMap<FName, FOBB> StaticMeshOBBs;	// 스태틱 메시용 OBB 저장
 };

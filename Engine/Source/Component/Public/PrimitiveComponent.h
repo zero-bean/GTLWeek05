@@ -23,7 +23,7 @@ public:
 	uint32 GetNumVertices() const;
 	uint32 GetNumIndices() const;
 
-	const FRenderState& GetRenderState() const { return RenderState; }
+	FRenderState& GetRenderState() { return RenderState; }
 
 	void SetTopology(D3D11_PRIMITIVE_TOPOLOGY InTopology);
 	D3D11_PRIMITIVE_TOPOLOGY GetTopology() const;
@@ -59,7 +59,7 @@ protected:
 	FVector4 Color = FVector4{ 0.f,0.f,0.f,0.f };
 
 	D3D11_PRIMITIVE_TOPOLOGY Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	FRenderState RenderState = {};
+	mutable FRenderState RenderState = {};
 	EPrimitiveType Type = EPrimitiveType::Cube;
 
 	bool bVisible = true;

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Physics/Public/AABB.h"
+#include "Physics/Public/BoundingSphere.h"
 
 float FAABB::GetCenterDistanceSquared(const FVector& Point) const
 {
@@ -113,4 +114,32 @@ float FAABB::GetDistanceSquaredToPoint(const FVector& Point) const
     }
 
     return SquaredDistance;
+}
+
+bool CheckIntersectionSphereAABB(const FBoundingSphere& Sphere, const FAABB& Box)
+{
+    float DistSquared = Box.GetDistanceSquaredToPoint(Sphere.Center);
+    return DistSquared <= (Sphere.Radius * Sphere.Radius);
+}
+
+bool FAABB::Intersects(const IBoundingVolume& Other) const
+{
+    // 상대방의 타입을 확인합니다.
+    switch (Other.GetType())
+    {
+    case EBoundingVolumeType::AABB:
+    {
+        // 상대방이 AABB라면, 기존의 AABB-AABB 검사를 수행합니다.
+        const FAABB& OtherAABB = static_cast<const FAABB&>(Other);
+        return this->IsIntersected(OtherAABB);
+    }
+    case EBoundingVolumeType::Sphere:
+    {
+        // 상대방이 Sphere라면, AABB-Sphere 검사를 수행합니다.
+        const FBoundingSphere& OtherSphere = static_cast<const FBoundingSphere&>(Other);
+        return CheckIntersectionSphereAABB(OtherSphere, *this);
+    }
+    default:
+        return false;
+    }
 }

@@ -21,6 +21,11 @@ AActor::~AActor()
 {
 	for (UActorComponent* Component : OwnedComponents)
 	{
+        if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
+        {
+            GWorld->GetLevel()->UnregisterPrimitiveComponent(PrimitiveComponent);
+        }
+
 		SafeDelete(Component);
 	}
 	SetOuter(nullptr);
@@ -286,7 +291,7 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete)
             }
 		}
         OwnedComponents.erase(It);
-        SafeDelete(*It);
+        SafeDelete(InComponentToDelete);
         return true;
     }
     return false;

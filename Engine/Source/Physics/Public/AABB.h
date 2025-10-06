@@ -2,6 +2,8 @@
 #include "Physics/Public/BoundingVolume.h"
 #include "Global/Vector.h"
 
+class FBoundingSphere;
+
 struct FAABB : public IBoundingVolume
 {
 	FVector Min;
@@ -25,6 +27,8 @@ struct FAABB : public IBoundingVolume
 	float GetDistanceSquaredToPoint(const FVector& Point) const;
 
 	EBoundingVolumeType GetType() const override { return EBoundingVolumeType::AABB; }
+
+	bool Intersects(const IBoundingVolume& Other) const override;
 };
 
 bool CheckIntersectionRayBox(const FRay& Ray, const FAABB& Box);

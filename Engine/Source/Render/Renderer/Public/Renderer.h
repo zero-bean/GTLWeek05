@@ -39,6 +39,7 @@ public:
 	void CreateBlendState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
+	void CreateDecalShader();
 	void CreateConstantBuffers();
 
 	// Release
@@ -59,6 +60,7 @@ public:
 	void RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera);
 	void RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState);
 	void RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState, uint32 InStride = 0, uint32 InIndexBufferStride = 0);
+	void RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0) const;
 
@@ -136,14 +138,18 @@ private:
 	// States
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
+	ID3D11DepthStencilState* DecalDepthState = nullptr;
 	ID3D11BlendState* AlphaBlendState = nullptr;
+	ID3D11BlendState* DecalBlendState = nullptr;
 
 	// Constant Buffers
 	ID3D11Buffer* ConstantBufferModels = nullptr;
+	ID3D11Buffer* ConstantBufferDecalModels = nullptr;
 	ID3D11Buffer* ConstantBufferViewProj = nullptr;
 	ID3D11Buffer* ConstantBufferColor = nullptr;
 	ID3D11Buffer* ConstantBufferBatchLine = nullptr;
 	ID3D11Buffer* ConstantBufferMaterial = nullptr;
+	ID3D11Buffer* ConstantBufferDecal = nullptr;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};
 
@@ -156,6 +162,11 @@ private:
 	ID3D11VertexShader* TextureVertexShader = nullptr;
 	ID3D11PixelShader* TexturePixelShader = nullptr;
 	ID3D11InputLayout* TextureInputLayout = nullptr;
+
+	// Decal Shaders
+	ID3D11VertexShader* DecalVertexShader = nullptr;
+	ID3D11PixelShader* DecalPixelShader = nullptr;
+	ID3D11InputLayout* DecalInputLayout = nullptr;
 	
 	uint32 Stride = 0;
 

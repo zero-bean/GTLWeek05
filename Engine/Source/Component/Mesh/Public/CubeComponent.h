@@ -9,4 +9,6 @@ class UCubeComponent : public UPrimitiveComponent
 
 public:
 	UCubeComponent();
+
+	void UseLineRendering(bool bUseLine);
 };

@@ -11,6 +11,7 @@
 #include "Actor/Public/BillBoardActor.h"
 #include "Actor/Public/MovingCubeActor.h"
 #include "Actor/Public/TextActor.h"
+#include "Actor/Public/DecalActor.h"
 
 UPrimitiveSpawnWidget::UPrimitiveSpawnWidget()
 	: UWidget("Primitive Spawn Widget")
@@ -44,7 +45,8 @@ void UPrimitiveSpawnWidget::RenderWidget()
 		"Square",
 		"StaticMesh",
 		"BillBoard",
-		"Text"
+		"Text",
+		"Decal"
 	};
 
 	// None을 고려한 Enum 변환 처리
@@ -171,6 +173,10 @@ void UPrimitiveSpawnWidget::SpawnActors() const
 		else if (SelectedPrimitiveType == EPrimitiveType::Text)
 		{
 			NewActor = GWorld->SpawnActor(ATextActor::StaticClass());
+		}
+		else if (SelectedPrimitiveType == EPrimitiveType::Decal)
+		{
+			NewActor = GWorld->SpawnActor(ADecalActor::StaticClass());
 		}
 
 		if (NewActor)

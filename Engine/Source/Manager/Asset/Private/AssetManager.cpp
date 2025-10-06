@@ -6,6 +6,7 @@
 #include "DirectXTK/DDSTextureLoader.h"
 #include "Component/Mesh/Public/VertexDatas.h"
 #include "Physics/Public/AABB.h"
+#include "Physics/Public/OBB.h"
 #include "Texture/Public/TextureRenderProxy.h"
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/ObjManager.h"
@@ -33,17 +34,22 @@ void UAssetManager::Initialize()
 	VertexDatas.emplace(EPrimitiveType::CubeArrow, &VerticesCubeArrow);
 	VertexDatas.emplace(EPrimitiveType::Ring, &VerticesRing);
 	VertexDatas.emplace(EPrimitiveType::Line, &VerticesLine);
+	VertexDatas.emplace(EPrimitiveType::CubeLine, &VerticesCube);
 	VertexDatas.emplace(EPrimitiveType::Sprite, &VerticesVerticalSquare);
 
 	IndexDatas.emplace(EPrimitiveType::Cube, &IndicesCube);
+	IndexDatas.emplace(EPrimitiveType::CubeLine, &IndicesCubeLine);
 	IndexDatas.emplace(EPrimitiveType::Sprite, &IndicesVerticalSquare);
 
 	IndexBuffers.emplace(EPrimitiveType::Cube,
 		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
+	IndexBuffers.emplace(EPrimitiveType::CubeLine,
+		Renderer.CreateIndexBuffer(IndicesCubeLine.data(), static_cast<int>(IndicesCubeLine.size()) * sizeof(uint32)));
 	IndexBuffers.emplace(EPrimitiveType::Sprite,
 		Renderer.CreateIndexBuffer(IndicesVerticalSquare.data(), static_cast<int>(IndicesVerticalSquare.size()) * sizeof(uint32)));
 
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
+	NumIndices.emplace(EPrimitiveType::CubeLine, static_cast<uint32>(IndicesCubeLine.size()));
 	NumIndices.emplace(EPrimitiveType::Sprite, static_cast<uint32>(IndicesVerticalSquare.size()));
 	
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
@@ -65,6 +71,7 @@ void UAssetManager::Initialize()
 		VerticesRing.data(), static_cast<int>(VerticesRing.size() * sizeof(FNormalVertex))));
 	VertexBuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
 		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FNormalVertex))));
+	VertexBuffers.emplace(EPrimitiveType::CubeLine, VertexBuffers[EPrimitiveType::Cube]);
 	VertexBuffers.emplace(EPrimitiveType::Sprite, Renderer.CreateVertexBuffer(
 		VerticesVerticalSquare.data(), static_cast<int>(VerticesVerticalSquare.size() * sizeof(FNormalVertex))));
 
@@ -77,6 +84,7 @@ void UAssetManager::Initialize()
 	NumVertices.emplace(EPrimitiveType::CubeArrow, static_cast<uint32>(VerticesCubeArrow.size()));
 	NumVertices.emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.size()));
 	NumVertices.emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.size()));
+	NumVertices.emplace(EPrimitiveType::CubeLine, NumVertices[EPrimitiveType::Cube]);
 	NumVertices.emplace(EPrimitiveType::Sprite, static_cast<uint32>(VerticesVerticalSquare.size()));
 	
 	// Calculate AABB for all primitive types (excluding StaticMesh)
@@ -88,6 +96,7 @@ void UAssetManager::Initialize()
 			continue;
 
 		AABBs[Type] = CalculateAABB(*Vertices);
+		OBBs[Type] = CalculateOBB(*Vertices, FMatrix::Identity());
 	}
 
 	// Calculate AABB for each StaticMesh
@@ -103,6 +112,7 @@ void UAssetManager::Initialize()
 			continue;
 
 		StaticMeshAABBs[ObjPath] = CalculateAABB(Vertices);
+		StaticMeshOBBs[ObjPath] = CalculateOBB(Vertices, FMatrix::Identity());
 	}
 
 	// Initialize Shaders
@@ -285,6 +295,16 @@ const FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
 const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 {
 	return StaticMeshAABBs[InName];
+}
+
+const FOBB& UAssetManager::GetOBB(EPrimitiveType InType)
+{
+	return OBBs[InType];
+}
+
+const FOBB& UAssetManager::GetStaticMeshOBB(FName InName)
+{
+	return StaticMeshOBBs[InName];
 }
 
 const TMap<FName, ID3D11ShaderResourceView*>& UAssetManager::GetTextureCache() const
@@ -619,4 +639,58 @@ FAABB UAssetManager::CalculateAABB(const TArray<FNormalVertex>& Vertices)
 	}
 
 	return FAABB(MinPoint, MaxPoint);
+}
+
+FOBB UAssetManager::CalculateOBB(const TArray<FNormalVertex>& Vertices, const FMatrix& Rotation)
+{
+	FVector Min(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// 1️⃣ 회전의 역행렬(전치 행렬)을 구합니다.
+	// 사용자님의 FMatrix에 구현된 Transpose() 함수를 사용합니다.
+	const FMatrix InvRot = Rotation.Transpose();
+
+	for (const auto& Vertex : Vertices)
+	{
+		// 2️⃣ FVector를 FVector4로 변환 후, operator*를 이용해 로컬 공간으로 변환합니다.
+		const FVector4 TempPos(Vertex.Position.X, Vertex.Position.Y, Vertex.Position.Z, 1.0f);
+		const FVector4 TransformedPos = TempPos * InvRot;
+		const FVector LocalPos(TransformedPos.X, TransformedPos.Y, TransformedPos.Z);
+
+		// 로컬 공간에서 AABB를 찾습니다.
+		Min.X = min(Min.X, LocalPos.X);
+		Min.Y = min(Min.Y, LocalPos.Y);
+		Min.Z = min(Min.Z, LocalPos.Z);
+
+		Max.X = max(Max.X, LocalPos.X);
+		Max.Y = max(Max.Y, LocalPos.Y);
+		Max.Z = max(Max.Z, LocalPos.Z);
+	}
+
+	// 3️⃣ 로컬 공간의 중심과 크기를 계산합니다.
+	const FVector LocalCenter = (Min + Max) * 0.5f;
+	const FVector Extents = (Max - Min) * 0.5f;
+
+	// 4️⃣ 로컬 중심을 다시 월드 공간으로 변환합니다.
+	const FVector4 TempCenter(LocalCenter.X, LocalCenter.Y, LocalCenter.Z, 1.0f);
+	const FVector4 TransformedCenter = TempCenter * Rotation;
+	const FVector WorldCenter(TransformedCenter.X, TransformedCenter.Y, TransformedCenter.Z);
+
+	FOBB Result;
+	Result.Center = WorldCenter;
+	Result.Extents = Extents;
+
+	// 5️⃣ ✅ 수정됨: Rotation 행렬의 각 행(row)을 OBB의 축으로 설정합니다.
+	// 행렬의 Data[0]은 X축, Data[1]은 Y축, Data[2]는 Z축을 나타냅니다.
+	Result.Axes[0] = FVector(Rotation.Data[0][0], Rotation.Data[0][1], Rotation.Data[0][2]);
+	Result.Axes[1] = FVector(Rotation.Data[1][0], Rotation.Data[1][1], Rotation.Data[1][2]);
+	Result.Axes[2] = FVector(Rotation.Data[2][0], Rotation.Data[2][1], Rotation.Data[2][2]);
+
+	// 스케일 값이 포함될 수 있으므로 정규화(Normalize)하여 순수 방향 벡터로 만듭니다.
+	// FVector에 구현된 Normalize() 함수를 호출합니다.
+	Result.Axes[0].Normalize();
+	Result.Axes[1].Normalize();
+	Result.Axes[2].Normalize();
+
+	return Result;
 }

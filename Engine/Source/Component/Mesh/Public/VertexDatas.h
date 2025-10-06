@@ -12,4 +12,5 @@ extern TArray<FNormalVertex> VerticesTorus;
 extern TArray<FNormalVertex> VerticesVerticalSquare;
 
 extern TArray<uint32> IndicesCube;
+extern TArray<uint32> IndicesCubeLine;
 extern TArray<uint32> IndicesVerticalSquare;

@@ -4,6 +4,7 @@
 #include "Component/Public/UUIDTextComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Mesh/Public/DecalComponent.h"
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/Viewport.h"
 #include "Editor/Public/ViewportClient.h"
@@ -36,6 +37,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateBlendState();
 	CreateDefaultShader();
 	CreateTextureShader();
+	CreateDecalShader();
 	CreateConstantBuffers();
 
 	// FontRenderer 초기화
@@ -83,6 +85,15 @@ void URenderer::CreateDepthStencilState()
 	DisabledDescription.DepthEnable = FALSE;
 	DisabledDescription.StencilEnable = FALSE;
 	GetDevice()->CreateDepthStencilState(&DisabledDescription, &DisabledDepthStencilState);
+
+	// Decal Depth Stencil (Depth Test O, Depth Write X)
+	// 데칼은 기존 씬의 깊이 값을 참고만 할 뿐, 자신의 깊이 값을 기록하지 않습니다.
+	D3D11_DEPTH_STENCIL_DESC DecalDescription = {};
+	DecalDescription.DepthEnable = TRUE;
+	DecalDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 깊이 버퍼에 쓰지 않음
+	DecalDescription.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	DecalDescription.StencilEnable = FALSE;
+	GetDevice()->CreateDepthStencilState(&DecalDescription, &DecalDepthState);
 }
 
 void URenderer::CreateBlendState()
@@ -98,6 +109,18 @@ void URenderer::CreateBlendState()
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
     GetDevice()->CreateBlendState(&blendDesc, &AlphaBlendState);
+
+	// 데칼 텍스처의 알파 값을 사용하여 자연스럽게 씬과 혼합합니다.
+	D3D11_BLEND_DESC DecalBlendDesc = {};
+	DecalBlendDesc.RenderTarget[0].BlendEnable = TRUE;
+	DecalBlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	DecalBlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	DecalBlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	DecalBlendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	DecalBlendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	DecalBlendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	DecalBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	GetDevice()->CreateBlendState(&DecalBlendDesc, &DecalBlendState);
 }
 
 void URenderer::CreateDefaultShader()
@@ -127,6 +150,23 @@ void URenderer::CreateTextureShader()
 	CreatePixelShader(L"Asset/Shader/TextureShader.hlsl", &TexturePixelShader);
 }
 
+void URenderer::CreateDecalShader()
+{
+	// 데칼 셰이더는 스태틱 메시의 정점 데이터를 그대로 사용하므로
+	// TextureShader와 동일한 Input Layout을 사용합니다.
+	TArray<D3D11_INPUT_ELEMENT_DESC> DecalLayout =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FNormalVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
+	};
+
+	// DecalShader.hlsl 파일로부터 버텍스/픽셀 셰이더를 생성합니다.
+	CreateVertexShaderAndInputLayout(L"Asset/Shader/DecalShader.hlsl", DecalLayout, &DecalVertexShader, &DecalInputLayout);
+	CreatePixelShader(L"Asset/Shader/DecalShader.hlsl", &DecalPixelShader);
+}
+
 void URenderer::ReleaseRasterizerState()
 {
 	for (auto& Cache : RasterCache)
@@ -144,12 +184,16 @@ void URenderer::ReleaseDefaultShader()
 	SafeRelease(TextureInputLayout);
 	SafeRelease(TexturePixelShader);
 	SafeRelease(TextureVertexShader);
+	SafeRelease(DecalInputLayout);
+	SafeRelease(DecalVertexShader);
+	SafeRelease(DecalPixelShader);
 }
 
 void URenderer::ReleaseDepthStencilState()
 {
 	SafeRelease(DefaultDepthStencilState);
 	SafeRelease(DisabledDepthStencilState);
+	SafeRelease(DecalDepthState);
 	if (GetDeviceContext())
 	{
 		GetDeviceContext()->OMSetRenderTargets(0, nullptr, nullptr);
@@ -158,7 +202,8 @@ void URenderer::ReleaseDepthStencilState()
 
 void URenderer::ReleaseBlendState()
 {
-    SafeRelease(AlphaBlendState);
+	SafeRelease(AlphaBlendState);
+	SafeRelease(DecalBlendState);
 }
 
 void URenderer::Update()
@@ -229,6 +274,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 	TIME_PROFILE_END(Occlusion)
 
 	// 렌더링할 컴포넌트 분류
+	TArray<TObjectPtr<UDecalComponent>> Decals;
 	TArray<TObjectPtr<UStaticMeshComponent>> StaticMeshes;
 	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
 	TArray<TObjectPtr<UBillBoardComponent>> BillBoards;
@@ -269,6 +315,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera)
 		RenderPrimitiveDefault(PrimitiveComponent, GetRasterizerState(RenderState));
 	}
 	
+	RenderDecals(InCurrentCamera, DefaultPrimitives);
 	RenderBillBoard(InCurrentCamera, BillBoards);
 	RenderText(InCurrentCamera, Texts);
 
@@ -314,6 +361,96 @@ void URenderer::RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const
     {
         Pipeline->Draw(InPrimitive.NumVertices, 0);
     }
+}
+
+void URenderer::RenderDecals(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InVisiblePrimitives)
+{
+	const TObjectPtr<ULevel>& CurrentLevel = GWorld->GetLevel();
+	if (!CurrentLevel || InVisiblePrimitives.empty()) { return; }
+
+	// 레벨에 배치된 모든 데칼 컴포넌트를 가져옵니다.
+	const TArray<UDecalComponent*>& AllDecals = CurrentLevel->GetDecalComponents();
+	if (AllDecals.empty()) return;
+
+	// 1. 파이프라인을 데칼 렌더링용으로 설정합니다.
+	FRenderState DecalRenderState = {};
+	DecalRenderState.CullMode = ECullMode::None; // 데칼 볼륨 내부에 카메라가 들어가도 그려져야 하므로 컬링을 끕니다.
+	DecalRenderState.FillMode = EFillMode::Solid;
+
+	FPipelineInfo PipelineInfo = {
+		DecalInputLayout,
+		DecalVertexShader,
+		GetRasterizerState(DecalRenderState),
+		DecalDepthState, // 깊이 테스트는 하지만, 깊이 버퍼에 쓰지는 않음
+		DecalPixelShader,
+		DecalBlendState, // 알파 블렌딩 활성화
+	};
+
+	// 2. 모든 데칼 컴포넌트에 대해 반복합니다.
+	for (UDecalComponent* Decal : AllDecals)
+	{
+		// 데칼의 시각화 컴포넌트를 가져옵니다.
+		UPrimitiveComponent* VisualComp = nullptr;
+		for (USceneComponent* ChildComponent : Decal->GetChildren())
+		{
+			// "Visual"이라는 태그를 가지고 있는지 확인합니다.
+			if (ChildComponent->GetName() == FName("DecalVisualComponent"))
+			{
+				VisualComp = Cast<UPrimitiveComponent>(ChildComponent);
+				break;
+			}
+		}
+
+		// 데칼이 보이지 않거나 바운딩 볼륨이 없으면 건너뜁니다.
+		if (!VisualComp || !VisualComp->GetBoundingBox()) { continue; }
+
+		UMaterial* DecalMaterial = Decal->GetDecalMaterial();
+		if (DecalMaterial == nullptr || DecalMaterial->GetDiffuseTexture() == nullptr) { continue; }
+
+		if (auto* Proxy = DecalMaterial->GetDiffuseTexture()->GetRenderProxy())
+		{
+			Pipeline->SetTexture(0, false, Proxy->GetSRV());
+			Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
+		}
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		// 3. 데칼의 월드 변환 역행렬을 계산하여 셰이더로 전달합니다.
+		FDecalConstants DecalData(Decal->GetWorldTransformMatrix(), Decal->GetWorldTransformMatrixInverse());
+		UpdateConstantBuffer(ConstantBufferDecal, DecalData, 3, false); 
+
+		// 데칼의 바운딩 볼륨을 가져옵니다.
+		const IBoundingVolume* DecalBounds = VisualComp->GetBoundingBox();
+
+		// 4. 화면에 보이는 모든 프리미티브와 데칼 볼륨의 충돌 검사를 수행합니다.
+		for (UPrimitiveComponent* Primitive : InVisiblePrimitives)
+		{
+			if (!Primitive || !Primitive->GetBoundingBox()) { continue; }
+
+			// 데칼 액터의 시각화 컴포넌트에는 데칼을 적용하지 않도록 예외 처리합니다.
+			if (Primitive == VisualComp) { continue; }
+
+			// AABB(Axis-Aligned Bounding Box) 교차 검사
+			if (DecalBounds->Intersects(*Primitive->GetBoundingBox()))
+			{
+				// 5. 교차하는 프리미티브를 데칼 셰이더로 다시 그립니다.
+				FModelConstants ModelConstants(Primitive->GetWorldTransformMatrix(),
+					Primitive->GetWorldTransformMatrixInverse().Transpose());
+				UpdateConstantBuffer(ConstantBufferDecalModels, ModelConstants, 0, true); // 슬롯 0번 사용
+
+				// 프리미티브의 버텍스/인덱스 버퍼를 설정합니다.
+				Pipeline->SetVertexBuffer(Primitive->GetVertexBuffer(), sizeof(FNormalVertex));
+				if (Primitive->GetIndexBuffer() && Primitive->GetNumIndices() > 0)
+				{
+					Pipeline->SetIndexBuffer(Primitive->GetIndexBuffer(), 0);
+					Pipeline->DrawIndexed(Primitive->GetNumIndices(), 0, 0);
+				}
+				else
+				{
+					Pipeline->Draw(Primitive->GetNumVertices(), 0);
+				}
+			}
+		}
+	}
 }
 
 void URenderer::RenderEnd() const
@@ -490,24 +627,39 @@ void URenderer::RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurre
 
 void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState)
 {
-	FPipelineInfo PipelineInfo = { DefaultInputLayout, DefaultVertexShader, InRasterizerState, DefaultDepthStencilState, DefaultPixelShader, nullptr };
+	if (!InPrimitiveComp) return;
+
+	// 파이프라인 설정
+	FPipelineInfo PipelineInfo = {
+		DefaultInputLayout,
+		DefaultVertexShader,
+		InRasterizerState,
+		DefaultDepthStencilState,
+		DefaultPixelShader,
+		nullptr
+	};
+	PipelineInfo.Topology = InPrimitiveComp->GetTopology();
 	Pipeline->UpdatePipeline(PipelineInfo);
-	
-	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true); 
-	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true); 
-    
+
+	// 상수 버퍼 갱신
+	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true);
+	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, false);
+
+	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
 	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
-    
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+
+	// 정점/인덱스 버퍼 설정
 	Pipeline->SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
 
-	if (InPrimitiveComp->GetIndexBuffer() && InPrimitiveComp->GetIndicesData())
+	if (InPrimitiveComp->GetIndexBuffer() && InPrimitiveComp->GetNumIndices() > 0)
 	{
 		Pipeline->SetIndexBuffer(InPrimitiveComp->GetIndexBuffer(), 0);
 		Pipeline->DrawIndexed(InPrimitiveComp->GetNumIndices(), 0, 0);
 	}
 	else
 	{
-		Pipeline->Draw(static_cast<uint32>(InPrimitiveComp->GetNumVertices()), 0);
+		Pipeline->Draw(InPrimitiveComp->GetNumVertices(), 0);
 	}
 }
 
@@ -641,6 +793,8 @@ void URenderer::CreateConstantBuffers()
 	ConstantBufferColor = CreateConstantBuffer<FVector4>();
 	ConstantBufferViewProj = CreateConstantBuffer<FViewProjConstants>();
 	ConstantBufferMaterial = CreateConstantBuffer<FMaterialConstants>();
+	ConstantBufferDecal = CreateConstantBuffer<FDecalConstants>();
+	ConstantBufferDecalModels = CreateConstantBuffer<FModelConstants>();
 }
 
 void URenderer::ReleaseConstantBuffers()
@@ -649,6 +803,8 @@ void URenderer::ReleaseConstantBuffers()
 	SafeRelease(ConstantBufferColor);
 	SafeRelease(ConstantBufferViewProj);
 	SafeRelease(ConstantBufferMaterial);
+	SafeRelease(ConstantBufferDecal);
+	SafeRelease(ConstantBufferDecalModels);
 }
 
 bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const

@@ -11,6 +11,7 @@ using JSON = json::JSON;
 class UWorld;
 class AActor;
 class UPrimitiveComponent;
+class UDecalComponent;
 class FOctree;
 
 /**
@@ -56,6 +57,8 @@ public:
 	void UnregisterPrimitiveComponent(UPrimitiveComponent* InComponent);
 	bool DestroyActor(AActor* InActor);
 
+	const TArray<UDecalComponent*>& GetDecalComponents() const { return DecalComponents; }
+
 	uint64 GetShowFlags() const { return ShowFlags; }
 	void SetShowFlags(uint64 InShowFlags) { ShowFlags = InShowFlags; }
 
@@ -77,6 +80,7 @@ private:
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;
 	TArray<UPrimitiveComponent*> DynamicPrimitives;
+	TArray<UDecalComponent*> DecalComponents;
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;

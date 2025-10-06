@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Level/Public/Level.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Component/Mesh/Public/DecalComponent.h"
 #include "Editor/Public/Editor.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
@@ -142,8 +143,12 @@ void ULevel::RegisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 		return;
 	}
 
+	if (UDecalComponent* Decal = Cast<UDecalComponent>(InComponent))
+	{
+		DecalComponents.push_back(Decal);
+	}
 	// StaticOctree에 먼저 삽입 시도
-	if (StaticOctree->Insert(InComponent) == false)
+	else if (StaticOctree->Insert(InComponent) == false)
 	{
 		// 실패하면 DynamicPrimitives 목록에 추가
 		// 중복 추가를 방지하기 위해 이미 있는지 확인
@@ -156,21 +161,30 @@ void ULevel::RegisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 	UE_LOG("Level: '%s' 컴포넌트를 씬에 등록했습니다.", InComponent->GetName().ToString().data());
 }
 
+// Level.cpp 수정
 void ULevel::UnregisterPrimitiveComponent(UPrimitiveComponent* InComponent)
 {
 	if (!InComponent)
 	{
 		return;
 	}
-	// StaticOctree에서 제거 시도
-	if (StaticOctree->Remove(InComponent) == false)
+
+	if (UDecalComponent* Decal = Cast<UDecalComponent>(InComponent))
 	{
-		// 실패하면 DynamicPrimitives 목록에서 찾아서 제거
-		if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), InComponent); It != DynamicPrimitives.end())
-		{
-			*It = std::move(DynamicPrimitives.back());
-			DynamicPrimitives.pop_back();
-		}
+		// 데칼이면 데칼 전용 목록에서만 제거하고 함수를 종료합니다.
+		DecalComponents.erase(
+			std::remove(DecalComponents.begin(), DecalComponents.end(), Decal),
+			DecalComponents.end()
+		);
+		return;
+	}
+
+	StaticOctree->Remove(InComponent);
+
+	if (auto It = std::find(DynamicPrimitives.begin(), DynamicPrimitives.end(), InComponent); It != DynamicPrimitives.end())
+	{
+		*It = std::move(DynamicPrimitives.back());
+		DynamicPrimitives.pop_back();
 	}
 }
 
@@ -183,7 +197,13 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
-		if (StaticOctree->Insert(PrimitiveComponent) == false)
+		// 데칼 컴포넌트인지 확인하고, 맞다면 DecalComponents 목록에 추가합니다.
+		if (UDecalComponent* Decal = Cast<UDecalComponent>(PrimitiveComponent))
+		{
+			DecalComponents.push_back(Decal);
+		}
+		// 데칼이 아니라면 기존 로직대로 Octree에 추가를 시도합니다.
+		else if (StaticOctree->Insert(PrimitiveComponent) == false)
 		{
 			DynamicPrimitives.push_back(PrimitiveComponent);
 		}

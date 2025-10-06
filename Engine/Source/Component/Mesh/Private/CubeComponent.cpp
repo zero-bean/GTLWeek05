@@ -20,8 +20,32 @@ UCubeComponent::UCubeComponent()
 	IndexBuffer = ResourceManager.GetIndexbuffer(Type);
 	NumIndices = ResourceManager.GetNumIndices(Type);
 
-	RenderState.CullMode = ECullMode::Back;
+	RenderState.CullMode = ECullMode::None;
 	RenderState.FillMode = EFillMode::Solid;
 	BoundingBox = &ResourceManager.GetAABB(Type);
 }
 
+void UCubeComponent::UseLineRendering(bool bUseLine)
+{
+	UAssetManager& ResourceManager = UAssetManager::GetInstance();
+	if (bUseLine)
+	{
+		Type = EPrimitiveType::CubeLine;
+		Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	}
+	else
+	{
+		Type = EPrimitiveType::Cube;
+		Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
+
+	Vertices = ResourceManager.GetVertexData(Type);
+	VertexBuffer = ResourceManager.GetVertexbuffer(Type);
+	NumVertices = ResourceManager.GetNumVertices(Type);
+
+	Indices = ResourceManager.GetIndexData(Type);
+	IndexBuffer = ResourceManager.GetIndexbuffer(Type);
+	NumIndices = ResourceManager.GetNumIndices(Type);
+
+	BoundingBox = &ResourceManager.GetAABB(Type);
+}
