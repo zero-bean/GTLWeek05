@@ -339,6 +339,7 @@
     <ClInclude Include="Source\Component\Mesh\Public\TriangleComponent.h" />
     <ClInclude Include="Source\Component\Mesh\Public\VertexDatas.h" />
     <ClInclude Include="Source\Core\Public\Archive.h" />
+    <ClInclude Include="Source\Core\Public\NewObject.h" />
     <ClInclude Include="Source\Core\Public\ObjectIterator.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinReader.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
@@ -346,9 +347,6 @@
     <ClInclude Include="Source\Editor\Public\SplitterWindow.h" />
     <ClInclude Include="Source\Editor\Public\ViewportClient.h" />
     <ClInclude Include="Source\Editor\Public\Viewport.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\StaticMeshActorFactory.h">
-      <DeploymentContent>false</DeploymentContent>
-    </ClInclude>
     <ClInclude Include="Source\Global\BVH.h" />
     <ClInclude Include="Source\Global\Octree.h" />
     <ClInclude Include="Source\Global\Quaternion.h" />
@@ -370,7 +368,6 @@
     <ClInclude Include="Source\Core\Public\EngineStatics.h" />
     <ClInclude Include="Source\Core\Public\Name.h" />
     <ClInclude Include="Source\Core\Public\Object.h" />
-    <ClInclude Include="Source\Core\Public\ObjectPtr.h" />
     <ClInclude Include="Source\Core\Public\resource.h" />
     <ClInclude Include="Source\Editor\Public\Axis.h" />
     <ClInclude Include="Source\Editor\Public\BatchLines.h" />
@@ -381,15 +378,6 @@
     <ClInclude Include="Source\Editor\Public\Gizmo.h" />
     <ClInclude Include="Source\Editor\Public\Grid.h" />
     <ClInclude Include="Source\Editor\Public\ObjectPicker.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\ActorFactory.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\CubeActorFactory.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\SphereActorFactory.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\SquareActorFactory.h" />
-    <ClInclude Include="Source\Factory\Actor\Public\TriangleActorFactory.h" />
-    <ClInclude Include="Source\Factory\Component\Public\ComponentFactory.h" />
-    <ClInclude Include="Source\Factory\Public\Factory.h" />
-    <ClInclude Include="Source\Factory\Public\FactorySystem.h" />
-    <ClInclude Include="Source\Factory\Public\NewObject.h" />
     <ClInclude Include="Source\Global\Constant.h" />
     <ClInclude Include="Source\Global\CoreTypes.h" />
     <ClInclude Include="Source\Global\Enum.h" />
@@ -419,6 +407,13 @@
     <ClInclude Include="Source\Render\Renderer\Public\DeviceResources.h" />
     <ClInclude Include="Source\Render\Renderer\Public\Pipeline.h" />
     <ClInclude Include="Source\Render\Renderer\Public\Renderer.h" />
+    <ClInclude Include="Source\Render\Renderer\Public\RenderResourceFactory.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\BillboardPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\PrimitivePass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\RenderingContext.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\RenderPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\StaticMeshPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\TextPass.h" />
     <ClInclude Include="Source\Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Source\Render\UI\ImGui\Public\ImGuiHelper.h" />
     <ClInclude Include="Source\Render\UI\Overlay\Public\StatOverlay.h" />
@@ -505,9 +500,6 @@
     <ClCompile Include="Source\Editor\Private\SplitterWindow.cpp" />
     <ClCompile Include="Source\Editor\Private\ViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Private\Viewport.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\StaticMeshActorFactory.cpp">
-      <DeploymentContent>false</DeploymentContent>
-    </ClCompile>
     <ClCompile Include="Source\Global\BVH.cpp" />
     <ClCompile Include="Source\Global\Octree.cpp" />
     <ClCompile Include="Source\Global\Quaternion.cpp" />
@@ -536,15 +528,6 @@
     <ClCompile Include="Source\Editor\Private\Gizmo.cpp" />
     <ClCompile Include="Source\Editor\Private\Grid.cpp" />
     <ClCompile Include="Source\Editor\Private\ObjectPicker.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\ActorFactory.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\CubeActorFactory.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\SphereActorFactory.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\SquareActorFactory.cpp" />
-    <ClCompile Include="Source\Factory\Actor\Private\TriangleActorFactory.cpp" />
-    <ClCompile Include="Source\Factory\Component\Private\ComponentFactories.cpp" />
-    <ClCompile Include="Source\Factory\Component\Private\ComponentFactory.cpp" />
-    <ClCompile Include="Source\Factory\Private\Factory.cpp" />
-    <ClCompile Include="Source\Factory\Private\FactorySystem.cpp" />
     <ClCompile Include="Source\Global\Matrix.cpp" />
     <ClCompile Include="Source\Global\Memory.cpp" />
     <ClCompile Include="Source\Global\Vector.cpp" />
@@ -565,6 +548,12 @@
     <ClCompile Include="Source\Render\Renderer\Private\Pipeline.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\Renderer.cpp" />
     <ClCompile Include="Source\Render\FontRenderer\Private\FontRenderer.cpp" />
+    <ClCompile Include="Source\Render\Renderer\Private\RenderResourceFactory.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\BillboardPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\PrimitivePass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\RenderPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\StaticMeshPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\TextPass.cpp" />
     <ClCompile Include="Source\Render\UI\Factory\Private\UIWindowFactory.cpp" />
     <ClCompile Include="Source\Render\UI\ImGui\Private\ImGuiHelper.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />

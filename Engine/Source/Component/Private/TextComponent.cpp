@@ -41,7 +41,7 @@ void UTextComponent::SetText(const FString& InText)
 	RegulatePickingAreaByTextLength();
 }
 
-TObjectPtr<UClass> UTextComponent::GetSpecificWidgetClass() const
+UClass* UTextComponent::GetSpecificWidgetClass() const
 {
 	return USetTextComponentWidget::StaticClass();
 }

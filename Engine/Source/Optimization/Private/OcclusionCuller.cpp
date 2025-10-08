@@ -16,7 +16,7 @@ void COcclusionCuller::InitializeCuller(const FMatrix& ViewMatrix, const FMatrix
     CurrentViewProj = ViewMatrix * ProjectionMatrix;
 }
 
-TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllPrimitives, const FVector& CameraPos)
+TArray<UPrimitiveComponent*> COcclusionCuller::PerformCulling(const TArray<UPrimitiveComponent*>& AllPrimitives, const FVector& CameraPos)
 {    
     Frame++;
     // 0. Primitive AABB 데이터 채우기
@@ -52,7 +52,7 @@ TArray<TObjectPtr<UPrimitiveComponent>> COcclusionCuller::PerformCulling(const T
     {
         if (IsMeshVisible(AABBData))
         {
-            VisibleMeshComponents.push_back(TObjectPtr<UPrimitiveComponent>(AABBData.Prim));
+            VisibleMeshComponents.push_back(AABBData.Prim);
         }
     }
 

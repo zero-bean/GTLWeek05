@@ -49,7 +49,7 @@ void USceneHierarchyWidget::RenderWidget()
 	// 검색창 렌더링
 	RenderSearchBar();
 
-	const TArray<TObjectPtr<AActor>>& LevelActors = CurrentLevel->GetLevelActors();
+	const TArray<AActor*>& LevelActors = CurrentLevel->GetLevelActors();
 
 	if (LevelActors.empty())
 	{
@@ -157,12 +157,12 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 	// Actor의 PrimitiveComponent들의 Visibility 체크
 	bool bHasPrimitive = false;
 	bool bAllVisible = true;
-	TObjectPtr<UPrimitiveComponent> FirstPrimitive = nullptr;
+	UPrimitiveComponent* FirstPrimitive = nullptr;
 
 	// Actor의 모든 Component 중에서 PrimitiveComponent 찾기
 	for (auto& Component : InActor->GetOwnedComponents())
 	{
-		if (TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
+		if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
 		{
 			bHasPrimitive = true;
 
@@ -288,7 +288,7 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
  * @param InActor 선택할 Actor
  * @param bInFocusCamera 카메라 포커싱 여부 (더블 클릭 시 true)
  */
-void USceneHierarchyWidget::SelectActor(TObjectPtr<AActor> InActor, bool bInFocusCamera)
+void USceneHierarchyWidget::SelectActor(AActor* InActor, bool bInFocusCamera)
 {
 	UEditor* Editor = GEditor->GetEditorModule();
 	Editor->SelectActor(InActor);
@@ -306,14 +306,14 @@ void USceneHierarchyWidget::SelectActor(TObjectPtr<AActor> InActor, bool bInFocu
  * @brief 카메라를 특정 Actor에 포커스하는 함수
  * @param InActor 포커스할 Actor
  */
-void USceneHierarchyWidget::FocusOnActor(TObjectPtr<AActor> InActor)
+void USceneHierarchyWidget::FocusOnActor(AActor* InActor)
 {
 	if (!InActor) { return; }
 
 	FViewport* Viewport = URenderer::GetInstance().GetViewportClient();
 	if (!Viewport) { return; }
 
-	TObjectPtr<UPrimitiveComponent> Prim = nullptr;
+	UPrimitiveComponent* Prim = nullptr;
 	if (InActor->GetRootComponent() && InActor->GetRootComponent()->IsA(UPrimitiveComponent::StaticClass()))
 	{
 		Prim = Cast<UPrimitiveComponent>(InActor->GetRootComponent());
@@ -467,7 +467,7 @@ void USceneHierarchyWidget::RenderSearchBar()
  * @brief 필터링된 Actor 인덱스 리스트를 업데이트하는 함수
  * @param InLevelActors 레벨의 모든 Actor 리스트
  */
-void USceneHierarchyWidget::UpdateFilteredActors(const TArray<TObjectPtr<AActor>>& InLevelActors)
+void USceneHierarchyWidget::UpdateFilteredActors(const TArray<AActor*>& InLevelActors)
 {
 	FilteredIndices.clear();
 
@@ -526,7 +526,7 @@ bool USceneHierarchyWidget::IsActorMatchingSearch(const FString& InActorName, co
  * @brief 이름 변경 모드를 시작하는 함수
  * @param InActor 이름을 변경할 Actor
  */
-void USceneHierarchyWidget::StartRenaming(TObjectPtr<AActor> InActor)
+void USceneHierarchyWidget::StartRenaming(AActor* InActor)
 {
 	if (!InActor)
 	{

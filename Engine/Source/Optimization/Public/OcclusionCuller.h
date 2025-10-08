@@ -22,7 +22,7 @@ public:
      * @param CameraPos 현재 카메라 위치
      * @return 렌더링되어야 할 UPrimitiveComponent 목록
      */
-    TArray<TObjectPtr<UPrimitiveComponent>> PerformCulling(const TArray<TObjectPtr<UPrimitiveComponent>>& AllStaticMeshes, const FVector& CameraPos);
+    TArray<UPrimitiveComponent*> PerformCulling(const TArray<UPrimitiveComponent*>& AllStaticMeshes, const FVector& CameraPos);
 
     // Constants
     static constexpr int Z_BUFFER_WIDTH = 256;
@@ -70,7 +70,7 @@ private:
     TArray<struct FWorldAABBData> CachedAABBs;
     TArray<FVector> Triangles;
     TArray<UPrimitiveComponent*> FilteredOccluders;    
-    TArray<TObjectPtr<UPrimitiveComponent>> VisibleMeshComponents;
+    TArray<UPrimitiveComponent*> VisibleMeshComponents;
     uint32 Frame = 0;
 
     // For SIMD

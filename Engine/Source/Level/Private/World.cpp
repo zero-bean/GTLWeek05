@@ -24,7 +24,7 @@ UWorld::~UWorld()
 	EndPlay();
 	if (Level)
 	{
-		ULevel* CurrentLevel = Level.Get();
+		ULevel* CurrentLevel = Level;
 		SafeDelete(CurrentLevel); // 내부 Clean up은 Level의 소멸자에서 수행
 		Level = nullptr;
 	}
@@ -94,7 +94,7 @@ void UWorld::Tick(float DeltaTimes)
 	}
 }
 
-TObjectPtr<ULevel> UWorld::GetLevel() const
+ULevel* UWorld::GetLevel() const
 {
 	return Level;
 }
@@ -264,7 +264,7 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 	EndPlay();
 	if (Level)
 	{
-		ULevel* OldLevel = Level.Get();
+		ULevel* OldLevel = Level;
 		SafeDelete(OldLevel);
 		Level = nullptr;
 	}
@@ -289,7 +289,8 @@ void UWorld::DuplicateSubObjects(UObject* DuplicatedObject)
 
 void UWorld::CreateNewLevel(const FName& InLevelName)
 {
-	TObjectPtr<ULevel> NewLevel = TObjectPtr(new ULevel(InLevelName));
+	ULevel* NewLevel = NewObject<ULevel>();
+	NewLevel->SetName(InLevelName);
 	NewLevel->SetOuter(this);
 	SwitchToLevel(NewLevel);
 }

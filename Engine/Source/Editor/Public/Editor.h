@@ -15,13 +15,6 @@ class ULevel;
 class USplitterWidget;
 struct FRay;
 
-enum class EViewModeIndex : uint32
-{
-	VMI_Lit,
-	VMI_Unlit,
-	VMI_Wireframe,
-};
-
 enum class EViewportLayoutState
 {
 	Multi,
@@ -45,7 +38,7 @@ public:
 	void RestoreMultiViewportLayout();
 
 	void SelectActor(AActor* InActor);
-	TObjectPtr<AActor> GetSelectedActor() const { return SelectedActor; }
+	AActor* GetSelectedActor() const { return SelectedActor; }
 	UUUIDTextComponent* GetPickedBillboard() const;
 
 private:
@@ -66,7 +59,7 @@ private:
 	}
 
 	UObjectPicker ObjectPicker;
-	TObjectPtr<AActor> SelectedActor = nullptr; // 선택된 액터
+	AActor* SelectedActor = nullptr; // 선택된 액터
 
 	UUUIDTextComponent* PickedBillboard; // 선택된 액터의 빌보드
 

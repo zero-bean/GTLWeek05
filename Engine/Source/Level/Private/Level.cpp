@@ -2,9 +2,7 @@
 #include "Level/Public/Level.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/Editor.h"
-#include "Manager/UI/Public/UIManager.h"
 #include "Actor/Public/Actor.h"
-#include "Factory/Public/NewObject.h"
 #include "Core/Public/Object.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
@@ -87,7 +85,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["PerspectiveCamera"] = UConfigManager::GetInstance().GetCameraSettingsAsJson();
 
 		JSON ActorsJson = json::Object();
-		for (const TObjectPtr<AActor>& Actor : LevelActors)
+		for (AActor* Actor : LevelActors)
 		{
 			JSON ActorJson;
 			ActorJson["Type"] = FActorTypeMapper::ActorToType(Actor->GetClass());
@@ -118,7 +116,7 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, const FName& InName, JSO
 		{
 			NewActor->SetName(InName);
 		}
-		LevelActors.push_back(TObjectPtr(NewActor));
+		LevelActors.push_back(NewActor);
 		if (ActorJsonData != nullptr)
 		{
 			NewActor->Serialize(true, *ActorJsonData);
@@ -180,7 +178,7 @@ void ULevel::AddLevelPrimitiveComponent(AActor* Actor)
 
 	for (auto& Component : Actor->GetOwnedComponents())
 	{
-		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
 		if (StaticOctree->Insert(PrimitiveComponent) == false)
@@ -198,7 +196,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 	// 컴포넌트들을 옥트리에서 제거
 	for (auto& Component : InActor->GetOwnedComponents())
 	{
-		TObjectPtr<UPrimitiveComponent> PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
 		if (!PrimitiveComponent) { continue; }
 
 		if (StaticOctree)
@@ -223,7 +221,7 @@ bool ULevel::DestroyActor(AActor* InActor)
 
 	// Remove Actor Selection
 	UEditor* Editor = GEditor->GetEditorModule();
-	if (Editor->GetSelectedActor().Get() == InActor)
+	if (Editor->GetSelectedActor() == InActor)
 	{
 		Editor->SelectActor(nullptr);
 	}

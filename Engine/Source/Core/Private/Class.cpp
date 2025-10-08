@@ -4,7 +4,7 @@
 
 using std::stringstream;
 
-void UClass::SignUpClass(TObjectPtr<UClass> InClass)
+void UClass::SignUpClass(UClass* InClass)
 {
 	if (InClass)
 	{
@@ -17,9 +17,9 @@ void UClass::SignUpClass(TObjectPtr<UClass> InClass)
 	}
 }
 
-TObjectPtr<UClass> UClass::FindClass(const FName& InClassName)
+UClass* UClass::FindClass(const FName& InClassName)
 {
-	for (TObjectPtr<UClass> Class : GetAllClasses())
+	for (UClass* Class : GetAllClasses())
 	{
 		if (Class && Class->GetName() == InClassName)
 		{
@@ -30,10 +30,9 @@ TObjectPtr<UClass> UClass::FindClass(const FName& InClassName)
 	return nullptr;
 }
 
-TArray<TObjectPtr<UClass>>& UClass::GetAllClasses()
+TArray<UClass*>& UClass::GetAllClasses()
 {
-	// 이 함수가 최초로 호출될 때 단 한 번만 안전하게 초기화됩니다.
-	static TArray<TObjectPtr<UClass>> AllClasses;
+	static TArray<UClass*> AllClasses;
 	return AllClasses;
 }
 
@@ -44,8 +43,7 @@ TArray<TObjectPtr<UClass>>& UClass::GetAllClasses()
  * @param InClassSize Class Size
  * @param InConstructor 생성자 함수 포인터
  */
-UClass::UClass(const FName& InName, TObjectPtr<UClass> InSuperClass, size_t InClassSize,
-	ClassConstructorType InConstructor)
+UClass::UClass(const FName& InName, UClass* InSuperClass, size_t InClassSize, ClassConstructorType InConstructor)
 	: ClassName(InName), SuperClass(InSuperClass), ClassSize(InClassSize), Constructor(InConstructor)
 {
 	UE_LOG("UClass: 클래스 등록: %s", ClassName.ToString().data());
@@ -56,7 +54,7 @@ UClass::UClass(const FName& InName, TObjectPtr<UClass> InSuperClass, size_t InCl
  * @param InClass 확인할 클래스
  * @return 하위 클래스이거나 같은 클래스면 true
  */
-bool UClass::IsChildOf(const TObjectPtr<UClass> InClass) const
+bool UClass::IsChildOf(UClass* InClass) const
 {
 	if (!InClass)
 	{
@@ -78,7 +76,7 @@ bool UClass::IsChildOf(const TObjectPtr<UClass> InClass) const
 			return true;
 		}
 
-		CurrentClass = CurrentClass->SuperClass.Get();
+		CurrentClass = CurrentClass->SuperClass;
 	}
 
 	return false;
@@ -88,7 +86,7 @@ bool UClass::IsChildOf(const TObjectPtr<UClass> InClass) const
  * @brief 새로운 인스턴스 생성
  * @return 생성된 객체 포인터
  */
-TObjectPtr<UObject> UClass::CreateDefaultObject() const
+UObject* UClass::CreateDefaultObject() const
 {
 	if (Constructor)
 	{

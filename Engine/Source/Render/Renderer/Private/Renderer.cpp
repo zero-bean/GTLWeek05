@@ -9,14 +9,16 @@
 #include "Editor/Public/ViewportClient.h"
 #include "Editor/Public/Camera.h"
 #include "Level/Public/Level.h"
-
 #include "Manager/UI/Public/UIManager.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
-#include "Texture/Public/Material.h"
-#include "Texture/Public/Texture.h"
-#include "Texture/Public/TextureRenderProxy.h"
+#include "Render/RenderPass/Public/RenderPass.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "Optimization/Public/OcclusionCuller.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
+#include "Render/RenderPass/Public/BillboardPass.h"
+#include "Render/RenderPass/Public/PrimitivePass.h"
+#include "Render/RenderPass/Public/StaticMeshPass.h"
+#include "Render/RenderPass/Public/TextPass.h"
 
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
@@ -31,7 +33,6 @@ void URenderer::Init(HWND InWindowHandle)
 	ViewportClient = new FViewport();
 
 	// 렌더링 상태 및 리소스 생성
-	CreateRasterizerState();
 	CreateDepthStencilState();
 	CreateBlendState();
 	CreateDefaultShader();
@@ -47,6 +48,21 @@ void URenderer::Init(HWND InWindowHandle)
 	}
 
 	ViewportClient->InitializeLayout(DeviceResources->GetViewportInfo());
+
+	FStaticMeshPass* StaticMeshPass = new FStaticMeshPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
+		TextureVertexShader, TexturePixelShader, TextureInputLayout, DefaultDepthStencilState);
+	RenderPasses.push_back(StaticMeshPass);
+
+	FPrimitivePass* PrimitivePass = new FPrimitivePass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
+		DefaultVertexShader, DefaultPixelShader, DefaultInputLayout, DefaultDepthStencilState);
+	RenderPasses.push_back(PrimitivePass);
+
+	FBillboardPass* BillboardPass = new FBillboardPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
+		TextureVertexShader, TexturePixelShader, TextureInputLayout, DefaultDepthStencilState);
+	RenderPasses.push_back(BillboardPass);
+
+	FTextPass* TextPass = new FTextPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels);
+	RenderPasses.push_back(TextPass);
 }
 
 void URenderer::Release()
@@ -55,17 +71,17 @@ void URenderer::Release()
 	ReleaseDefaultShader();
 	ReleaseDepthStencilState();
 	ReleaseBlendState();
-	ReleaseRasterizerState();
+	FRenderResourceFactory::ReleaseRasterizerState();
+	for (auto& RenderPass : RenderPasses)
+	{
+		RenderPass->Release();
+		SafeDelete(RenderPass);
+	}
 
 	SafeDelete(ViewportClient);
 	SafeDelete(FontRenderer);
 	SafeDelete(Pipeline);
 	SafeDelete(DeviceResources);
-}
-
-void URenderer::CreateRasterizerState()
-{
-	// 현재는 GetRasterizerState에서 동적으로 생성하므로 비워둠
 }
 
 void URenderer::CreateDepthStencilState()
@@ -109,8 +125,8 @@ void URenderer::CreateDefaultShader()
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
 	};
-	CreateVertexShaderAndInputLayout(L"Asset/Shader/SampleShader.hlsl", DefaultLayout, &DefaultVertexShader, &DefaultInputLayout);
-	CreatePixelShader(L"Asset/Shader/SampleShader.hlsl", &DefaultPixelShader);
+	FRenderResourceFactory::CreateVertexShaderAndInputLayout(L"Asset/Shader/SampleShader.hlsl", DefaultLayout, &DefaultVertexShader, &DefaultInputLayout);
+	FRenderResourceFactory::CreatePixelShader(L"Asset/Shader/SampleShader.hlsl", &DefaultPixelShader);
 	Stride = sizeof(FNormalVertex);
 }
 
@@ -123,17 +139,8 @@ void URenderer::CreateTextureShader()
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
 	};
-	CreateVertexShaderAndInputLayout(L"Asset/Shader/TextureShader.hlsl", TextureLayout, &TextureVertexShader, &TextureInputLayout);
-	CreatePixelShader(L"Asset/Shader/TextureShader.hlsl", &TexturePixelShader);
-}
-
-void URenderer::ReleaseRasterizerState()
-{
-	for (auto& Cache : RasterCache)
-	{
-		SafeRelease(Cache.second);
-	}
-	RasterCache.clear();
+	FRenderResourceFactory::CreateVertexShaderAndInputLayout(L"Asset/Shader/TextureShader.hlsl", TextureLayout, &TextureVertexShader, &TextureInputLayout);
+	FRenderResourceFactory::CreatePixelShader(L"Asset/Shader/TextureShader.hlsl", &TexturePixelShader);
 }
 
 void URenderer::ReleaseDefaultShader()
@@ -173,7 +180,8 @@ void URenderer::Update()
 
 		UCamera* CurrentCamera = &ViewportClient.Camera;
 		CurrentCamera->Update(ViewportClient.GetViewportInfo());
-		UpdateConstantBuffer(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants(), 1, true);
+		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants());
+		Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
 
 		{
 			TIME_PROFILE(RenderLevel)
@@ -211,73 +219,45 @@ void URenderer::RenderBegin() const
 
 void URenderer::RenderLevel(UCamera* InCurrentCamera)
 {
-	const TObjectPtr<ULevel>& CurrentLevel = GWorld->GetLevel();
+	const ULevel* CurrentLevel = GWorld->GetLevel();
 	if (!CurrentLevel) { return; }
-
-	uint64 ShowFlags = CurrentLevel->GetShowFlags();
-	if (!(ShowFlags & EEngineShowFlags::SF_Primitives)) { return; }
 
 	// 오클루전 컬링 수행
 	TIME_PROFILE(Occlusion)
 	static COcclusionCuller Culler;
 	const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
 	Culler.InitializeCuller(ViewProj.View, ViewProj.Projection);
-	TArray<TObjectPtr<UPrimitiveComponent>> FinalVisiblePrims = Culler.PerformCulling(
+	TArray<UPrimitiveComponent*> FinalVisiblePrims = Culler.PerformCulling(
 		InCurrentCamera->GetViewVolumeCuller().GetRenderableObjects(),
 		InCurrentCamera->GetLocation()
 	);
 	TIME_PROFILE_END(Occlusion)
 
-	// 렌더링할 컴포넌트 분류
-	TArray<TObjectPtr<UStaticMeshComponent>> StaticMeshes;
-	TArray<TObjectPtr<UPrimitiveComponent>> DefaultPrimitives;
-	TArray<TObjectPtr<UBillBoardComponent>> BillBoards;
-	TArray<TObjectPtr<UTextComponent>> Texts;
-	StaticMeshes.reserve(FinalVisiblePrims.size());
+	FRenderingContext RenderingContext(&ViewProj, InCurrentCamera, GEditor->GetEditorModule()->GetViewMode(), CurrentLevel->GetShowFlags());
 
 	for (auto& Prim : FinalVisiblePrims)
 	{
 		if (auto StaticMesh = Cast<UStaticMeshComponent>(Prim))
 		{
-			StaticMeshes.push_back(StaticMesh);
+			RenderingContext.StaticMeshes.push_back(StaticMesh);
 		}
 		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
 		{
-			BillBoards.push_back(BillBoard);
+			RenderingContext.BillBoards.push_back(BillBoard);
 		}
 		else if (auto Text = Cast<UTextComponent>(Prim); Text && !Text->IsExactly(UUUIDTextComponent::StaticClass()))
 		{
-			Texts.push_back(Text);
+			RenderingContext.Texts.push_back(Text);
 		}
 		else
 		{
-			DefaultPrimitives.push_back(Prim);
+			RenderingContext.DefaultPrimitives.push_back(Prim);
 		}
 	}
 
-	// 각 타입별 렌더링 함수 호출
-	RenderStaticMeshes(StaticMeshes);
-	
-	for (auto& PrimitiveComponent : DefaultPrimitives)
+	for (auto RenderPass: RenderPasses)
 	{
-		FRenderState RenderState = PrimitiveComponent->GetRenderState();
-		if (GEditor->GetEditorModule()->GetViewMode() == EViewModeIndex::VMI_Wireframe)
-		{
-			RenderState.CullMode = ECullMode::None;
-			RenderState.FillMode = EFillMode::WireFrame;
-		}
-		RenderPrimitiveDefault(PrimitiveComponent, GetRasterizerState(RenderState));
-	}
-	
-	RenderBillBoard(InCurrentCamera, BillBoards);
-	RenderText(InCurrentCamera, Texts);
-
-	if (ShowFlags & EEngineShowFlags::SF_BillboardText)
-	{
-		if (UUUIDTextComponent* PickedBillboard = GEditor->GetEditorModule()->GetPickedBillboard())
-		{
-			RenderUUID(PickedBillboard, InCurrentCamera);
-		}
+		RenderPass->Execute(RenderingContext);
 	}
 }
 
@@ -290,7 +270,7 @@ void URenderer::RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const
     FPipelineInfo PipelineInfo = {
         InPrimitive.InputLayout ? InPrimitive.InputLayout : DefaultInputLayout,
         InPrimitive.VertexShader ? InPrimitive.VertexShader : DefaultVertexShader,
-        GetRasterizerState(InRenderState),
+		FRenderResourceFactory::GetRasterizerState(InRenderState),
         InPrimitive.bShouldAlwaysVisible ? DisabledDepthStencilState : DefaultDepthStencilState,
         InPrimitive.PixelShader ? InPrimitive.PixelShader : DefaultPixelShader,
         nullptr,
@@ -299,9 +279,12 @@ void URenderer::RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const
     Pipeline->UpdatePipeline(PipelineInfo);
 
     // Update constant buffers
-    UpdateConstantBuffer(ConstantBufferModels, FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale), 0, true);
-    UpdateConstantBuffer(ConstantBufferColor, InPrimitive.Color, 2, false);
-
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModels, FMatrix::GetModelMatrix(InPrimitive.Location, FVector::GetDegreeToRadian(InPrimitive.Rotation), InPrimitive.Scale));
+	Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+	
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferColor, InPrimitive.Color);
+	Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+	
     Pipeline->SetVertexBuffer(InPrimitive.Vertexbuffer, FinalStride);
 
     // The core logic: check for an index buffer
@@ -321,226 +304,6 @@ void URenderer::RenderEnd() const
 	TIME_PROFILE(DrawCall)
 	GetSwapChain()->Present(0, 0);
 	TIME_PROFILE_END(DrawCall)
-}
-
-void URenderer::RenderStaticMeshes(TArray<TObjectPtr<UStaticMeshComponent>>& MeshComponents)
-{
-	TIME_PROFILE(RenderStaticMeshes)
-	sort(MeshComponents.begin(), MeshComponents.end(),
-		[](TObjectPtr<UStaticMeshComponent> A, TObjectPtr<UStaticMeshComponent> B) {
-			uint64_t MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
-			uint64_t MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
-			return MeshA < MeshB;
-		});
-
-	FStaticMesh* CurrentMeshAsset = nullptr;
-	UMaterial* CurrentMaterial = nullptr;
-	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
-
-	for (UStaticMeshComponent* MeshComp : MeshComponents) 
-	{
-		if (!MeshComp->GetStaticMesh()) { continue; }
-		FStaticMesh* MeshAsset = MeshComp->GetStaticMesh()->GetStaticMeshAsset();
-		if (!MeshAsset) { continue; }
-
-		FRenderState RenderState = MeshComp->GetRenderState();
-		if (ViewMode == EViewModeIndex::VMI_Wireframe) 
-		{
-			RenderState.CullMode = ECullMode::None;
-			RenderState.FillMode = EFillMode::WireFrame;
-		}
-		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
-
-		if (CurrentRasterizer != RasterizerState) 
-		{
-			static FPipelineInfo PipelineInfo = { TextureInputLayout, TextureVertexShader, nullptr, DefaultDepthStencilState, TexturePixelShader, nullptr };
-			PipelineInfo.RasterizerState = RasterizerState;
-			Pipeline->UpdatePipeline(PipelineInfo);
-			CurrentRasterizer = RasterizerState;
-		}
-
-		if (CurrentMeshAsset != MeshAsset)
-		{
-			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
-			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
-			CurrentMeshAsset = MeshAsset;
-		}
-
-		UpdateConstantBuffer(ConstantBufferModels, MeshComp->GetWorldTransformMatrix(), 0, true);
-
-		if (MeshAsset->MaterialInfo.empty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0) 
-		{
-			Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
-			continue;
-		}
-
-		if (MeshComp->IsScrollEnabled()) 
-		{
-			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + UTimeManager::GetInstance().GetDeltaTime());
-		}
-
-		for (const FMeshSection& section : MeshAsset->Sections)
-		{
-			UMaterial* Material = MeshComp->GetMaterial(section.MaterialSlot);
-			if (CurrentMaterial != Material) {
-				FMaterialConstants MaterialConstants = {};
-				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
-				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
-				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
-				MaterialConstants.Ns = Material->GetSpecularExponent();
-				MaterialConstants.Ni = Material->GetRefractionIndex();
-				MaterialConstants.D = Material->GetDissolveFactor();
-				MaterialConstants.MaterialFlags = 0;
-				MaterialConstants.Time = MeshComp->GetElapsedTime();
-
-				UpdateConstantBuffer(ConstantBufferMaterial, MaterialConstants, 2, false);
-
-				if (UTexture* DiffuseTexture = Material->GetDiffuseTexture())
-				{
-					if(auto* Proxy = DiffuseTexture->GetRenderProxy())
-					{
-						Pipeline->SetTexture(0, false, Proxy->GetSRV());
-						Pipeline->SetSamplerState(0, false, Proxy->GetSampler());
-					}
-				}
-				if (UTexture* AmbientTexture = Material->GetAmbientTexture())
-				{
-					if(auto* Proxy = AmbientTexture->GetRenderProxy())
-					{
-						Pipeline->SetTexture(1, false, Proxy->GetSRV());
-					}
-				}
-				if (UTexture* SpecularTexture = Material->GetSpecularTexture())
-				{
-					if(auto* Proxy = SpecularTexture->GetRenderProxy())
-					{
-						Pipeline->SetTexture(2, false, Proxy->GetSRV());
-					}
-				}
-				if (UTexture* AlphaTexture = Material->GetAlphaTexture())
-				{
-					if(auto* Proxy = AlphaTexture->GetRenderProxy())
-					{
-						Pipeline->SetTexture(4, false, Proxy->GetSRV());
-					}
-				}
-				
-				CurrentMaterial = Material;
-			}
-			Pipeline->DrawIndexed(section.IndexCount, section.StartIndex, 0);
-		}
-	}
-}
-
-void URenderer::RenderBillBoard(UCamera* InCurrentCamera, TArray<TObjectPtr<UBillBoardComponent>>& InBillBoardComp)
-{
-	ID3D11RasterizerState* CurrentRasterizer = nullptr;
-	const EViewModeIndex ViewMode = GEditor->GetEditorModule()->GetViewMode();
-
-	Pipeline->SetTexture(1, false, nullptr);
-	Pipeline->SetTexture(2, false, nullptr);
-	Pipeline->SetTexture(4, false, nullptr);
-
-	for (UBillBoardComponent* BillBoardComp : InBillBoardComp)
-	{
-		BillBoardComp->FaceCamera(InCurrentCamera->GetLocation(), InCurrentCamera->GetUp(), InCurrentCamera->GetRight());
-
-		FRenderState RenderState = BillBoardComp->GetRenderState();
-		if (ViewMode == EViewModeIndex::VMI_Wireframe)
-		{
-			RenderState.CullMode = ECullMode::None;
-			RenderState.FillMode = EFillMode::WireFrame;
-		}
-		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
-
-		if (CurrentRasterizer != RasterizerState)
-		{
-			static FPipelineInfo PipelineInfo = { TextureInputLayout, TextureVertexShader, nullptr, DefaultDepthStencilState, TexturePixelShader, nullptr };
-			PipelineInfo.RasterizerState = RasterizerState;
-			Pipeline->UpdatePipeline(PipelineInfo);
-			CurrentRasterizer = RasterizerState;
-		}
-
-		Pipeline->SetVertexBuffer(BillBoardComp->GetVertexBuffer(), sizeof(FNormalVertex));
-		Pipeline->SetIndexBuffer(BillBoardComp->GetIndexBuffer(), 0);
-		UpdateConstantBuffer(ConstantBufferModels, BillBoardComp->GetWorldTransformMatrix(), 0, true);
-		Pipeline->SetTexture(0, false, BillBoardComp->GetSprite().second);
-		Pipeline->SetSamplerState(0, false, const_cast<ID3D11SamplerState*>(BillBoardComp->GetSampler()));
-		Pipeline->DrawIndexed(BillBoardComp->GetNumIndices(), 0, 0);
-	}
-}
-
-void URenderer::RenderText(UCamera* InCurrentCamera, TArray<TObjectPtr<UTextComponent>>& InTextComp)
-{
-	const FViewProjConstants& ViewProj = InCurrentCamera->GetFViewProjConstants();
-	for (const TObjectPtr<UTextComponent>& Text : InTextComp)
-	{
-		FontRenderer->RenderText(Text->GetText().c_str(), Text->GetWorldTransformMatrix(), ViewProj, 0.0f, -1.0f, 1.0f, 2.0f, true);
-	}
-}
-
-void URenderer::RenderUUID(UUUIDTextComponent* InBillBoardComp, UCamera* InCurrentCamera)
-{
-	if (!InCurrentCamera) return;
-	InBillBoardComp->UpdateRotationMatrix(InCurrentCamera->GetLocation());
-	FString UUIDString = "UID: " + std::to_string(InBillBoardComp->GetUUID());
-	FontRenderer->RenderText(UUIDString.c_str(), InBillBoardComp->GetRTMatrix(), InCurrentCamera->GetFViewProjConstants());
-}
-
-void URenderer::RenderPrimitiveDefault(UPrimitiveComponent* InPrimitiveComp, ID3D11RasterizerState* InRasterizerState)
-{
-	FPipelineInfo PipelineInfo = { DefaultInputLayout, DefaultVertexShader, InRasterizerState, DefaultDepthStencilState, DefaultPixelShader, nullptr };
-	Pipeline->UpdatePipeline(PipelineInfo);
-	
-	UpdateConstantBuffer(ConstantBufferModels, InPrimitiveComp->GetWorldTransformMatrix(), 0, true); 
-	UpdateConstantBuffer(ConstantBufferColor, InPrimitiveComp->GetColor(), 2, true); 
-    
-	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
-    
-	Pipeline->SetVertexBuffer(InPrimitiveComp->GetVertexBuffer(), Stride);
-
-	if (InPrimitiveComp->GetIndexBuffer() && InPrimitiveComp->GetIndicesData())
-	{
-		Pipeline->SetIndexBuffer(InPrimitiveComp->GetIndexBuffer(), 0);
-		Pipeline->DrawIndexed(InPrimitiveComp->GetNumIndices(), 0, 0);
-	}
-	else
-	{
-		Pipeline->Draw(static_cast<uint32>(InPrimitiveComp->GetNumVertices()), 0);
-	}
-}
-
-ID3D11Buffer* URenderer::CreateVertexBuffer(FNormalVertex* InVertices, uint32 InByteWidth) const
-{
-	D3D11_BUFFER_DESC Desc = { InByteWidth, D3D11_USAGE_IMMUTABLE, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
-	D3D11_SUBRESOURCE_DATA InitData = { InVertices, 0, 0 };
-	ID3D11Buffer* VertexBuffer = nullptr;
-	GetDevice()->CreateBuffer(&Desc, &InitData, &VertexBuffer);
-	return VertexBuffer;
-}
-
-ID3D11Buffer* URenderer::CreateVertexBuffer(FVector* InVertices, uint32 InByteWidth, bool bCpuAccess) const
-{
-	D3D11_BUFFER_DESC Desc = { InByteWidth, D3D11_USAGE_IMMUTABLE, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
-	if (bCpuAccess)
-	{
-		Desc.Usage = D3D11_USAGE_DYNAMIC;
-		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-	D3D11_SUBRESOURCE_DATA InitData = { InVertices, 0, 0 };
-	ID3D11Buffer* VertexBuffer = nullptr;
-	GetDevice()->CreateBuffer(&Desc, &InitData, &VertexBuffer);
-	return VertexBuffer;
-}
-
-ID3D11Buffer* URenderer::CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const
-{
-	D3D11_BUFFER_DESC Desc = { InByteWidth, D3D11_USAGE_IMMUTABLE, D3D11_BIND_INDEX_BUFFER, 0, 0, 0 };
-	D3D11_SUBRESOURCE_DATA InitData = { InIndices, 0, 0 };
-	ID3D11Buffer* IndexBuffer = nullptr;
-	GetDevice()->CreateBuffer(&Desc, &InitData, &IndexBuffer);
-	return IndexBuffer;
 }
 
 void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
@@ -566,81 +329,11 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
 }
 
-void URenderer::ReleaseVertexBuffer(ID3D11Buffer* InVertexBuffer)
-{
-	SafeRelease(InVertexBuffer);
-}
-
-void URenderer::ReleaseIndexBuffer(ID3D11Buffer* InIndexBuffer)
-{
-	SafeRelease(InIndexBuffer);
-}
-
-void URenderer::CreateVertexShaderAndInputLayout(const wstring& InFilePath,
-	const TArray<D3D11_INPUT_ELEMENT_DESC>& InInputLayoutDescs,
-	ID3D11VertexShader** OutVertexShader,
-	ID3D11InputLayout** OutInputLayout)
-{
-	ID3DBlob* VertexShaderBlob = nullptr;
-	ID3DBlob* ErrorBlob = nullptr;
-
-	HRESULT Result = D3DCompileFromFile(InFilePath.data(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", 0, 0, &VertexShaderBlob, &ErrorBlob);
-	if (FAILED(Result))
-	{
-		if (ErrorBlob) { OutputDebugStringA(static_cast<char*>(ErrorBlob->GetBufferPointer())); SafeRelease(ErrorBlob); }
-		SafeRelease(VertexShaderBlob);
-		return;
-	}
-
-	GetDevice()->CreateVertexShader(VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), nullptr, OutVertexShader);
-	GetDevice()->CreateInputLayout(InInputLayoutDescs.data(), static_cast<uint32>(InInputLayoutDescs.size()), VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), OutInputLayout);
-	
-	SafeRelease(VertexShaderBlob);
-}
-
-void URenderer::CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** OutPixelShader) const
-{
-	ID3DBlob* PixelShaderBlob = nullptr;
-	ID3DBlob* ErrorBlob = nullptr;
-
-	HRESULT Result = D3DCompileFromFile(InFilePath.data(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", 0, 0, &PixelShaderBlob, &ErrorBlob);
-	if (FAILED(Result))
-	{
-		if (ErrorBlob) { OutputDebugStringA(static_cast<char*>(ErrorBlob->GetBufferPointer())); SafeRelease(ErrorBlob); }
-		SafeRelease(PixelShaderBlob);
-		return;
-	}
-
-	GetDevice()->CreatePixelShader(PixelShaderBlob->GetBufferPointer(), PixelShaderBlob->GetBufferSize(), nullptr, OutPixelShader);
-	SafeRelease(PixelShaderBlob);
-}
-
-ID3D11SamplerState* URenderer::CreateSamplerState(D3D11_FILTER InFilter, D3D11_TEXTURE_ADDRESS_MODE InAddressMode) const
-{
-    D3D11_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = InFilter;
-    samplerDesc.AddressU = InAddressMode;
-    samplerDesc.AddressV = InAddressMode;
-    samplerDesc.AddressW = InAddressMode;
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    ID3D11SamplerState* SamplerState = nullptr;
-    if (FAILED(GetDevice()->CreateSamplerState(&samplerDesc, &SamplerState)))
-    {
-        UE_LOG_ERROR("Renderer: 샘플러 스테이트 생성 실패");
-        return nullptr;
-    }
-    return SamplerState;
-}
-
 void URenderer::CreateConstantBuffers()
 {
-	ConstantBufferModels = CreateConstantBuffer<FMatrix>();
-	ConstantBufferColor = CreateConstantBuffer<FVector4>();
-	ConstantBufferViewProj = CreateConstantBuffer<FViewProjConstants>();
-	ConstantBufferMaterial = CreateConstantBuffer<FMaterialConstants>();
+	ConstantBufferModels = FRenderResourceFactory::CreateConstantBuffer<FMatrix>();
+	ConstantBufferColor = FRenderResourceFactory::CreateConstantBuffer<FVector4>();
+	ConstantBufferViewProj = FRenderResourceFactory::CreateConstantBuffer<FViewProjConstants>();
 }
 
 void URenderer::ReleaseConstantBuffers()
@@ -648,63 +341,4 @@ void URenderer::ReleaseConstantBuffers()
 	SafeRelease(ConstantBufferModels);
 	SafeRelease(ConstantBufferColor);
 	SafeRelease(ConstantBufferViewProj);
-	SafeRelease(ConstantBufferMaterial);
-}
-
-bool URenderer::UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const
-{
-	if (!GetDeviceContext() || !InVertexBuffer || InVertices.empty()) return false;
-
-	D3D11_MAPPED_SUBRESOURCE MappedResource = {};
-	if (FAILED(GetDeviceContext()->Map(InVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource))) return false;
-	
-	memcpy(MappedResource.pData, InVertices.data(), sizeof(FVector) * InVertices.size());
-	GetDeviceContext()->Unmap(InVertexBuffer, 0);
-
-	return true;
-}
-
-ID3D11RasterizerState* URenderer::GetRasterizerState(const FRenderState& InRenderState)
-{
-	const FRasterKey Key{ ToD3D11(InRenderState.FillMode), ToD3D11(InRenderState.CullMode) };
-	if (auto Iter = RasterCache.find(Key); Iter != RasterCache.end())
-	{
-		return Iter->second;
-	}
-
-	D3D11_RASTERIZER_DESC RasterizerDesc = {};
-	RasterizerDesc.FillMode = Key.FillMode;
-	RasterizerDesc.CullMode = Key.CullMode;
-	RasterizerDesc.FrontCounterClockwise = TRUE;
-	RasterizerDesc.DepthClipEnable = TRUE;
-
-	ID3D11RasterizerState* RasterizerState = nullptr;
-	if (FAILED(GetDevice()->CreateRasterizerState(&RasterizerDesc, &RasterizerState)))
-	{
-		return nullptr;
-	}
-
-	RasterCache.emplace(Key, RasterizerState);
-	return RasterizerState;
-}
-
-D3D11_CULL_MODE URenderer::ToD3D11(ECullMode InCull)
-{
-	switch (InCull)
-	{
-	case ECullMode::Back: return D3D11_CULL_BACK;
-	case ECullMode::Front: return D3D11_CULL_FRONT;
-	case ECullMode::None: return D3D11_CULL_NONE;
-	default: return D3D11_CULL_BACK;
-	}
-}
-
-D3D11_FILL_MODE URenderer::ToD3D11(EFillMode InFill)
-{
-	switch (InFill)
-	{
-	case EFillMode::Solid: return D3D11_FILL_SOLID;
-	case EFillMode::WireFrame: return D3D11_FILL_WIREFRAME;
-	default: return D3D11_FILL_SOLID;
-	}
 }

@@ -165,3 +165,32 @@ enum class EFillMode : uint8_t
 
 	End = 0xFF
 };
+
+enum class EViewModeIndex : uint32
+{
+	VMI_Lit,
+	VMI_Unlit,
+	VMI_Wireframe,
+};
+
+/**
+ * @brief Level Show Flag Enum
+ */
+enum class EEngineShowFlags : uint64
+{
+	SF_Primitives = 0x01,
+	SF_Billboard = 0x10,
+	SF_Bounds = 0x20,
+	SF_StaticMesh = 0x30,
+	SF_Text = 0x40,
+};
+
+inline uint64 operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)
+{
+	return static_cast<uint64>(lhs) | static_cast<uint64>(rhs);
+}
+
+inline uint64 operator&(uint64 lhs, EEngineShowFlags rhs)
+{
+	return lhs & static_cast<uint64>(rhs);
+}

@@ -31,7 +31,7 @@ public:
 
 	void Draw(uint32 VertexCount, uint32 StartLocation);
 
-	void DrawIndexed(uint32 indexCount, uint32 startIndexLocation, uint32 baseVertexLocation);
+	void DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int32 BaseVertexLocation);
 
 private:
 	FPipelineInfo LastPipelineInfo{};

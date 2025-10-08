@@ -20,11 +20,11 @@ public:
 	void Cleanup() override;
 
 	float GetMenuBarHeight() const { return MainBarWidget ? MainBarWidget->GetMenuBarHeight() : 0.0f; }
-	TObjectPtr<UMainBarWidget> GetMainBarWidget() const { return MainBarWidget; }
+	UMainBarWidget* GetMainBarWidget() const { return MainBarWidget; }
 	bool IsSingleton() override { return true; }
 
 private:
-	TObjectPtr<UMainBarWidget> MainBarWidget = nullptr;
+	UMainBarWidget* MainBarWidget = nullptr;
 
 	void SetupMainMenuConfig();
 };

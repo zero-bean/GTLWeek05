@@ -239,7 +239,7 @@ UObject* AActor::Duplicate()
 	return Actor;
 }
 
-void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
+void AActor::RegisterComponent(UActorComponent* InNewComponent)
 {
 	if (!InNewComponent || InNewComponent->GetOwner() != this)
 	{
@@ -248,7 +248,7 @@ void AActor::RegisterComponent(TObjectPtr<UActorComponent> InNewComponent)
 
 	OwnedComponents.push_back(InNewComponent);
 
-	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InNewComponent.Get()))
+	if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InNewComponent))
 	{
 		GWorld->GetLevel()->RegisterPrimitiveComponent(PrimitiveComponent);
 	}

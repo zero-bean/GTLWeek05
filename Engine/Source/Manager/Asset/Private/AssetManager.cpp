@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Manager/Asset/Public/AssetManager.h"
-
 #include "Render/Renderer/Public/Renderer.h"
 #include "DirectXTK/WICTextureLoader.h"
 #include "DirectXTK/DDSTextureLoader.h"
@@ -9,6 +8,7 @@
 #include "Texture/Public/TextureRenderProxy.h"
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/ObjManager.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
 
 IMPLEMENT_SINGLETON_CLASS_BASE(UAssetManager)
 
@@ -39,33 +39,33 @@ void UAssetManager::Initialize()
 	IndexDatas.emplace(EPrimitiveType::Sprite, &IndicesVerticalSquare);
 
 	IndexBuffers.emplace(EPrimitiveType::Cube,
-		Renderer.CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
+		FRenderResourceFactory::CreateIndexBuffer(IndicesCube.data(), static_cast<int>(IndicesCube.size()) * sizeof(uint32)));
 	IndexBuffers.emplace(EPrimitiveType::Sprite,
-		Renderer.CreateIndexBuffer(IndicesVerticalSquare.data(), static_cast<int>(IndicesVerticalSquare.size()) * sizeof(uint32)));
+		FRenderResourceFactory::CreateIndexBuffer(IndicesVerticalSquare.data(), static_cast<int>(IndicesVerticalSquare.size()) * sizeof(uint32)));
 
 	NumIndices.emplace(EPrimitiveType::Cube, static_cast<uint32>(IndicesCube.size()));
 	NumIndices.emplace(EPrimitiveType::Sprite, static_cast<uint32>(IndicesVerticalSquare.size()));
 	
 	// TArray.GetData(), TArray.Num()*sizeof(FVertexSimple), TArray.GetTypeSize()
-	VertexBuffers.emplace(EPrimitiveType::Cube, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Cube, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesCube.data(), static_cast<int>(VerticesCube.size()) * sizeof(FNormalVertex)));
-	VertexBuffers.emplace(EPrimitiveType::Sphere, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Sphere, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesSphere.data(), static_cast<int>(VerticesSphere.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Triangle, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Triangle, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesTriangle.data(), static_cast<int>(VerticesTriangle.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Square, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Square, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesSquare.data(), static_cast<int>(VerticesSquare.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Torus, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Torus, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesTorus.data(), static_cast<int>(VerticesTorus.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Arrow, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Arrow, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesArrow.data(), static_cast<int>(VerticesArrow.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::CubeArrow, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::CubeArrow, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesCubeArrow.data(), static_cast<int>(VerticesCubeArrow.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Ring, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Ring, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesRing.data(), static_cast<int>(VerticesRing.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Line, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Line, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesLine.data(), static_cast<int>(VerticesLine.size() * sizeof(FNormalVertex))));
-	VertexBuffers.emplace(EPrimitiveType::Sprite, Renderer.CreateVertexBuffer(
+	VertexBuffers.emplace(EPrimitiveType::Sprite, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesVerticalSquare.data(), static_cast<int>(VerticesVerticalSquare.size() * sizeof(FNormalVertex))));
 
 	NumVertices.emplace(EPrimitiveType::Cube, static_cast<uint32>(VerticesCube.size()));
@@ -112,13 +112,13 @@ void UAssetManager::Initialize()
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	URenderer::GetInstance().CreateVertexShaderAndInputLayout(L"Asset/Shader/BatchLineVS.hlsl", layoutDesc,
+	FRenderResourceFactory::CreateVertexShaderAndInputLayout(L"Asset/Shader/BatchLineVS.hlsl", layoutDesc,
 		&vertexShader, &inputLayout);
 	VertexShaders.emplace(EShaderType::BatchLine, vertexShader);
 	InputLayouts.emplace(EShaderType::BatchLine, inputLayout);
 
 	ID3D11PixelShader* PixelShader;
-	URenderer::GetInstance().CreatePixelShader(L"Asset/Shader/BatchLinePS.hlsl", &PixelShader);
+	FRenderResourceFactory::CreatePixelShader(L"Asset/Shader/BatchLinePS.hlsl", &PixelShader);
 	PixelShaders.emplace(EShaderType::BatchLine, PixelShader);
 }
 
@@ -130,20 +130,20 @@ void UAssetManager::Release()
 	// TMap.Value()
 	for (auto& Pair : VertexBuffers)
 	{
-		URenderer::GetInstance().ReleaseVertexBuffer(Pair.second);
+		SafeRelease(Pair.second);
 	}
 	for (auto& Pair : IndexBuffers)
 	{
-		URenderer::GetInstance().ReleaseIndexBuffer(Pair.second);
+		SafeRelease(Pair.second);
 	}
 
 	for (auto& Pair : StaticMeshVertexBuffers)
 	{
-		URenderer::GetInstance().ReleaseVertexBuffer(Pair.second);
+		SafeRelease(Pair.second);
 	}
 	for (auto& Pair : StaticMeshIndexBuffers)
 	{
-		URenderer::GetInstance().ReleaseIndexBuffer(Pair.second);
+		SafeRelease(Pair.second);
 	}
 
 	StaticMeshCache.clear();	// unique ptr 이라서 자동으로 해제됨
@@ -200,8 +200,8 @@ void UAssetManager::LoadAllObjStaticMesh()
 		{
 			StaticMeshCache.emplace(ObjPath, LoadedMesh);
 
-			StaticMeshVertexBuffers.emplace(ObjPath, CreateVertexBuffer(LoadedMesh->GetVertices()));
-			StaticMeshIndexBuffers.emplace(ObjPath, CreateIndexBuffer(LoadedMesh->GetIndices()));
+			StaticMeshVertexBuffers.emplace(ObjPath, this->CreateVertexBuffer(LoadedMesh->GetVertices()));
+			StaticMeshIndexBuffers.emplace(ObjPath, this->CreateIndexBuffer(LoadedMesh->GetIndices()));
 		}
 	}
 }
@@ -224,12 +224,12 @@ ID3D11Buffer* UAssetManager::GetIndexBuffer(FName InObjPath)
 
 ID3D11Buffer* UAssetManager::CreateVertexBuffer(TArray<FNormalVertex> InVertices)
 {
-	return URenderer::GetInstance().CreateVertexBuffer(InVertices.data(), static_cast<int>(InVertices.size()) * sizeof(FNormalVertex));
+	return FRenderResourceFactory::CreateVertexBuffer(InVertices.data(), static_cast<int>(InVertices.size()) * sizeof(FNormalVertex));
 }
 
 ID3D11Buffer* UAssetManager::CreateIndexBuffer(TArray<uint32> InIndices)
 {
-	return URenderer::GetInstance().CreateIndexBuffer(InIndices.data(), static_cast<int>(InIndices.size()) * sizeof(uint32));
+	return FRenderResourceFactory::CreateIndexBuffer(InIndices.data(), static_cast<int>(InIndices.size()) * sizeof(uint32));
 }
 
 TArray<FNormalVertex>* UAssetManager::GetVertexData(EPrimitiveType InType)
@@ -345,22 +345,12 @@ UTexture* UAssetManager::CreateTexture(const FName& InFilePath, const FName& InN
 	if (!SRV)	return nullptr;
 
 	ID3D11SamplerState* Sampler = nullptr;
-	D3D11_SAMPLER_DESC SamplerDesc = {};
-	SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;       // UV가 범위를 벗어나면 클램프
-	SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	SamplerDesc.MinLOD = 0;
-	SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	HRESULT hr = URenderer::GetInstance().GetDevice()->CreateSamplerState(&SamplerDesc, &Sampler);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("CreateSamplerState failed (HRESULT: 0x%08lX)", hr);
-		return nullptr;
-	}
-
+	    Sampler = FRenderResourceFactory::CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
+		if (!Sampler)
+		{
+			UE_LOG_ERROR("CreateSamplerState failed");
+			return nullptr;
+		}
 	auto* Proxy = new FTextureRenderProxy(SRV, Sampler);
 	auto* Texture = new UTexture(InFilePath, InName);
 	Texture->SetRenderProxy(Proxy);

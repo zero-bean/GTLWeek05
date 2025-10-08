@@ -12,13 +12,13 @@ public:
 	void Initialize() override;
 	void Update() override;
 	void RenderWidget() override;
-	void DeleteSelectedActor(TObjectPtr<AActor> InSelectedActor);
-	void DeleteSelectedComponent(TObjectPtr<AActor> InSelectedActor, TObjectPtr<UActorComponent> InSelectedComponent);
+	void DeleteSelectedActor(AActor* InSelectedActor);
+	void DeleteSelectedComponent(AActor* InSelectedActor, UActorComponent* InSelectedComponent);
 
 	UActorTerminationWidget();
 	UActorTerminationWidget(UActorDetailWidget* InActorDetailWidget);
 	~UActorTerminationWidget() override;
 
 private:
-	TObjectPtr<UActorDetailWidget> ActorDetailWidget = nullptr;
+	UActorDetailWidget* ActorDetailWidget = nullptr;
 };

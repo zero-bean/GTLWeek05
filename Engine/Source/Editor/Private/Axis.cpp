@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Editor/Public/Axis.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
 
 UAxis::UAxis()
 {
@@ -19,7 +20,7 @@ UAxis::UAxis()
 	AxisVertices.push_back({ { 0.0f,0.0f,0.0f }, {}, { 0,0,1,1 }, {} });
 
 	Primitive.NumVertices = static_cast<int>(AxisVertices.size());
-	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(AxisVertices.data(), Primitive.NumVertices * sizeof(FNormalVertex));
+	Primitive.Vertexbuffer = FRenderResourceFactory::CreateVertexBuffer(AxisVertices.data(), Primitive.NumVertices * sizeof(FNormalVertex));
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 	Primitive.Color = FVector4(1, 1, 1, 0);
 	Primitive.Location = FVector(0, 0, 0);
@@ -29,7 +30,7 @@ UAxis::UAxis()
 
 UAxis::~UAxis()
 {
-	URenderer::ReleaseVertexBuffer(Primitive.Vertexbuffer);
+	SafeRelease(Primitive.Vertexbuffer);
 }
 
 void UAxis::Render()

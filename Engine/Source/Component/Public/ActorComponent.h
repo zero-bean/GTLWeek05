@@ -28,7 +28,7 @@ public:
 	/**
 	 * @brief 특정 컴포넌트 전용 Widget이 필요할 경우 재정의 필요
 	 */
-	virtual TObjectPtr<UClass> GetSpecificWidgetClass() const { return nullptr; }
+	virtual UClass* GetSpecificWidgetClass() const { return nullptr; }
 
 
 	EComponentType GetComponentType() { return ComponentType; }

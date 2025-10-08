@@ -347,7 +347,7 @@ void UEditor::ProcessMouseInput()
 
 	CurrentCamera = &CurrentViewport->Camera;
 
-	TObjectPtr<AActor> ActorPicked = GetSelectedActor();
+	AActor* ActorPicked = GetSelectedActor();
 
 	if (ActorPicked)
 	{
@@ -480,7 +480,7 @@ TArray<UPrimitiveComponent*> UEditor::FindCandidatePrimitives(ULevel* InLevel)
 	{
 		for (auto& ActorComponent : Actor->GetOwnedComponents())
 		{
-			if (TObjectPtr<UPrimitiveComponent> Primitive = Cast<UPrimitiveComponent>(ActorComponent))
+			if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(ActorComponent))
 			{
 				Candidate.push_back(Primitive);
 			}

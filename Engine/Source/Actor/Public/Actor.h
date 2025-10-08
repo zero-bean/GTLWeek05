@@ -1,9 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
-#include "Core/Public/ObjectPtr.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/SceneComponent.h"
-#include "Factory/Public/NewObject.h"
 
 class UUUIDTextComponent;
 /**
@@ -38,12 +36,12 @@ public:
 	virtual void Tick(float DeltaTimes);
 
 	// Getter & Setter
-	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
-	TArray<TObjectPtr<UActorComponent>>& GetOwnedComponents()  { return OwnedComponents; }
+	USceneComponent* GetRootComponent() const { return RootComponent; }
+	TArray<UActorComponent*>& GetOwnedComponents()  { return OwnedComponents; }
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
-	UUUIDTextComponent* GetUUIDTextComponent() const { return UUIDTextComponent.Get(); }
+	UUUIDTextComponent* GetUUIDTextComponent() const { return UUIDTextComponent; }
 	void SetUUIDTextComponent(UUUIDTextComponent* InUUIDTextComponent) { UUIDTextComponent = InUUIDTextComponent; }
 
 	const FVector& GetActorLocation() const;
@@ -56,7 +54,7 @@ public:
 		static_assert(is_base_of_v<UObject, T>, "생성할 클래스는 UObject를 반드시 상속 받아야 합니다");
 
 		// 2. NewObject를 호출할 때도 템플릿 타입 T를 사용하여 정확한 타입의 컴포넌트를 생성합니다.
-		TObjectPtr<T> NewComponent = NewObject<T>(TObjectPtr<UObject>(this));
+		T* NewComponent = NewObject<T>(this);
 		if (!InName.IsNone()) { NewComponent->SetName(InName); }
 
 		// 3. 컴포넌트 생성이 성공했는지 확인하고 기본 설정을 합니다.
@@ -72,7 +70,7 @@ public:
 	
 	UActorComponent* CreateDefaultSubobject(UClass* Class)
 	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, TObjectPtr<UObject>(this)));
+		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, this));
 		if (NewComponent)
 		{
 			NewComponent->SetOwner(this);
@@ -93,20 +91,17 @@ public:
 	{
 		static_assert(std::is_base_of_v<UActorComponent, T>, "추가할 클래스는 UActorComponent를 반드시 상속 받아야 합니다");
 
-		// 1. 정의하신 NewObject<T>() 함수를 호출합니다.
-		//    이 함수는 TObjectPtr을 반환하므로 .Get()으로 원시 포인터를 가져옵니다.
-		T* NewComponent = NewObject<T>(this).Get();
+		T* NewComponent = NewObject<T>(this);
 
 		if (NewComponent)
 		{
-			// 3. 컴포넌트를 액터에 등록합니다.
 			RegisterComponent(NewComponent);
 		}
 
 		return NewComponent;
 	}
 
-	void RegisterComponent(TObjectPtr<UActorComponent> InNewComponent);
+	void RegisterComponent(UActorComponent* InNewComponent);
 
 	bool RemoveComponent(UActorComponent* InComponentToDelete);
 
@@ -122,9 +117,9 @@ protected:
 	bool bBegunPlay = false;
 
 private:
-	TObjectPtr<USceneComponent> RootComponent = nullptr;
-	TObjectPtr<UUUIDTextComponent> UUIDTextComponent = nullptr;
-	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
+	USceneComponent* RootComponent = nullptr;
+	UUUIDTextComponent* UUIDTextComponent = nullptr;
+	TArray<UActorComponent*> OwnedComponents;
 	
 public:
 	virtual UObject* Duplicate() override;

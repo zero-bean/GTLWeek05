@@ -78,10 +78,10 @@ void USetTextComponentWidget::RenderWidget()
 
 void USetTextComponentWidget::UpdateTextFromActor()
 {
-	for (const TObjectPtr<UActorComponent>& Comp : SelectedActor->GetOwnedComponents())
+	for (UActorComponent* Comp : SelectedActor->GetOwnedComponents())
 	{
-		TObjectPtr<UTextComponent> TextComp = Cast<UTextComponent>(Comp);
+		UTextComponent* TextComp = Cast<UTextComponent>(Comp);
 		if (TextComp)
-			SelectedTextComponent = TextComp.Get();
+			SelectedTextComponent = TextComp;
 	}
 }

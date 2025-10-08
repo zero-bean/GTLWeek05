@@ -278,17 +278,17 @@ void UMainBarWidget::RenderShowFlagsMenu()
 		}
 
 		// BillBoard Text 표시 옵션
-		bool bShowBillboardText = (ShowFlags & EEngineShowFlags::SF_BillboardText) != 0;
-		if (ImGui::MenuItem("빌보드 표시", nullptr, bShowBillboardText))
+		bool bShowBillboard = (ShowFlags & EEngineShowFlags::SF_Billboard) != 0;
+		if (ImGui::MenuItem("빌보드 표시", nullptr, bShowBillboard))
 		{
-			if (bShowBillboardText)
+			if (bShowBillboard)
 			{
-				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_BillboardText);
+				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_Billboard);
 				UE_LOG("MainBarWidget: 빌보드 비표시");
 			}
 			else
 			{
-				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_BillboardText);
+				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Billboard);
 				UE_LOG("MainBarWidget: 빌보드 표시");
 			}
 			CurrentLevel->SetShowFlags(ShowFlags);
@@ -307,6 +307,40 @@ void UMainBarWidget::RenderShowFlagsMenu()
 			{
 				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Bounds);
 				UE_LOG("MainBarWidget: 바운딩박스 표시");
+			}
+			CurrentLevel->SetShowFlags(ShowFlags);
+		}
+
+		// StaticMesh 표시 옵션
+		bool bShowStaticMesh = (ShowFlags & EEngineShowFlags::SF_StaticMesh) != 0;
+		if (ImGui::MenuItem("스태틱 메쉬 표시", nullptr, bShowStaticMesh))
+		{
+			if (bShowStaticMesh)
+			{
+				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_StaticMesh);
+				UE_LOG("MainBarWidget: 스태틱 메쉬 비표시");
+			}
+			else
+			{
+				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_StaticMesh);
+				UE_LOG("MainBarWidget: 스태틱 메쉬 표시");
+			}
+			CurrentLevel->SetShowFlags(ShowFlags);
+		}
+
+		// Text 표시 옵션
+		bool bShowText = (ShowFlags & EEngineShowFlags::SF_Text) != 0;
+		if (ImGui::MenuItem("텍스트 표시", nullptr, bShowText))
+		{
+			if (bShowText)
+			{
+				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_Text);
+				UE_LOG("MainBarWidget: 텍스트 비표시");
+			}
+			else
+			{
+				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Text);
+				UE_LOG("MainBarWidget: 텍스트 표시");
 			}
 			CurrentLevel->SetShowFlags(ShowFlags);
 		}

@@ -22,7 +22,7 @@ public:
 	FMatrix GetRTMatrix() const override { return RTMatrix; }
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
-	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
+	UClass* GetSpecificWidgetClass() const override;
 private:
 	FMatrix RTMatrix;
 	float ZOffset;

@@ -1,6 +1,5 @@
 #pragma once
 #include "Name.h"
-#include "ObjectPtr.h"
 
 class UObject;
 /**
@@ -17,26 +16,26 @@ public:
     // 생성자 함수 포인터 타입 정의
     typedef UObject* (*ClassConstructorType)();
 public:
-    static void SignUpClass(TObjectPtr<UClass> InClass);
-    static TObjectPtr<UClass> FindClass(const FName& InClassName);
+    static void SignUpClass(UClass* InClass);
+    static UClass* FindClass(const FName& InClassName);
 private:
-    static TArray<TObjectPtr<UClass>>& GetAllClasses();
+    static TArray<UClass*>& GetAllClasses();
     
 public:
-    UClass(const FName& InName, TObjectPtr<UClass> InSuperClass, size_t InClassSize, ClassConstructorType InConstructor);
+    UClass(const FName& InName, UClass* InSuperClass, size_t InClassSize, ClassConstructorType InConstructor);
 
     // Getter
     const FName& GetName() const { return ClassName; }
-    TObjectPtr<UClass> GetSuperClass() const { return SuperClass; }
+    UClass* GetSuperClass() const { return SuperClass; }
     size_t GetClassSize() const { return ClassSize; }
     
-    bool IsChildOf(TObjectPtr<UClass> InClass) const;
-    TObjectPtr<UObject> CreateDefaultObject() const;
+    bool IsChildOf(UClass* InClass) const;
+    UObject* CreateDefaultObject() const;
 
 
 private:
     FName ClassName;
-    TObjectPtr<UClass> SuperClass;
+    UClass* SuperClass;
     size_t ClassSize;
     ClassConstructorType Constructor;
 };
@@ -93,7 +92,7 @@ static bool bIsRegistered_##ClassName = [](){ ClassName::StaticClass(); return t
  * @brief 싱글톤 클래스용 RTTI 매크로 시스템
  */
 
- // 싱글톤 클래스 선언부에 사용하는 매크로 (수정됨: TObjectPtr, ClassPrivate 제거)
+ // 싱글톤 클래스 선언부에 사용하는 매크로
 #define DECLARE_SINGLETON_CLASS(ClassName, SuperClassName) \
 public: \
     typedef ClassName ThisClass; \
@@ -110,7 +109,7 @@ private: \
     ClassName(ClassName&&) = delete; \
     ClassName& operator=(ClassName&&) = delete;
 
-// 싱글톤 클래스 구현부에 사용하는 매크로 (수정됨: TObjectPtr, ClassPrivate, 람다 제거)
+// 싱글톤 클래스 구현부에 사용하는 매크로
 #define IMPLEMENT_SINGLETON_CLASS(ClassName, SuperClassName) \
 UClass* ClassName::StaticClass() \
 { \
@@ -140,7 +139,7 @@ ClassName& ClassName::GetInstance() \
 }\
 static bool bIsRegistered_##ClassName = [](){ ClassName::StaticClass(); return true; }();
 
-// 싱글톤 베이스 클래스용 매크로 (SuperClass가 nullptr인 경우) (수정됨: TObjectPtr, ClassPrivate, 람다 제거)
+// 싱글톤 베이스 클래스용 매크로 (SuperClass가 nullptr인 경우)
 #define IMPLEMENT_SINGLETON_CLASS_BASE(ClassName) \
 UClass* ClassName::StaticClass() \
 { \
@@ -168,7 +167,7 @@ ClassName& ClassName::GetInstance() \
     return Instance; \
 }
 
-// UObject의 기본 매크로 (Base Class) (수정됨: TObjectPtr, ClassPrivate, 람다 제거)
+// UObject의 기본 매크로 (Base Class)
 #define IMPLEMENT_CLASS_BASE(ClassName) \
 UClass* ClassName::StaticClass() \
 { \

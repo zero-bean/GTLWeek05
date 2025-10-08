@@ -1,9 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
-#include "Factory/Public/FactorySystem.h"
-#include "Factory/Public/NewObject.h"
-
 #include "Editor/Public/Camera.h"
+#include "Global/Enum.h"
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -12,26 +10,6 @@ class UWorld;
 class AActor;
 class UPrimitiveComponent;
 class FOctree;
-
-/**
- * @brief Level Show Flag Enum
- */
-enum class EEngineShowFlags : uint64
-{
-	SF_Primitives = 0x01,
-	SF_BillboardText = 0x10,
-	SF_Bounds = 0x20,
-};
-
-inline uint64 operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)
-{
-	return static_cast<uint64>(lhs) | static_cast<uint64>(rhs);
-}
-
-inline uint64 operator&(uint64 lhs, EEngineShowFlags rhs)
-{
-	return lhs & static_cast<uint64>(rhs);
-}
 
 UCLASS()
 class ULevel :
@@ -48,7 +26,7 @@ public:
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
-	const TArray<TObjectPtr<AActor>>& GetLevelActors() const { return LevelActors; }
+	const TArray<AActor*>& GetLevelActors() const { return LevelActors; }
 
 	void AddLevelPrimitiveComponent(AActor* Actor);
 
@@ -74,7 +52,7 @@ protected:
 private:
 	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
 
-	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
+	TArray<AActor*> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;
 	TArray<UPrimitiveComponent*> DynamicPrimitives;
 
@@ -82,6 +60,6 @@ private:
 	TArray<AActor*> ActorsToDelete;
 
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
-		static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
+		static_cast<uint64>(EEngineShowFlags::SF_Billboard) |
 		static_cast<uint64>(EEngineShowFlags::SF_Bounds);
 };

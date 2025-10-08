@@ -1,6 +1,4 @@
 #include "pch.h"
-#include "Core/Public/Class.h"       // UObject 기반 클래스 및 매크로
-#include "Core/Public/ObjectPtr.h"
 #include "Core/Public/ObjectIterator.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Mesh/Public/MeshComponent.h"
@@ -92,7 +90,7 @@ void UStaticMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	}
 }
 
-TObjectPtr<UClass> UStaticMeshComponent::GetSpecificWidgetClass() const
+UClass* UStaticMeshComponent::GetSpecificWidgetClass() const
 {
 	return UStaticMeshComponentWidget::StaticClass();
 }
@@ -107,11 +105,11 @@ void UStaticMeshComponent::SetStaticMesh(const FName& InObjPath)
 	{
 		StaticMesh = NewStaticMesh;
 
-		Vertices = &(StaticMesh.Get()->GetVertices());
+		Vertices = &(StaticMesh->GetVertices());
 		VertexBuffer = AssetManager.GetVertexBuffer(InObjPath);
 		NumVertices = Vertices->size();
 
-		Indices = &(StaticMesh.Get()->GetIndices());
+		Indices = &(StaticMesh->GetIndices());
 		IndexBuffer = AssetManager.GetIndexBuffer(InObjPath);
 		NumIndices = Indices->size();
 
@@ -139,6 +137,12 @@ void UStaticMeshComponent::SetMaterial(int32 Index, UMaterial* InMaterial)
 		OverrideMaterials.resize(Index + 1, nullptr);
 	}
 	OverrideMaterials[Index] = InMaterial;
+}
+
+const FRenderState& UStaticMeshComponent::GetClassDefaultRenderState()
+{
+	static FRenderState DefaultRenderState { ECullMode::Back, EFillMode::Solid };
+	return DefaultRenderState;
 }
 
 UObject* UStaticMeshComponent::Duplicate()

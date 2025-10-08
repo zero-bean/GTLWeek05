@@ -1,8 +1,5 @@
 #pragma once
-#include "Factory.h"
-#include "Factory/Actor/Public/ActorFactory.h"
-#include "Core/Public/ObjectPtr.h"
-
+#include "Object.h"
 using std::is_base_of_v;
 
 /**
@@ -12,16 +9,16 @@ using std::is_base_of_v;
  * @return 생성된 객체
  */
 template <typename T>
-TObjectPtr<T> NewObject(TObjectPtr<UObject> InOuter = nullptr)
+T* NewObject(UObject* InOuter = nullptr)
 {
 	static_assert(is_base_of_v<UObject, T>, "생성할 클래스는 UObject를 반드시 상속 받아야 합니다");
 	T* NewObject = new T();
 	NewObject->SetName(FNameTable::GetInstance().GetUniqueName(NewObject->GetClass()->GetName().ToString()));
-
+	NewObject->SetOuter(InOuter);
 	return NewObject;
 }
 
-inline TObjectPtr<UObject> NewObject(UClass* ClassToCreate, TObjectPtr<UObject> InOuter = nullptr)
+inline UObject* NewObject(UClass* ClassToCreate, UObject* InOuter = nullptr)
 {
 	if (!ClassToCreate) { return nullptr; }
 	UObject* NewObject = ClassToCreate->CreateDefaultObject();
@@ -30,6 +27,7 @@ inline TObjectPtr<UObject> NewObject(UClass* ClassToCreate, TObjectPtr<UObject> 
 	{
 		FName NewName = FNameTable::GetInstance().GetUniqueName(ClassToCreate->GetName().ToString());
 		NewObject->SetName(NewName);
+		NewObject->SetOuter(InOuter);
 	}
 
 	return NewObject;

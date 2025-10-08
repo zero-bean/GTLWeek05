@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Core/Public/NewObject.h"
 using std::string;
 using std::wstring;
 

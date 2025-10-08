@@ -69,10 +69,10 @@ public:
 		const FViewProjConstants& ViewProjConstants
 	);
 
-	const TArray<TObjectPtr<UPrimitiveComponent>>& GetRenderableObjects() const;
+	const TArray<UPrimitiveComponent*>& GetRenderableObjects() const;
 private:
     void CullOctree(FOctree* Octree);
 
     FFrustum CurrentFrustum{};
-    TArray<TObjectPtr<UPrimitiveComponent>> RenderableObjects{};
+    TArray<UPrimitiveComponent*> RenderableObjects{};
 };

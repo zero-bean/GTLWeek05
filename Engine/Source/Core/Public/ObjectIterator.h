@@ -67,5 +67,5 @@ private:
 
 	int32 CurrentIndex;
 	TObject* CurrentObject = nullptr;
-	TArray<TObjectPtr<UObject>>& UObjectArray;
+	TArray<UObject*>& UObjectArray;
 };

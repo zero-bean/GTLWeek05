@@ -43,9 +43,7 @@ public:
 
 	// StaticMesh 관련 함수
 	void LoadAllObjStaticMesh();
-	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);
 	ID3D11Buffer* GetVertexBuffer(FName InObjPath);
-	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
 	// StaticMesh Cache Accessors
@@ -90,6 +88,8 @@ private:
 	void ReleaseAllTextures();
 
 	// Helper Functions
+	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);
+	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	FAABB CalculateAABB(const TArray<FNormalVertex>& Vertices);
 
 	// AABB Resource

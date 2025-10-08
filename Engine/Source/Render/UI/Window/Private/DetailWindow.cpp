@@ -54,7 +54,7 @@ void UDetailWindow::OnSelectedActorChanged(AActor* InActor)
 	{
 		for (const auto& Component : InActor->GetOwnedComponents())
 		{
-			TObjectPtr<UClass> WidgetClass = Component->GetSpecificWidgetClass();
+			UClass* WidgetClass = Component->GetSpecificWidgetClass();
 			if (WidgetClass)
 			{
 				UWidget* NewWidget = Cast<UWidget>(NewObject(WidgetClass));

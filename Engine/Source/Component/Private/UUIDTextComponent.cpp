@@ -60,7 +60,7 @@ void UUUIDTextComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	}
 }
 
-TObjectPtr<UClass> UUUIDTextComponent::GetSpecificWidgetClass() const
+UClass* UUUIDTextComponent::GetSpecificWidgetClass() const
 {
-	return TObjectPtr<UClass>();
+	return nullptr;
 }

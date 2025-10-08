@@ -32,7 +32,7 @@ void UActorTerminationWidget::Update()
 void UActorTerminationWidget::RenderWidget()
 {
 	auto& InputManager = UInputManager::GetInstance();
-	TObjectPtr<AActor> SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 	if (!SelectedActor)
 	{
 		return;
@@ -43,7 +43,7 @@ void UActorTerminationWidget::RenderWidget()
 		// 컴포넌트 선택시 컴포넌트 삭제를 우선
 		if (ActorDetailWidget)
 		{
-			if (TObjectPtr<UActorComponent> ActorComp = ActorDetailWidget->GetSelectedComponent())
+			if (UActorComponent* ActorComp = ActorDetailWidget->GetSelectedComponent())
 			{
 				DeleteSelectedComponent(SelectedActor, ActorComp);
 				return;
@@ -56,7 +56,7 @@ void UActorTerminationWidget::RenderWidget()
 /**
  * @brief Selected Actor 삭제 함수
  */
-void UActorTerminationWidget::DeleteSelectedActor(TObjectPtr<AActor> InSelectedActor)
+void UActorTerminationWidget::DeleteSelectedActor(AActor* InSelectedActor)
 {
 	UE_LOG("ActorTerminationWidget: 삭제를 위한 Actor Marking 시작");
 	if (!InSelectedActor)
@@ -65,7 +65,7 @@ void UActorTerminationWidget::DeleteSelectedActor(TObjectPtr<AActor> InSelectedA
 		return;
 	}
 
-	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -80,7 +80,7 @@ void UActorTerminationWidget::DeleteSelectedActor(TObjectPtr<AActor> InSelectedA
 	GWorld->DestroyActor(InSelectedActor);
 }
 
-void UActorTerminationWidget::DeleteSelectedComponent(TObjectPtr<AActor> InSelectedActor, TObjectPtr<UActorComponent> InSelectedComponent)
+void UActorTerminationWidget::DeleteSelectedComponent(AActor* InSelectedActor, UActorComponent* InSelectedComponent)
 {
 	bool bSuccess = InSelectedActor->RemoveComponent(InSelectedComponent);
 	if (bSuccess)

@@ -47,7 +47,6 @@ void UPipeline::UpdatePipeline(FPipelineInfo Info)
 
 void UPipeline::SetIndexBuffer(ID3D11Buffer* indexBuffer, uint32 stride)
 {
-	uint32 fffset = 0;
 	DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
@@ -100,7 +99,7 @@ void UPipeline::Draw(uint32 VertexCount, uint32 StartLocation)
 	DeviceContext->Draw(VertexCount, StartLocation);
 }
 
-void UPipeline::DrawIndexed(uint32 indexCount, uint32 startIndexLocation, uint32 baseVertexLocation)
+void UPipeline::DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, int32 BaseVertexLocation)
 {
-	DeviceContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+	DeviceContext->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }

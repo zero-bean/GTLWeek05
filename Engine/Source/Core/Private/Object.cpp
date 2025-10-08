@@ -7,9 +7,9 @@
 
 uint32 UEngineStatics::NextUUID = 0;
 
-TArray<TObjectPtr<UObject>>& GetUObjectArray()
+TArray<UObject*>& GetUObjectArray()
 {
-	static TArray<TObjectPtr<UObject>> GUObjectArray;
+	static TArray<UObject*> GUObjectArray;
 	return GUObjectArray;
 }
 
@@ -120,7 +120,7 @@ void UObject::PropagateMemoryChange(uint64 InBytesDelta, uint32 InCountDelta)
  * @param InClass 판정할 Class
  * @return 판정 결과
  */
-bool UObject::IsA(TObjectPtr<UClass> InClass) const
+bool UObject::IsA(UClass* InClass) const
 {
 	if (!InClass)
 	{
@@ -134,7 +134,7 @@ bool UObject::IsA(TObjectPtr<UClass> InClass) const
  * @brief 해당 클래스가 현재 내 클래스와 동일한지 판단하는 함수
  * @return 판정 결과
  */
-bool UObject::IsExactly(TObjectPtr<UClass> InClass) const
+bool UObject::IsExactly(UClass* InClass) const
 {
 	if (!InClass)
 	{

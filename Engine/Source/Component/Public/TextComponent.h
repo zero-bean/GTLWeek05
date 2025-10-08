@@ -22,7 +22,7 @@ public:
 	const FString& GetText();
 	void SetText(const FString& InText);
 
-	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
+	UClass* GetSpecificWidgetClass() const override;
 private:
 	void RegulatePickingAreaByTextLength();
 

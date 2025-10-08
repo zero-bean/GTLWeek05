@@ -18,7 +18,7 @@ public:
 	void Update() override;
 	void RenderWidget() override;
 
-	TObjectPtr<UActorComponent> GetSelectedComponent() const { return SelectedComponent; }
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
 	void SetSelectedComponent(UActorComponent* InComponent);
 
 	// Special Member Function
@@ -29,23 +29,23 @@ private:
 	bool bIsRenamingActor = false;
 	char ActorNameBuffer[256] = {};
 
-	TObjectPtr<UActorComponent>  SelectedComponent = nullptr;
-	TObjectPtr<AActor> CachedSelectedActor = nullptr;
+	UActorComponent*  SelectedComponent = nullptr;
+	AActor* CachedSelectedActor = nullptr;
 
 	// Helper functions
-	void RenderActorHeader(TObjectPtr<AActor> InSelectedActor);
-	void RenderComponentTree(TObjectPtr<AActor> InSelectedActor);
+	void RenderActorHeader(AActor* InSelectedActor);
+	void RenderComponentTree(AActor* InSelectedActor);
 	void RenderComponentNodeRecursive(UActorComponent* InComponent);
-	void RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor);
+	void RenderAddComponentButton(AActor* InSelectedActor);
 	bool CenteredSelectable(const char* label);
-	void AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName);
+	void AddComponentByName(AActor* InSelectedActor, const FString& InComponentName);
 	void RenderTransformEdit();
 	void SwapComponents(UActorComponent* A, UActorComponent* B);
 
 	void DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale);
 
 	// 이름 변경 함수
-	void StartRenamingActor(TObjectPtr<AActor> InActor);
-	void FinishRenamingActor(TObjectPtr<AActor> InActor);
+	void StartRenamingActor(AActor* InActor);
+	void FinishRenamingActor(AActor* InActor);
 	void CancelRenamingActor();
 };

@@ -35,7 +35,7 @@ void UActorDetailWidget::Update()
 
 void UActorDetailWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -43,7 +43,7 @@ void UActorDetailWidget::RenderWidget()
 		return;
 	}
 
-	TObjectPtr<AActor> SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 	if (!SelectedActor)
 	{
 		ImGui::TextUnformatted("No Object Selected");
@@ -74,7 +74,7 @@ void UActorDetailWidget::RenderWidget()
 	RenderTransformEdit();
 }
 
-void UActorDetailWidget::RenderActorHeader(TObjectPtr<AActor> InSelectedActor)
+void UActorDetailWidget::RenderActorHeader(AActor* InSelectedActor)
 {
 	if (!InSelectedActor)
 	{
@@ -125,7 +125,7 @@ void UActorDetailWidget::RenderActorHeader(TObjectPtr<AActor> InSelectedActor)
  * @brief 컴포넌트들을 트리 형태로 표시하는 함수
  * @param InSelectedActor 선택된 Actor
  */
-void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
+void UActorDetailWidget::RenderComponentTree(AActor* InSelectedActor)
 {
 	if (!InSelectedActor) return;
 
@@ -146,11 +146,11 @@ void UActorDetailWidget::RenderComponentTree(TObjectPtr<AActor> InSelectedActor)
 	{
 		if (!Component) continue;
 
-		USceneComponent* SceneComp = Cast<USceneComponent>(Component.Get());
+		USceneComponent* SceneComp = Cast<USceneComponent>(Component);
 		// SceneComponent가 아니거나, 부모가 없는 SceneComponent가 최상위입니다.
 		if (!SceneComp || !SceneComp->GetParentAttachment())
 		{
-			RenderComponentNodeRecursive(Component.Get());
+			RenderComponentNodeRecursive(Component);
 		}
 	}
 }
@@ -202,7 +202,7 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 
 			USceneComponent* DraggedScene = Cast<USceneComponent>(DraggedComp);
 			USceneComponent* TargetScene = Cast<USceneComponent>(InComponent);
-			TObjectPtr<AActor> Owner = DraggedComp->GetOwner();
+			AActor* Owner = DraggedComp->GetOwner();
 			if (!Owner)
 			{
 				ImGui::EndDragDropTarget();		ImGui::TreePop();
@@ -320,7 +320,7 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 	}
 }
 
-void UActorDetailWidget::RenderAddComponentButton(TObjectPtr<AActor> InSelectedActor)
+void UActorDetailWidget::RenderAddComponentButton(AActor* InSelectedActor)
 {
 	ImGui::SameLine();
 
@@ -381,7 +381,7 @@ bool UActorDetailWidget::CenteredSelectable(const char* label)
 	return clicked;
 }
 
-void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, const FString& InComponentName)
+void UActorDetailWidget::AddComponentByName(AActor* InSelectedActor, const FString& InComponentName)
 {
 	if (!InSelectedActor)
 	{
@@ -440,7 +440,7 @@ void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, 
 	if (USceneComponent* NewSceneComponent = Cast<USceneComponent>(NewComponent))
 	{
 		// 2. 현재 선택된 컴포넌트가 있고, 그것이 SceneComponent인지 확인
-		USceneComponent* ParentSceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+		USceneComponent* ParentSceneComponent = Cast<USceneComponent>(SelectedComponent);
 
 		if (ParentSceneComponent)
 		{
@@ -462,7 +462,7 @@ void UActorDetailWidget::AddComponentByName(TObjectPtr<AActor> InSelectedActor, 
 	}
 }
 
-void UActorDetailWidget::StartRenamingActor(TObjectPtr<AActor> InActor)
+void UActorDetailWidget::StartRenamingActor(AActor* InActor)
 {
 	if (!InActor)
 	{
@@ -477,7 +477,7 @@ void UActorDetailWidget::StartRenamingActor(TObjectPtr<AActor> InActor)
 	UE_LOG("ActorDetailWidget: '%s' 에 대한 이름 변경 시작", CurrentName.data());
 }
 
-void UActorDetailWidget::FinishRenamingActor(TObjectPtr<AActor> InActor)
+void UActorDetailWidget::FinishRenamingActor(AActor* InActor)
 {
 	if (!InActor || !bIsRenamingActor)
 	{
@@ -508,7 +508,7 @@ void UActorDetailWidget::RenderTransformEdit()
 	if (!SelectedComponent)
 		return;
 
-	USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent.Get());
+	USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent);
 	if (!SceneComponent)
 		return;
 
@@ -542,10 +542,10 @@ void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
 {
 	if (!A || !B) return;
 
-	TObjectPtr<AActor> Owner = A->GetOwner();
+	AActor* Owner = A->GetOwner();
 	if (!Owner) return;
 
-	auto& Components = Owner->GetOwnedComponents(); // std::vector<TObjectPtr<UActorComponent>>
+	auto& Components = Owner->GetOwnedComponents();
 
 	auto ItA = std::find(Components.begin(), Components.end(), A);
 	auto ItB = std::find(Components.begin(), Components.end(), B);
@@ -553,8 +553,8 @@ void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
 	if (ItA != Components.end() && ItB != Components.end())
 	{
 		// 포인터 임시 저장
-		TObjectPtr<UActorComponent> TempA = *ItA;
-		TObjectPtr<UActorComponent> TempB = *ItB;
+		UActorComponent* TempA = *ItA;
+		UActorComponent* TempB = *ItB;
 
 		// erase 후 push_back
 		Components.erase(ItA); // 먼저 A 제거

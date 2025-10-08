@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/Public/Class.h"       // UObject 기반 클래스 및 매크로
-#include "Core/Public/ObjectPtr.h"
 #include "Component/Mesh/Public/MeshComponent.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 
@@ -23,7 +22,7 @@ public:
 	UStaticMesh* GetStaticMesh() { return StaticMesh; }
 	void SetStaticMesh(const FName& InObjPath);
 
-	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
+	UClass* GetSpecificWidgetClass() const override;
 
 	UMaterial* GetMaterial(int32 Index) const;
 	void SetMaterial(int32 Index, UMaterial* InMaterial);
@@ -35,8 +34,10 @@ public:
 	void SetElapsedTime(float InElapsedTime) { ElapsedTime = InElapsedTime; }
 	float GetElapsedTime() const { return ElapsedTime; }
 
+	static const FRenderState& GetClassDefaultRenderState(); 
+
 private:
-	TObjectPtr<UStaticMesh> StaticMesh;
+	UStaticMesh* StaticMesh;
 
 	// MaterialList
 	TArray<UMaterial*> OverrideMaterials;

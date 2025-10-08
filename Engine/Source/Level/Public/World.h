@@ -48,7 +48,7 @@ public:
 	void Tick(float DeltaTimes);
 
 	// Level Management Triggers
-	TObjectPtr<ULevel> GetLevel() const;
+	ULevel* GetLevel() const;
 	void CreateNewLevel(const FName& InLevelName = FName::GetNone());
 	bool LoadLevel(std::filesystem::path InLevelFilePath);
 	bool SaveCurrentLevel(std::filesystem::path InLevelFilePath) const;
@@ -65,7 +65,7 @@ public:
 
 private:
 	EWorldType WorldType;
-	TObjectPtr<ULevel> Level = nullptr; // Persistance Level. Sublevels are not considered in GTL.
+	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in GTL.
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
 

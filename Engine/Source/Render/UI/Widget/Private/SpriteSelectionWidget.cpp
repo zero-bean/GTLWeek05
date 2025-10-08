@@ -35,11 +35,10 @@ void USpriteSelectionWidget::Update()
 		{
 			SelectedActor = NewSelectedActor;
 
-			for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
+			for (UActorComponent* Component : SelectedActor->GetOwnedComponents())
 			{
-				TObjectPtr<UBillBoardComponent> UUIDTextComponent = Cast<UBillBoardComponent>(Component);
-				if (UUIDTextComponent)
-					SelectedBillBoard = UUIDTextComponent.Get();
+				if (UBillBoardComponent* UUIDTextComponent = Cast<UBillBoardComponent>(Component))
+					{ SelectedBillBoard = UUIDTextComponent; }
 			}
 		}
 	}

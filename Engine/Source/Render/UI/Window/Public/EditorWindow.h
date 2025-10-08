@@ -16,5 +16,5 @@ public:
 	void Initialize() override;
 
 private:
-	TObjectPtr<USplitterDebugWidget> SplitterDebugWidget = nullptr;
+	USplitterDebugWidget* SplitterDebugWidget = nullptr;
 };

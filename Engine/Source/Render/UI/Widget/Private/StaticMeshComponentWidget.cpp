@@ -12,7 +12,7 @@ IMPLEMENT_CLASS(UStaticMeshComponentWidget, UWidget)
 
 void UStaticMeshComponentWidget::RenderWidget()
 {
-	TObjectPtr<ULevel> CurrentLevel = GWorld->GetLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -20,14 +20,14 @@ void UStaticMeshComponentWidget::RenderWidget()
 		return;
 	}
 
-	TObjectPtr<AActor> SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
 	if (!SelectedActor)
 	{
 		ImGui::TextUnformatted("No Object Selected");
 		return;
 	}
 
-	for (const TObjectPtr<UActorComponent>& Component : SelectedActor->GetOwnedComponents())
+	for (UActorComponent* Component : SelectedActor->GetOwnedComponents())
 	{
 		StaticMeshComponent = Cast<UStaticMeshComponent>(Component);
 

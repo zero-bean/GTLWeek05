@@ -50,12 +50,12 @@ void ViewVolumeCuller::Cull(FOctree* StaticOctree, TArray<UPrimitiveComponent*>&
 	{
 		if (Primitive && CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
 		{
-			RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+			RenderableObjects.push_back(Primitive);
 		}
 	}
 }
 
-const TArray<TObjectPtr<UPrimitiveComponent>>& ViewVolumeCuller::GetRenderableObjects() const
+const TArray<UPrimitiveComponent*>& ViewVolumeCuller::GetRenderableObjects() const
 {
 	return RenderableObjects;
 }
@@ -98,7 +98,7 @@ void ViewVolumeCuller::CullOctree(FOctree* Octree)
 				if (Primitive && 
 					CurrentFrustum.CheckIntersection(GetPrimitiveBoundingBox(Primitive)) != EBoundCheckResult::Outside)
 				{
-					RenderableObjects.push_back(TObjectPtr<UPrimitiveComponent>(Primitive));
+					RenderableObjects.push_back(Primitive);
 				}
 			}
 

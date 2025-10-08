@@ -17,6 +17,6 @@ public:
 private:
 	void SetupConfig();
 
-	TObjectPtr<UViewportMenuBarWidget> ViewportMenuBarWidget = nullptr;
+	UViewportMenuBarWidget* ViewportMenuBarWidget = nullptr;
 };
 

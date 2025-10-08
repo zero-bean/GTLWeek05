@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Public/Object.h"       // UObject 기반 클래스 및 매크로
-#include "Core/Public/ObjectPtr.h" // TObjectPtr 사용
 #include "Global/CoreTypes.h"        // TArray 등
 #include "Global/BVH.h"
 
@@ -84,7 +83,7 @@ public:
 private:
 	// 실제 데이터 본체(FStaticMesh)에 대한 비소유(non-owning) 포인터.
 	// 이 데이터의 실제 소유권 및 생명주기는 AssetManager가 책임집니다.
-	TObjectPtr<FStaticMesh> StaticMeshAsset;
+	FStaticMesh* StaticMeshAsset;
 
 	TArray<UMaterial*> Materials;
 };

@@ -9,7 +9,7 @@ class UEditor;
 struct FWorldContext
 {
 private:
-    TObjectPtr<UWorld> WorldPtr = nullptr;
+    UWorld* WorldPtr = nullptr;
 public:
     UWorld* World() const { return WorldPtr; }
     EWorldType GetType() const { return WorldPtr ? WorldPtr->GetWorldType() : EWorldType::Game; } 
@@ -101,7 +101,7 @@ private:
     
     EPIEState PIEState = EPIEState::Stopped;
     TArray<FWorldContext> WorldContexts;
-    TObjectPtr<UEditor> EditorModule;
+    UEditor* EditorModule;
 };
 
 // UEditorEngine의 전역 인스턴스 포인터

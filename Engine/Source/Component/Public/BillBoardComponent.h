@@ -21,9 +21,11 @@ public:
 	const TPair<FName, ID3D11ShaderResourceView*>& GetSprite() const;
 	void SetSprite(const TPair<FName, ID3D11ShaderResourceView*>& Sprite);
 
-	const ID3D11SamplerState* GetSampler() const;
+	ID3D11SamplerState* GetSampler() const;
 
-	TObjectPtr<UClass> GetSpecificWidgetClass() const override;
+	UClass* GetSpecificWidgetClass() const override;
+
+	static const FRenderState& GetClassDefaultRenderState(); 
 
 private:
 	TPair<FName, ID3D11ShaderResourceView*> Sprite = {"None", nullptr};

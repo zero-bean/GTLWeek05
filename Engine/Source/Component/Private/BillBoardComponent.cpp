@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Component/Public/BillBoardComponent.h""
-
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Physics/Public/AABB.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/UI/Widget/Public/SpriteSelectionWidget.h"
 
 IMPLEMENT_CLASS(UBillBoardComponent, UPrimitiveComponent)
@@ -26,19 +26,9 @@ UBillBoardComponent::UBillBoardComponent()
 	RenderState.FillMode = EFillMode::Solid;
 	BoundingBox = &ResourceManager.GetAABB(Type);
 
-    D3D11_SAMPLER_DESC SamplerDesc = {};
-    SamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    SamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;       // UV가 범위를 벗어나면 클램프
-    SamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    SamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    SamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    SamplerDesc.MinLOD = 0;
-    SamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    HRESULT hr = URenderer::GetInstance().GetDevice()->CreateSamplerState(&SamplerDesc, &Sampler);
-    if (FAILED(hr))
+    Sampler = FRenderResourceFactory::CreateSamplerState(D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_CLAMP);
+    if (!Sampler)
     {
-        UE_LOG_ERROR("CreateSamplerState failed (HRESULT: 0x%08lX)", hr);
         assert(false);
     }
 
@@ -60,20 +50,20 @@ void UBillBoardComponent::FaceCamera(
     const FVector& FallbackUp
 )
 {
-    // Front 방향
+    // Front 
     FVector Front = (CameraPosition - GetRelativeLocation());
     Front.Normalize();
 
-    // Right 계산
+    // Right 
     FVector Right = CameraUp.Cross(Front);
     if (Right.Length() <= 0.0001f)
     {
-        // CameraUp과 Front가 평행하면 FallbackUp 사용
+        // CameraUp Front FallbackUp 
         Right = FallbackUp.Cross(Front);
     }
     Right.Normalize();
 
-    // Up 계산
+    // Up 
     FVector Up = Front.Cross(Right);
     Up.Normalize();
 
@@ -81,7 +71,7 @@ void UBillBoardComponent::FaceCamera(
     float YAngle = -asin(Up.X);
     float ZAngle = -atan2(-Right.X, Front.X);
 
-    // 적용
+    // 
     SetRelativeRotation(
         FVector(
             FVector::GetRadianToDegree(XAngle),
@@ -101,12 +91,18 @@ void UBillBoardComponent::SetSprite(const TPair<FName, ID3D11ShaderResourceView*
     Sprite = InSprite;
 }
 
-const ID3D11SamplerState* UBillBoardComponent::GetSampler() const
+ID3D11SamplerState* UBillBoardComponent::GetSampler() const
 { 
     return Sampler;
 };
 
-TObjectPtr<UClass> UBillBoardComponent::GetSpecificWidgetClass() const
+UClass* UBillBoardComponent::GetSpecificWidgetClass() const
 {
     return USpriteSelectionWidget::StaticClass();
+}
+
+const FRenderState& UBillBoardComponent::GetClassDefaultRenderState()
+{
+    static FRenderState DefaultRenderState { ECullMode::Back, EFillMode::Solid };
+    return DefaultRenderState;
 }

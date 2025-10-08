@@ -27,7 +27,7 @@ public:
 private:
 	bool bIsMenuBarVisible = true;
 	float MenuBarHeight = 0.0f;
-	TObjectPtr<UUIManager> UIManager = nullptr;
+	UUIManager* UIManager = nullptr;
 
 	void RenderWindowsMenu() const;
 
