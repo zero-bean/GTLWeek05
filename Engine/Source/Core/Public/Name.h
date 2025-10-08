@@ -12,7 +12,7 @@ public:
 	FName();
 	FName(const FString& Str);
 	FName(const char* Str);
-	FName(int32 InDisplayIndex, int32 InComparisonIndex, int32 InNumber);
+	FName(int32 InComparisonIndex, int32 InDisplayIndex, int32 InNumber);
 
 	bool operator==(const FName& Other) const;
 	int32 Compare(const FName& Other) const;
@@ -31,7 +31,6 @@ private:
 	int32 Number;
 
 public:
-	static FName GetNone();
 	static const FName None;
 };
 
@@ -69,7 +68,7 @@ public:
 	FString GetDisplayString(int32 Idx) const;
 
 private:
-	FString ToLower(const FString& Str) const;
+	static FString ToLower(const FString& Str);
 
 	TArray<FString> ComparisonStringPool;
 	TArray<FString> DisplayStringPool;

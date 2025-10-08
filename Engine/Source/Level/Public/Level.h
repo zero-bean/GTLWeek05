@@ -72,7 +72,7 @@ protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
 private:
-	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::GetNone(), JSON* ActorJsonData = nullptr);
+	AActor* SpawnActorToLevel(UClass* InActorClass, const FName& InName = FName::None, JSON* ActorJsonData = nullptr);
 
 	TArray<TObjectPtr<AActor>> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	FOctree* StaticOctree = nullptr;

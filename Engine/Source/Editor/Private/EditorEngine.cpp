@@ -156,7 +156,7 @@ bool UEditorEngine::SaveCurrentLevel(const FString& InLevelName)
     if (FilePath.empty())
     {
         FName CurrentLevelName = GetEditorWorldContext().World()->GetLevel()->GetName();
-        FilePath = GenerateLevelFilePath(CurrentLevelName == FName::GetNone()? "Untitled" : CurrentLevelName.ToString());
+        FilePath = GenerateLevelFilePath(CurrentLevelName == FName::None? "Untitled" : CurrentLevelName.ToString());
     }
 
     UE_LOG("GEditor: 현재 레벨을 다음 경로에 저장합니다: %s", FilePath.string().c_str());

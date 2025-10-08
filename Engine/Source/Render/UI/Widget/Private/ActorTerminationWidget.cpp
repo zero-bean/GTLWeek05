@@ -74,7 +74,7 @@ void UActorTerminationWidget::DeleteSelectedActor(TObjectPtr<AActor> InSelectedA
 	}
 
 	UE_LOG_INFO("ActorTerminationWidget: 선택된 Actor를 삭제를 위해 마킹 처리: %s",
-	       InSelectedActor->GetName() == FName::GetNone() ? "UnNamed" : InSelectedActor->GetName().ToString().data());
+	       InSelectedActor->GetName() == FName::None ? "UnNamed" : InSelectedActor->GetName().ToString().data());
 
 	// 지연 삭제를 사용하여 안전하게 다음 틱에서 삭제
 	GWorld->DestroyActor(InSelectedActor);

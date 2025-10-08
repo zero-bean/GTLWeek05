@@ -35,8 +35,8 @@ public:
 	ID3D11InputLayout* GetIputLayout(EShaderType Type);
 
 	// Texture 관련 함수들
-	ComPtr<ID3D11ShaderResourceView> LoadTexture(const FName& InFilePath, const FName& InName = FName::GetNone());
-	UTexture* CreateTexture(const FName& InFilePath, const FName& InName = FName::GetNone());
+	ComPtr<ID3D11ShaderResourceView> LoadTexture(const FName& InFilePath, const FName& InName = FName::None);
+	UTexture* CreateTexture(const FName& InFilePath, const FName& InName = FName::None);
 	ComPtr<ID3D11ShaderResourceView> GetTexture(const FName& InFilePath);
 	void ReleaseTexture(const FName& InFilePath);
 	bool HasTexture(const FName& InFilePath) const;
@@ -73,7 +73,7 @@ private:
 	TMap<EPrimitiveType, uint32> NumIndices;
 	TMap<EPrimitiveType, TArray<uint32>*> IndexDatas;
 
-	// Shaser Resources
+	// Shader Resources
 	TMap<EShaderType, ID3D11VertexShader*> VertexShaders;
 	TMap<EShaderType, ID3D11InputLayout*> InputLayouts;
 	TMap<EShaderType, ID3D11PixelShader*> PixelShaders;

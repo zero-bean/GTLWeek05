@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Texture/Public/Texture.h"
 
+#include "Texture/Public/TextureRenderProxy.h"
+
 IMPLEMENT_CLASS(UTexture, UObject)
 
 /**
@@ -9,9 +11,9 @@ IMPLEMENT_CLASS(UTexture, UObject)
  * 생성에 필요한 내용을 갖추도록 구현
  */
 UTexture::UTexture()
-	: TextureFilePath(FName::GetNone())
+	: TextureFilePath(FName::None)
 {
-	SetName(FName::GetNone());
+	SetName(FName::None);
 }
 
 UTexture::UTexture(const FName& InFilePath, FName InName)
@@ -22,8 +24,6 @@ UTexture::UTexture(const FName& InFilePath, FName InName)
 
 UTexture::~UTexture()
 {
-	if (RenderProxy)
-	{
-		delete RenderProxy;
-	}
+	RenderProxy->Release();
+	delete RenderProxy;
 }
