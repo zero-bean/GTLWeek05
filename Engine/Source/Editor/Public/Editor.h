@@ -39,13 +39,15 @@ public:
 
 	void SelectActor(AActor* InActor);
 	AActor* GetSelectedActor() const { return SelectedActor; }
+	void SelectComponent(UActorComponent* InComponent);
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
 	UUUIDTextComponent* GetPickedBillboard() const;
 
 private:
 	void InitializeLayout();
-	void UpdateLayout();
-
+	void UpdateBatchLines();
 	void ProcessMouseInput();
+	void UpdateLayout();
 	TArray<UPrimitiveComponent*> FindCandidatePrimitives(ULevel* InLevel);
 
 	// 모든 기즈모 드래그 함수가 ActiveCamera를 받도록 통일
@@ -60,7 +62,8 @@ private:
 
 	UObjectPicker ObjectPicker;
 	AActor* SelectedActor = nullptr; // 선택된 액터
-
+	UActorComponent* SelectedComponent = nullptr; // 선택된 컴포넌트
+	
 	UUUIDTextComponent* PickedBillboard; // 선택된 액터의 빌보드
 
 	const float MinScale = 0.01f;

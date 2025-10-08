@@ -147,3 +147,93 @@ void USceneComponent::SetRelativeScale3D(const FVector& Scale)
 		GWorld->GetLevel()->UpdatePrimitiveInOctree(PrimitiveComponent);
 	}
 }
+
+const FMatrix& USceneComponent::GetWorldTransformMatrix() const
+{
+	if (bIsTransformDirty)
+	{
+		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
+
+		if (ParentAttachment)
+		{
+			WorldTransformMatrix *= ParentAttachment->GetWorldTransformMatrix();
+		}
+
+		bIsTransformDirty = false;
+	}
+
+	return WorldTransformMatrix;
+}
+
+const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
+{
+	if (bIsTransformDirtyInverse)
+	{
+		WorldTransformMatrixInverse = FMatrix::Identity();
+
+		if (ParentAttachment)
+		{
+			WorldTransformMatrixInverse *= ParentAttachment->GetWorldTransformMatrixInverse();
+		}
+
+		WorldTransformMatrixInverse *= FMatrix::GetModelMatrixInverse(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
+
+		bIsTransformDirtyInverse = false;
+	}
+
+	return WorldTransformMatrixInverse;
+}
+
+FVector USceneComponent::GetWorldLocation() const
+{
+    return GetWorldTransformMatrix().GetLocation();
+}
+
+FVector USceneComponent::GetWorldRotation() const
+{
+    return GetWorldTransformMatrix().GetRotation();
+}
+
+FVector USceneComponent::GetWorldScale3D() const
+{
+    return GetWorldTransformMatrix().GetScale();
+}
+
+void USceneComponent::SetWorldLocation(const FVector& NewLocation)
+{
+    if (ParentAttachment)
+    {
+        const FMatrix ParentWorldMatrixInverse = ParentAttachment->GetWorldTransformMatrixInverse();
+        SetRelativeLocation(ParentWorldMatrixInverse.TransformPosition(NewLocation));
+    }
+    else
+    {
+        SetRelativeLocation(NewLocation);
+    }
+}
+
+void USceneComponent::SetWorldRotation(const FVector& NewRotation)
+{
+    if (ParentAttachment)
+    {
+        const FVector ParentWorldRotation = ParentAttachment->GetWorldRotation();
+        SetRelativeRotation(NewRotation - ParentWorldRotation);
+    }
+    else
+    {
+        SetRelativeRotation(NewRotation);
+    }
+}
+
+void USceneComponent::SetWorldScale3D(const FVector& NewScale)
+{
+    if (ParentAttachment)
+    {
+        const FVector ParentWorldScale = ParentAttachment->GetWorldScale3D();
+        SetRelativeScale3D(FVector(NewScale.X / ParentWorldScale.X, NewScale.Y / ParentWorldScale.Y, NewScale.Z / ParentWorldScale.Z));
+    }
+    else
+    {
+        SetRelativeScale3D(NewScale);
+    }
+}

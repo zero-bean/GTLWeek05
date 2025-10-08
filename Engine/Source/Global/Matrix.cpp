@@ -323,4 +323,34 @@ FMatrix FMatrix::Transpose() const
 	return Result;
 }
 
+FVector FMatrix::GetLocation() const
+{
+    return FVector(Data[3][0], Data[3][1], Data[3][2]);
+}
+
+FVector FMatrix::GetRotation() const
+{
+    // Assuming the angles are in radians.
+    float pitch = -asinf(Data[2][0]);
+    float yaw = atan2f(Data[1][0], Data[0][0]);
+    float roll = atan2f(Data[2][1], Data[2][2]);
+    return FVector(pitch, yaw, roll);
+}
+
+FVector FMatrix::GetScale() const
+{
+    return FVector(sqrtf(Data[0][0] * Data[0][0] + Data[0][1] * Data[0][1] + Data[0][2] * Data[0][2]),
+                   sqrtf(Data[1][0] * Data[1][0] + Data[1][1] * Data[1][1] + Data[1][2] * Data[1][2]),
+                   sqrtf(Data[2][0] * Data[2][0] + Data[2][1] * Data[2][1] + Data[2][2] * Data[2][2]));
+}
+
+FVector FMatrix::TransformPosition(const FVector& V) const
+{
+    return FVector(
+        V.X * Data[0][0] + V.Y * Data[1][0] + V.Z * Data[2][0] + Data[3][0],
+        V.X * Data[0][1] + V.Y * Data[1][1] + V.Z * Data[2][1] + Data[3][1],
+        V.X * Data[0][2] + V.Y * Data[1][2] + V.Z * Data[2][2] + Data[3][2]
+    );
+}
+
 

@@ -64,7 +64,7 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 
 	if (Gizmo.GetGizmoMode() == EGizmoMode::Scale || !Gizmo.IsWorldMode())
 	{
-		FVector Rad = FVector::GetDegreeToRadian(Gizmo.GetActorRotation());
+		FVector Rad = FVector::GetDegreeToRadian(Gizmo.GetComponentRotation());
 		FMatrix R = FMatrix::RotationMatrix(Rad);
 		//FQuaternion q = FQuaternion::FromEuler(Rad);
 

@@ -66,7 +66,7 @@ void UEditor::Update()
 	// 2. 활성 뷰포트의 카메라의 제어만 업데이트합니다.
 	if (UCamera* ActiveCamera = Viewport->GetActiveCamera())
 	{
-		// ✨ 만약 이동량이 있고, 직교 카메라라면 ViewportClient에 알립니다.
+		// 만약 이동량이 있고, 직교 카메라라면 ViewportClient에 알립니다.
 		const FVector MovementDelta = ActiveCamera->UpdateInput();
 		if (MovementDelta.LengthSquared() > 0.f && ActiveCamera->GetCameraType() == ECameraType::ECT_Orthographic)
 		{
@@ -74,33 +74,7 @@ void UEditor::Update()
 		}
 	}
 
-	if (AActor* SelectedActor = GetSelectedActor())
-	{
-		for (const auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			if (auto PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
-			{
-				FVector WorldMin, WorldMax;
-				PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
-
-				uint64 ShowFlags = GWorld->GetLevel()->GetShowFlags();
-
-				if ((ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds))
-				{
-					BatchLines.UpdateBoundingBoxVertices(FAABB(WorldMin, WorldMax));
-				}
-				else
-				{
-					BatchLines.UpdateBoundingBoxVertices({ { 0.0f,0.0f,0.0f }, { 0.0f, 0.0f, 0.0f } });
-				}
-			}
-		}
-	}
-	else
-	{
-		BatchLines.DisableRenderBoundingBox();
-	}
-
+	UpdateBatchLines();
 	BatchLines.UpdateVertexBuffer();
 
 	ProcessMouseInput();
@@ -111,15 +85,12 @@ void UEditor::Update()
 void UEditor::RenderEditor(UCamera* InCamera)
 {
 	if (GEditor->IsPIESessionActive()) { return; }
-	// Grid, Axis 등 에디터 요소를 렌더링합니다.
 	BatchLines.Render();
 	Axis.Render();
 
-	// Gizmo 렌더링 시, 현재 활성화된 카메라의 위치를 전달해야 합니다.
 	if (InCamera)
 	{
-		AActor* SelectedActor = GetSelectedActor();
-		Gizmo.RenderGizmo(SelectedActor, InCamera);
+		Gizmo.RenderGizmo(Cast<USceneComponent>(GetSelectedComponent()), InCamera);
 	}
 }
 
@@ -206,6 +177,28 @@ void UEditor::InitializeLayout()
 	const D3D11_VIEWPORT& ViewportInfo = URenderer::GetInstance().GetDeviceResources()->GetViewportInfo();
 	FRect FullScreenRect = { ViewportInfo.TopLeftX, ViewportInfo.TopLeftY, ViewportInfo.Width, ViewportInfo.Height };
 	RootSplitter.Resize(FullScreenRect);
+}
+
+void UEditor::UpdateBatchLines()
+{
+	if (UActorComponent* Component = GetSelectedComponent())
+	{
+		if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
+		{
+			uint64 ShowFlags = GWorld->GetLevel()->GetShowFlags();
+
+			if ((ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds))
+			{
+				FVector WorldMin, WorldMax;
+				PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
+				BatchLines.UpdateBoundingBoxVertices(FAABB(WorldMin, WorldMax));
+            
+				return; 
+			}
+		}
+	}
+
+	BatchLines.DisableRenderBoundingBox();
 }
 
 void UEditor::UpdateLayout()
@@ -389,7 +382,7 @@ void UEditor::ProcessMouseInput()
 		InteractionViewport = nullptr;
 	}
 
-	if (Gizmo.IsDragging() && Gizmo.GetSelectedActor())
+	if (Gizmo.IsDragging() && Gizmo.GetSelectedComponent())
 	{
 		switch (Gizmo.GetGizmoMode())
 		{
@@ -402,19 +395,19 @@ void UEditor::ProcessMouseInput()
 		case EGizmoMode::Rotate:
 		{
 			FVector GizmoDragRotation = GetGizmoDragRotation(CurrentCamera, WorldRay);
-			Gizmo.SetActorRotation(GizmoDragRotation);
+			Gizmo.SetComponentRotation(GizmoDragRotation);
 			break;
 		}
 		case EGizmoMode::Scale:
 		{
 			FVector GizmoDragScale = GetGizmoDragScale(CurrentCamera, WorldRay);
-			Gizmo.SetActorScale(GizmoDragScale);
+			Gizmo.SetComponentScale(GizmoDragScale);
 		}
 		}
 	}
 	else
 	{
-		if (GetSelectedActor() && Gizmo.HasActor())
+		if (GetSelectedActor() && Gizmo.HasComponent())
 		{
 			ObjectPicker.PickGizmo(CurrentCamera, WorldRay, Gizmo, CollisionPoint);
 		}
@@ -498,7 +491,7 @@ FVector UEditor::GetGizmoDragLocation(UCamera* InActiveCamera, FRay& WorldRay)
 	if (!Gizmo.IsWorldMode())
 	{
 		FVector4 GizmoAxis4{ GizmoAxis.X, GizmoAxis.Y, GizmoAxis.Z, 0.0f };
-		FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetActorRotation());
+		FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetComponentRotation());
 		GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(RadRotation);
 	}
 
@@ -519,7 +512,7 @@ FVector UEditor::GetGizmoDragRotation(UCamera* InActiveCamera, FRay& WorldRay)
 	if (!Gizmo.IsWorldMode())
 	{
 		FVector4 GizmoAxis4{ GizmoAxis.X, GizmoAxis.Y, GizmoAxis.Z, 0.0f };
-		FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetActorRotation());
+		FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetComponentRotation());
 		GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(RadRotation);
 	}
 
@@ -547,7 +540,7 @@ FVector UEditor::GetGizmoDragRotation(UCamera* InActiveCamera, FRay& WorldRay)
 			return (StartRotQuat * DeltaRotQuat).ToEuler();
 		}
 	}
-	return Gizmo.GetActorRotation();
+	return Gizmo.GetComponentRotation();
 }
 
 FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
@@ -557,7 +550,7 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 	FVector CardinalAxis = Gizmo.GetGizmoAxis();
 
 	FVector4 GizmoAxis4{ CardinalAxis.X, CardinalAxis.Y, CardinalAxis.Z, 0.0f };
-	FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetActorRotation());
+	FVector RadRotation = FVector::GetDegreeToRadian(Gizmo.GetComponentRotation());
 	FVector GizmoAxis = Gizmo.GetGizmoAxis();
 	GizmoAxis = GizmoAxis4 * FMatrix::RotationMatrix(RadRotation);
 
@@ -578,7 +571,7 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 		FVector DragStartScale = Gizmo.GetDragStartActorScale();
 		if (ScaleFactor > MinScale)
 		{
-			if (Gizmo.GetSelectedActor()->IsUniformScale())
+			if (Gizmo.GetSelectedComponent()->IsUniformScale())
 			{
 				float UniformValue = DragStartScale.Dot(CardinalAxis);
 				return FVector(1.0f, 1.0f, 1.0f) * UniformValue * ScaleFactor;
@@ -588,34 +581,33 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 				return DragStartScale + CardinalAxis * (ScaleFactor - 1.0f) * DragStartScale.Dot(CardinalAxis);
 			}
 		}
-		return Gizmo.GetActorScale();
+		return Gizmo.GetComponentScale();
 	}
-	return Gizmo.GetActorScale();
+	return Gizmo.GetComponentScale();
 }
 
 void UEditor::SelectActor(AActor* InActor)
 {
-	// Set Selected Actor
-	if (SelectedActor)
-	{
-		for (auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			Component->OnDeselected();
-		}
-	}
-
-	if (InActor != SelectedActor)
-	{
-		UUIManager::GetInstance().OnSelectedActorChanged(InActor);
-	}
+	if (InActor == SelectedActor) return;
+	
 	SelectedActor = InActor;
+	if (SelectedActor) { SelectComponent(InActor->GetRootComponent()); }
+	else { SelectComponent(nullptr); }
+}
 
-	if (SelectedActor)
+void UEditor::SelectComponent(UActorComponent* InComponent)
+{
+	if (InComponent == SelectedComponent) return;
+	
+	if (SelectedComponent)
 	{
-		for (auto& Component : SelectedActor->GetOwnedComponents())
-		{
-			Component->OnSelected();
-		}
+		SelectedComponent->OnDeselected();
+	}
+
+	SelectedComponent = InComponent;
+	if (SelectedComponent)
+	{
+		SelectedComponent->OnSelected();
 	}
 }
 

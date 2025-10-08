@@ -48,7 +48,7 @@ public:
 	UGizmo();
 	~UGizmo() override;
 	void UpdateScale(UCamera* InCamera);
-	void RenderGizmo(AActor* Actor, UCamera* InCamera);
+	void RenderGizmo(USceneComponent* SceneComponent, UCamera* InCamera);
 	void ChangeGizmoMode();
 
 	/* *
@@ -56,8 +56,8 @@ public:
 	*/
 	void SetLocation(const FVector& Location);
 	void SetGizmoDirection(EGizmoDirection Direction) { GizmoDirection = Direction; }
-	void SetActorRotation(const FVector& Rotation) { TargetActor->SetActorRotation(Rotation); }
-	void SetActorScale(const FVector& Scale) { TargetActor->SetActorScale3D(Scale); }
+	void SetComponentRotation(const FVector& Rotation) { TargetComponent->SetWorldRotation(Rotation); }
+	void SetComponentScale(const FVector& Scale) { TargetComponent->SetWorldScale3D(Scale); }
 
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }
@@ -70,8 +70,8 @@ public:
 	const float GetRotateScale() const { return RotateCollisionConfig.Scale; }
 	const EGizmoDirection GetGizmoDirection() { return GizmoDirection; }
 	const FVector& GetGizmoLocation() { return Primitives[(int)GizmoMode].Location; }
-	const FVector& GetActorRotation() { return TargetActor->GetActorRotation(); }
-	const FVector& GetActorScale() { return TargetActor->GetActorScale3D(); }
+	const FVector& GetComponentRotation() { return TargetComponent->GetWorldRotation(); }
+	const FVector& GetComponentScale() { return TargetComponent->GetWorldScale3D(); }
 	const FVector& GetDragStartMouseLocation() { return DragStartMouseLocation; }
 	const FVector& GetDragStartActorLocation() { return DragStartActorLocation; }
 	const FVector& GetDragStartActorRotation() { return DragStartActorRotation; }
@@ -86,9 +86,9 @@ public:
 	float GetRotateOuterRadius() const { return RotateCollisionConfig.OuterRadius * RotateCollisionConfig.Scale; }
 	float GetRotateInnerRadius() const { return RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale; }
 	float GetRotateThickness()   const { return std::max(0.001f, RotateCollisionConfig.InnerRadius * RotateCollisionConfig.Scale); }
-	AActor* GetSelectedActor() const { return TargetActor; }
+	USceneComponent* GetSelectedComponent() const { return TargetComponent; }
 	bool IsInRadius(float Radius);
-	bool HasActor() const { return TargetActor; };
+	bool HasComponent() const { return TargetComponent; }
 
 	/* *
 	* @brief 마우스 관련
@@ -116,7 +116,7 @@ private:
 
 
 	TArray<FEditorPrimitive> Primitives;
-	AActor* TargetActor = nullptr;
+	USceneComponent* TargetComponent = nullptr;
 
 	TArray<FVector4> GizmoColor;
 	FVector DragStartActorLocation;

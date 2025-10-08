@@ -37,56 +37,6 @@ bool USceneComponent::IsUniformScale() const
 	return bIsUniformScale;
 }
 
-const FVector& USceneComponent::GetRelativeLocation() const
-{
-	return RelativeLocation;
-}
-const FVector& USceneComponent::GetRelativeRotation() const
-{
-	return RelativeRotation;
-}
-const FVector& USceneComponent::GetRelativeScale3D() const
-{
-	return RelativeScale3D;
-}
-
-const FMatrix& USceneComponent::GetWorldTransformMatrix() const
-{
-	if (bIsTransformDirty)
-	{
-		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
-
-		if (ParentAttachment)
-		{
-			WorldTransformMatrix *= ParentAttachment->GetWorldTransformMatrix();
-		}
-
-		bIsTransformDirty = false;
-	}
-
-	return WorldTransformMatrix;
-}
-
-const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
-{
-
-	if (bIsTransformDirtyInverse)
-	{
-		WorldTransformMatrixInverse = FMatrix::Identity();
-
-		if (ParentAttachment)
-		{
-			WorldTransformMatrixInverse *= ParentAttachment->GetWorldTransformMatrixInverse();
-		}
-
-		WorldTransformMatrixInverse *= FMatrix::GetModelMatrixInverse(RelativeLocation, FVector::GetDegreeToRadian(RelativeRotation), RelativeScale3D);
-
-		bIsTransformDirtyInverse = false;
-	}
-
-	return WorldTransformMatrixInverse;
-}
-
 const TArray<FNormalVertex>* UPrimitiveComponent::GetVerticesData() const
 {
 	return Vertices;

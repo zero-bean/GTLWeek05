@@ -59,12 +59,12 @@ UGizmo::~UGizmo() = default;
 
 void UGizmo::UpdateScale(UCamera* InCamera)
 {
-	if (!TargetActor || !InCamera) { return; }
+	if (!TargetComponent || !InCamera) { return; }
 
 	float Scale;
 	if (InCamera->GetCameraType() == ECameraType::ECT_Perspective)
 	{
-		float DistanceToCamera = (InCamera->GetLocation() - TargetActor->GetActorLocation()).Length();
+		float DistanceToCamera = (InCamera->GetLocation() - TargetComponent->GetWorldLocation()).Length();
 		Scale = DistanceToCamera * ScaleFactor;
 		if (DistanceToCamera < MinScaleFactor)
 			Scale = MinScaleFactor * ScaleFactor;
@@ -78,15 +78,15 @@ void UGizmo::UpdateScale(UCamera* InCamera)
 	RotateCollisionConfig.Scale = Scale;
 }
 
-void UGizmo::RenderGizmo(AActor* Actor, UCamera* InCamera)
+void UGizmo::RenderGizmo(USceneComponent* SceneComponent, UCamera* InCamera)
 {
-	TargetActor = Actor;
-	if (!TargetActor || !InCamera) { return; }
+	TargetComponent = SceneComponent;
+	if (!TargetComponent || !InCamera) { return; }
 
 	float RenderScale;
 	if (InCamera->GetCameraType() == ECameraType::ECT_Perspective)
 	{
-		float DistanceToCamera = (InCamera->GetLocation() - TargetActor->GetActorLocation()).Length();
+		float DistanceToCamera = (InCamera->GetLocation() - TargetComponent->GetWorldLocation()).Length();
 		RenderScale = DistanceToCamera * ScaleFactor;
 		if (DistanceToCamera < MinScaleFactor)
 			RenderScale = MinScaleFactor * ScaleFactor;
@@ -99,7 +99,7 @@ void UGizmo::RenderGizmo(AActor* Actor, UCamera* InCamera)
 	URenderer& Renderer = URenderer::GetInstance();
 	const int Mode = static_cast<int>(GizmoMode);
 	auto& P = Primitives[Mode];
-	P.Location = TargetActor->GetActorLocation();
+	P.Location = TargetComponent->GetWorldLocation();
 
 	P.Scale = FVector(RenderScale, RenderScale, RenderScale);
 
@@ -111,11 +111,11 @@ void UGizmo::RenderGizmo(AActor* Actor, UCamera* InCamera)
 	}
 	else if (GizmoMode == EGizmoMode::Scale)
 	{
-		LocalRot = FQuaternion::FromEuler(TargetActor->GetActorRotation());
+		LocalRot = FQuaternion::FromEuler(TargetComponent->GetWorldRotation());
 	}
 	else
 	{
-		LocalRot = bIsWorld ? FQuaternion::Identity() : FQuaternion::FromEuler(TargetActor->GetActorRotation());
+		LocalRot = bIsWorld ? FQuaternion::Identity() : FQuaternion::FromEuler(TargetComponent->GetWorldRotation());
 	}
 
 	// X축 (Forward) - 빨간색
@@ -152,7 +152,7 @@ void UGizmo::ChangeGizmoMode()
 
 void UGizmo::SetLocation(const FVector& Location)
 {
-	TargetActor->SetActorLocation(Location);
+	TargetComponent->SetWorldLocation(Location);
 }
 
 bool UGizmo::IsInRadius(float Radius)
@@ -167,11 +167,11 @@ void UGizmo::OnMouseDragStart(FVector& CollisionPoint)
 	bIsDragging = true;
 	DragStartMouseLocation = CollisionPoint;
 
-	if (TargetActor)
+	if (TargetComponent)
 	{
-		DragStartActorLocation = TargetActor->GetActorLocation();
-		DragStartActorRotation = TargetActor->GetActorRotation();
-		DragStartActorScale = TargetActor->GetActorScale3D();
+		DragStartActorLocation = TargetComponent->GetWorldLocation();
+		DragStartActorRotation = TargetComponent->GetWorldRotation();
+		DragStartActorScale = TargetComponent->GetWorldScale3D();
 	}
 }
 

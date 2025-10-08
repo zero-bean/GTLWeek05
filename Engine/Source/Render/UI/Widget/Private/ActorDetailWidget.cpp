@@ -56,8 +56,8 @@ void UActorDetailWidget::RenderWidget()
 	// 선택된 액터가 변경되면, 컴포넌트 선택 상태를 초기화
 	if (CachedSelectedActor != SelectedActor)
 	{
-		SelectedComponent = nullptr;
 		CachedSelectedActor = SelectedActor;
+		SelectedComponent = SelectedActor->GetRootComponent();
 	}
 
 	// Actor 헤더 렌더링 (이름 + rename 기능)
@@ -302,6 +302,7 @@ void UActorDetailWidget::RenderComponentNodeRecursive(UActorComponent* InCompone
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = InComponent;
+		GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
 	}
 
 	// -----------------------------

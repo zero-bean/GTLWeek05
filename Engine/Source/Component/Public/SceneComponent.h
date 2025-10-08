@@ -35,12 +35,20 @@ public:
 	USceneComponent* GetParentAttachment() { return ParentAttachment; }
 	TArray<USceneComponent*> GetChildren() { return Children; }
 
-	const FVector& GetRelativeLocation() const;
-	const FVector& GetRelativeRotation() const;
-	const FVector& GetRelativeScale3D() const;
+	const FVector& GetRelativeLocation() const { return RelativeLocation; }
+	const FVector& GetRelativeRotation() const { return RelativeRotation; }
+	const FVector& GetRelativeScale3D() const { return RelativeScale3D; }
 
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
+
+	FVector GetWorldLocation() const;
+    FVector GetWorldRotation() const;
+    FVector GetWorldScale3D() const;
+
+    void SetWorldLocation(const FVector& NewLocation);
+    void SetWorldRotation(const FVector& NewRotation);
+    void SetWorldScale3D(const FVector& NewScale);
 
 private:
 	mutable bool bIsTransformDirty = true;
