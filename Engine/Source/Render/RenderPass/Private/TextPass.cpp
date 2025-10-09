@@ -43,7 +43,6 @@ FTextPass::FTextPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferViewPr
 
 void FTextPass::Execute(FRenderingContext& Context)
 {
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_Text)) { return; }
     // Set up pipeline
     FPipelineInfo PipelineInfo = {};
     PipelineInfo.InputLayout = FontInputLayout;
@@ -53,6 +52,7 @@ void FTextPass::Execute(FRenderingContext& Context)
     PipelineInfo.BlendState = URenderer::GetInstance().GetAlphaBlendState();
     PipelineInfo.DepthStencilState = URenderer::GetInstance().GetDefaultDepthStencilState(); // Or DisabledDepthStencilState based on a flag
     Pipeline->UpdatePipeline(PipelineInfo);
+    if (!(Context.ShowFlags & EEngineShowFlags::SF_Text)) { return; }
 
     // Set constant buffers
     Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);

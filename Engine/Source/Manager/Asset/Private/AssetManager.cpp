@@ -18,12 +18,9 @@ UAssetManager::~UAssetManager() = default;
 
 void UAssetManager::Initialize()
 {
-	URenderer& Renderer = URenderer::GetInstance();
-
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
 
-	// TMap.Add()
 	VertexDatas.emplace(EPrimitiveType::Cube, &VerticesCube);
 	VertexDatas.emplace(EPrimitiveType::Sphere, &VerticesSphere);
 	VertexDatas.emplace(EPrimitiveType::Triangle, &VerticesTriangle);
@@ -277,12 +274,12 @@ ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
 	return InputLayouts[Type];
 }
 
-const FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
+FAABB& UAssetManager::GetAABB(EPrimitiveType InType)
 {
 	return AABBs[InType];
 }
 
-const FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
+FAABB& UAssetManager::GetStaticMeshAABB(FName InName)
 {
 	return StaticMeshAABBs[InName];
 }

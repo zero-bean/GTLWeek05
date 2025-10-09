@@ -40,8 +40,9 @@ SamplerState SamplerWrap : register(s0);
 
 struct VS_INPUT
 {
-	float4 position : POSITION; // Input position from vertex buffer
+	float3 position : POSITION;
 	float3 normal : NORMAL;
+	float4 color : COLOR;
 	float2 tex : TEXCOORD0;
 };
 
@@ -56,7 +57,7 @@ PS_INPUT mainVS(VS_INPUT input)
 {
 	PS_INPUT output;
 
-	float4 tmp = input.position;
+	float4 tmp = float4(input.position, 1.0f);
 	tmp = mul(tmp, world);
 	tmp = mul(tmp, View);
 	tmp = mul(tmp, Projection);

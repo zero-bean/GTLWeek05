@@ -55,8 +55,8 @@ public:
 	static ID3D11ShaderResourceView* CreateTextureFromMemory(const void* InData, size_t InDataSize);
 
 	// Bounding Box
-	const FAABB& GetAABB(EPrimitiveType InType);
-	const FAABB& GetStaticMeshAABB(FName InName);
+	FAABB& GetAABB(EPrimitiveType InType);
+	FAABB& GetStaticMeshAABB(FName InName);
 
 	const TMap<FName, ID3D11ShaderResourceView*>& GetTextureCache() const;
 

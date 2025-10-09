@@ -11,7 +11,6 @@ FBillboardPass::FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBu
 
 void FBillboardPass::Execute(FRenderingContext& Context)
 {
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_Billboard)) return;
     FRenderState RenderState = UBillBoardComponent::GetClassDefaultRenderState();
     if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
     {
@@ -21,6 +20,7 @@ void FBillboardPass::Execute(FRenderingContext& Context)
     static FPipelineInfo PipelineInfo = { InputLayout, VS, FRenderResourceFactory::GetRasterizerState(RenderState), DS, PS, nullptr };
     Pipeline->UpdatePipeline(PipelineInfo);
 
+    if (!(Context.ShowFlags & EEngineShowFlags::SF_Billboard)) return;
     for (UBillBoardComponent* BillBoardComp : Context.BillBoards)
     {
         BillBoardComp->FaceCamera(Context.CurrentCamera->GetLocation(), Context.CurrentCamera->GetUp(), Context.CurrentCamera->GetRight());

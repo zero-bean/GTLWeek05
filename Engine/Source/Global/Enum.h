@@ -135,6 +135,7 @@ enum class EPrimitiveType : uint8
 	StaticMesh,
 	Sprite,
 	Text,
+	Decal,
 	Torus,
 	Arrow,
 	CubeArrow,

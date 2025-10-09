@@ -58,23 +58,10 @@ void UBatchLines::UpdateUGridVertices(const float newCellSize)
 	bChangedVertices = true;
 }
 
-void UBatchLines::UpdateBoundingBoxVertices(const FAABB& newBoundingBoxInfo)
+void UBatchLines::UpdateBoundingBoxVertices(const IBoundingVolume* NewBoundingVolume)
 {
-	FAABB curBoudingBoxInfo = BoundingBoxLines.GetRenderedBoxInfo();
-	if (newBoundingBoxInfo.Min == curBoudingBoxInfo.Min && newBoundingBoxInfo.Max == curBoudingBoxInfo.Max)
-	{
-		return;
-	}
-
-	BoundingBoxLines.UpdateVertices(newBoundingBoxInfo);
+	BoundingBoxLines.UpdateVertices(NewBoundingVolume);
 	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
-	bChangedVertices = true;
-}
-
-void UBatchLines::UpdateBatchLineVertices(const float newCellSize, const FAABB& newBoundingBoxInfo)
-{
-	UpdateUGridVertices(newCellSize);
-	UpdateBoundingBoxVertices(newBoundingBoxInfo);
 	bChangedVertices = true;
 }
 

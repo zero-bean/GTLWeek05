@@ -3,6 +3,7 @@
 
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Physics/Public/AABB.h"
+#include "Physics/Public/OBB.h"
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
 
@@ -77,7 +78,13 @@ D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
 	return Topology;
 }
 
-void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
+const IBoundingVolume* UPrimitiveComponent::GetBoundingBox()
+{
+	BoundingBox->Update(GetWorldTransformMatrix());
+	return BoundingBox;
+}
+
+void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax)
 {
 	if (!BoundingBox)
 	{
@@ -102,9 +109,9 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 			FVector WorldMin(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 			FVector WorldMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-			for (int32 i = 0; i < 8; i++)
+			for (int32 Idx = 0; Idx < 8; Idx++)
 			{
-				FVector4 WorldCorner = FVector4(LocalCorners[i].X, LocalCorners[i].Y, LocalCorners[i].Z, 1.0f) * WorldTransform;
+				FVector4 WorldCorner = FVector4(LocalCorners[Idx].X, LocalCorners[Idx].Y, LocalCorners[Idx].Z, 1.0f) * WorldTransform;
 				WorldMin.X = min(WorldMin.X, WorldCorner.X);
 				WorldMin.Y = min(WorldMin.Y, WorldCorner.Y);
 				WorldMin.Z = min(WorldMin.Z, WorldCorner.Z);
@@ -116,6 +123,15 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 			CachedWorldMin = WorldMin;
 			CachedWorldMax = WorldMax;
 		}
+		else if (BoundingBox->GetType() == EBoundingVolumeType::OBB)
+		{
+			const FOBB* OBB = static_cast<const FOBB*>(GetBoundingBox());
+			FAABB AABB = OBB->ToWorldAABB();
+
+			CachedWorldMin = AABB.Min;
+			CachedWorldMax = AABB.Max;
+       }
+
 		bIsAABBCacheDirty = false;
 	}
 

@@ -189,10 +189,13 @@ void UEditor::UpdateBatchLines()
 
 			if ((ShowFlags & EEngineShowFlags::SF_Primitives) && (ShowFlags & EEngineShowFlags::SF_Bounds))
 			{
-				FVector WorldMin, WorldMax;
-				PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
-				BatchLines.UpdateBoundingBoxVertices(FAABB(WorldMin, WorldMax));
-            
+				if (PrimitiveComponent->GetBoundingBox()->GetType() == EBoundingVolumeType::AABB)
+				{
+					FVector WorldMin, WorldMax; PrimitiveComponent->GetWorldAABB(WorldMin, WorldMax);
+					FAABB AABB(WorldMin, WorldMax);
+					BatchLines.UpdateBoundingBoxVertices(&AABB);
+				}
+				else { BatchLines.UpdateBoundingBoxVertices(PrimitiveComponent->GetBoundingBox()); }
 				return; 
 			}
 		}

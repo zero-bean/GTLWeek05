@@ -37,6 +37,7 @@ public:
 	void CreateBlendState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
+	void CreateDecalShader();
 	void CreateConstantBuffers();
 
 	// Release
@@ -80,6 +81,7 @@ private:
 
 	// States
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
+	ID3D11DepthStencilState* DecalDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
 	ID3D11BlendState* AlphaBlendState = nullptr;
 
@@ -100,6 +102,10 @@ private:
 	ID3D11VertexShader* TextureVertexShader = nullptr;
 	ID3D11PixelShader* TexturePixelShader = nullptr;
 	ID3D11InputLayout* TextureInputLayout = nullptr;
+
+	ID3D11VertexShader* DecalVertexShader = nullptr;
+	ID3D11PixelShader* DecalPixelShader = nullptr;
+	ID3D11InputLayout* DecalInputLayout = nullptr;
 	
 	uint32 Stride = 0;
 

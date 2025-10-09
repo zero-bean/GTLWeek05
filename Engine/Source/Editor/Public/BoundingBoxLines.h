@@ -8,22 +8,19 @@ public:
 	UBoundingBoxLines();
 	~UBoundingBoxLines() = default;
 
-	void MergeVerticesAt(TArray<FVector>& destVertices, size_t insertStartIndex);
-	void UpdateVertices(FAABB boundingBoxInfo);
+	void MergeVerticesAt(TArray<FVector>& DestVertices, size_t InsertStartIndex);
+	void UpdateVertices(const IBoundingVolume* NewBoundingVolume);
 
 	uint32 GetNumVertices() const
 	{
 		return NumVertices;
 	}
 
-	FAABB GetRenderedBoxInfo() const
-	{
-		return RenderedBoxInfo;
-	}
+	FAABB* GetDisabledBoundingBox() { return &DisabledBoundingBox; }
 
 private:
 	TArray<FVector> Vertices;
 	uint32 NumVertices = 8;
-	FAABB RenderedBoxInfo;
+	FAABB DisabledBoundingBox = FAABB(FVector(0, 0, 0), FVector(0, 0, 0));
 };
 

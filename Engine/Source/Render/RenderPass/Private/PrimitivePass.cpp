@@ -11,8 +11,6 @@ FPrimitivePass::FPrimitivePass(UPipeline* InPipeline, ID3D11Buffer* InConstantBu
 
 void FPrimitivePass::Execute(FRenderingContext& Context)
 {
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_Primitives)) return;
-    
     FRenderState DefaultState;
     if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
     {
@@ -21,7 +19,11 @@ void FPrimitivePass::Execute(FRenderingContext& Context)
     }
 
     FPipelineInfo PipelineInfo = { InputLayout, VS, nullptr, DS, PS, nullptr };
+    Pipeline->UpdatePipeline(PipelineInfo);
+    Pipeline->SetConstantBuffer(0, true, ConstantBufferModel);
     Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+    Pipeline->SetConstantBuffer(2, false, ConstantBufferColor);
+    if (!(Context.ShowFlags & EEngineShowFlags::SF_Primitives)) return;
     
     for (UPrimitiveComponent* PrimitiveComponent : Context.DefaultPrimitives)
     {
@@ -50,7 +52,6 @@ void FPrimitivePass::Execute(FRenderingContext& Context)
            Pipeline->Draw(PrimitiveComponent->GetNumVertices(), 0);
         }
     }
-
 }
 
 void FPrimitivePass::Release()
