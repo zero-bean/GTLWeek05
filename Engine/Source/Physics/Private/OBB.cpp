@@ -6,7 +6,8 @@
 void FOBB::Update(const FMatrix& WorldMatrix)
 {
     Center = WorldMatrix.GetLocation();
-    ScaleRotation = FMatrix::ScaleMatrix(WorldMatrix.GetScale()) * FMatrix::RotationMatrix(WorldMatrix.GetRotation());
+    ScaleRotation = WorldMatrix;
+    ScaleRotation.Data[3][0] = ScaleRotation.Data[3][1] = ScaleRotation.Data[3][2] = 0;
 }
 
 FAABB FOBB::ToWorldAABB() const
